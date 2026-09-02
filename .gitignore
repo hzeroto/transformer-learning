@@ -1,0 +1,27 @@
+# macOS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Tooling and notebooks
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local configuration and generated artifacts
+.env
+.env.*
+checkpoints/
+runs/
+*.pt
+*.pth
