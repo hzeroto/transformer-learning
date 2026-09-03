@@ -3,4 +3,3 @@
 from .tensor_index import indices, offset
 
 __all__ = ["indices", "offset"]
-

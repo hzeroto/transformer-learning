@@ -57,4 +57,3 @@ def indices(shape: tuple[int, ...], offset: int) -> tuple[int, ...]:
         ans.append(offset // s)
         offset -= (offset // s) * s
     return tuple(ans)
-
