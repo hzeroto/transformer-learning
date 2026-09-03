@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-03T17:00:06.570Z",
+  "generatedAt": "2026-09-03T17:01:08.608Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "在理解数学、数据流和训练机制的基础上，独立实现、验证、排错并改造 Transformer 及常见变体。",
