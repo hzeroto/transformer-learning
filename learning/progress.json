@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "currentNodeId": "text-input.token-unit",
-  "updatedAt": "2026-09-03T11:58:15.853Z",
+  "currentNodeId": null,
+  "updatedAt": "2026-09-03T16:59:39.622Z",
   "nodes": {
     "foundation.matrix-multiplication": {
       "status": "mastered",
@@ -37,16 +37,26 @@
       ]
     },
     "foundation.tensor-shape": {
-      "status": "verify",
-      "updatedAt": "2026-09-03T11:58:09.277Z",
-      "note": "已能解释常见shape，但高阶张量的轴与索引语义仍需系统确认",
-      "evidence": []
+      "status": "mastered",
+      "updatedAt": "2026-09-03T16:12:50.035Z",
+      "note": "进入向量化输入前完成高阶张量轴与索引语义验证；采用高信息密度任务，跳过定义复述",
+      "evidence": [
+        {
+          "at": "2026-09-03T16:12:50.035Z",
+          "text": "独立完成任意轴数张量的多轴索引与一维 offset 双向转换；指定样例、全部合法索引与全部 offset 的往返测试，以及非法 shape、索引数量和越界测试均通过"
+        }
+      ]
     },
     "foundation.axis-transpose": {
-      "status": "verify",
-      "updatedAt": "2026-09-03T11:58:09.869Z",
-      "note": "已接触最后两个轴交换，尚未独立用索引关系完成验证",
-      "evidence": []
+      "status": "mastered",
+      "updatedAt": "2026-09-03T16:59:39.622Z",
+      "note": "张量 shape 与索引已通过实现和测试验证；继续掌握交换轴的 shape 变化与精确索引关系",
+      "evidence": [
+        {
+          "at": "2026-09-03T16:59:39.622Z",
+          "text": "能正确判断 (2,3,4) 张量交换第 1、2 轴后 shape 为 (2,4,3)，正确给出 y[1,2,0] 对应 x[1,0,2]，并说明转置视图共享底层存储、修改该位置会同步影响原张量"
+        }
+      ]
     },
     "foundation.softmax": {
       "status": "verify",
@@ -103,10 +113,26 @@
       "evidence": []
     },
     "text-input.token-unit": {
-      "status": "current",
-      "updatedAt": "2026-09-03T11:58:15.853Z",
+      "status": "mastered",
+      "updatedAt": "2026-09-03T13:48:48.610Z",
       "note": "从文字如何变成可计算输入开始补齐背景",
-      "evidence": []
+      "evidence": [
+        {
+          "at": "2026-09-03T13:48:48.610Z",
+          "text": "能指出未收录的 playing 可由已知子词 play 和 ing 处理，并说明逐字符切分虽能处理但会产生更多 token、增加序列长度"
+        }
+      ]
+    },
+    "text-input.vocabulary-id": {
+      "status": "mastered",
+      "updatedAt": "2026-09-03T14:28:26.444Z",
+      "note": "文字切分单位已掌握，继续学习如何把每个文字单位稳定映射为整数编号",
+      "evidence": [
+        {
+          "at": "2026-09-03T14:28:26.444Z",
+          "text": "能正确把带起止标记的 token 序列编码为 [2,4,5,6,7,3]，能指出未知单位映射为 ID 1，并明确说明 token 与普通 ID 之间必须保持固定映射"
+        }
+      ]
     }
   }
 }

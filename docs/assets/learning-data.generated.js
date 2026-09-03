@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-03T12:40:17.859Z",
+  "generatedAt": "2026-09-03T17:00:06.570Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "在理解数学、数据流和训练机制的基础上，独立实现、验证、排错并改造 Transformer 及常见变体。",
@@ -49,10 +49,15 @@ window.LEARNING_DATA = {
             "能从shape写出合法索引并解释各轴语义"
           ],
           "progress": {
-            "status": "verify",
-            "updatedAt": "2026-09-03T11:58:09.277Z",
-            "note": "已能解释常见shape，但高阶张量的轴与索引语义仍需系统确认",
-            "evidence": []
+            "status": "mastered",
+            "updatedAt": "2026-09-03T16:12:50.035Z",
+            "note": "进入向量化输入前完成高阶张量轴与索引语义验证；采用高信息密度任务，跳过定义复述",
+            "evidence": [
+              {
+                "at": "2026-09-03T16:12:50.035Z",
+                "text": "独立完成任意轴数张量的多轴索引与一维 offset 双向转换；指定样例、全部合法索引与全部 offset 的往返测试，以及非法 shape、索引数量和越界测试均通过"
+              }
+            ]
           }
         },
         {
@@ -91,10 +96,15 @@ window.LEARNING_DATA = {
             "能判断交换前后的shape和元素位置"
           ],
           "progress": {
-            "status": "verify",
-            "updatedAt": "2026-09-03T11:58:09.869Z",
-            "note": "已接触最后两个轴交换，尚未独立用索引关系完成验证",
-            "evidence": []
+            "status": "mastered",
+            "updatedAt": "2026-09-03T16:59:39.622Z",
+            "note": "张量 shape 与索引已通过实现和测试验证；继续掌握交换轴的 shape 变化与精确索引关系",
+            "evidence": [
+              {
+                "at": "2026-09-03T16:59:39.622Z",
+                "text": "能正确判断 (2,3,4) 张量交换第 1、2 轴后 shape 为 (2,4,3)，正确给出 y[1,2,0] 对应 x[1,0,2]，并说明转置视图共享底层存储、修改该位置会同步影响原张量"
+              }
+            ]
           }
         },
         {
@@ -213,10 +223,15 @@ window.LEARNING_DATA = {
             "能指出未知词和序列长度问题"
           ],
           "progress": {
-            "status": "current",
-            "updatedAt": "2026-09-03T11:58:15.853Z",
+            "status": "mastered",
+            "updatedAt": "2026-09-03T13:48:48.610Z",
             "note": "从文字如何变成可计算输入开始补齐背景",
-            "evidence": []
+            "evidence": [
+              {
+                "at": "2026-09-03T13:48:48.610Z",
+                "text": "能指出未收录的 playing 可由已知子词 play 和 ing 处理，并说明逐字符切分虽能处理但会产生更多 token、增加序列长度"
+              }
+            ]
           }
         },
         {
@@ -231,7 +246,15 @@ window.LEARNING_DATA = {
             "能解释未知、开始、结束和补齐编号"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-03T14:28:26.444Z",
+            "note": "文字切分单位已掌握，继续学习如何把每个文字单位稳定映射为整数编号",
+            "evidence": [
+              {
+                "at": "2026-09-03T14:28:26.444Z",
+                "text": "能正确把带起止标记的 token 序列编码为 [2,4,5,6,7,3]，能指出未知单位映射为 ID 1，并明确说明 token 与普通 ID 之间必须保持固定映射"
+              }
+            ]
           }
         },
         {
@@ -1224,8 +1247,8 @@ window.LEARNING_DATA = {
   ],
   "progress": {
     "schemaVersion": 1,
-    "currentNodeId": "text-input.token-unit",
-    "updatedAt": "2026-09-03T11:58:15.853Z",
+    "currentNodeId": null,
+    "updatedAt": "2026-09-03T16:59:39.622Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -1261,16 +1284,26 @@ window.LEARNING_DATA = {
         ]
       },
       "foundation.tensor-shape": {
-        "status": "verify",
-        "updatedAt": "2026-09-03T11:58:09.277Z",
-        "note": "已能解释常见shape，但高阶张量的轴与索引语义仍需系统确认",
-        "evidence": []
+        "status": "mastered",
+        "updatedAt": "2026-09-03T16:12:50.035Z",
+        "note": "进入向量化输入前完成高阶张量轴与索引语义验证；采用高信息密度任务，跳过定义复述",
+        "evidence": [
+          {
+            "at": "2026-09-03T16:12:50.035Z",
+            "text": "独立完成任意轴数张量的多轴索引与一维 offset 双向转换；指定样例、全部合法索引与全部 offset 的往返测试，以及非法 shape、索引数量和越界测试均通过"
+          }
+        ]
       },
       "foundation.axis-transpose": {
-        "status": "verify",
-        "updatedAt": "2026-09-03T11:58:09.869Z",
-        "note": "已接触最后两个轴交换，尚未独立用索引关系完成验证",
-        "evidence": []
+        "status": "mastered",
+        "updatedAt": "2026-09-03T16:59:39.622Z",
+        "note": "张量 shape 与索引已通过实现和测试验证；继续掌握交换轴的 shape 变化与精确索引关系",
+        "evidence": [
+          {
+            "at": "2026-09-03T16:59:39.622Z",
+            "text": "能正确判断 (2,3,4) 张量交换第 1、2 轴后 shape 为 (2,4,3)，正确给出 y[1,2,0] 对应 x[1,0,2]，并说明转置视图共享底层存储、修改该位置会同步影响原张量"
+          }
+        ]
       },
       "foundation.softmax": {
         "status": "verify",
@@ -1327,22 +1360,115 @@ window.LEARNING_DATA = {
         "evidence": []
       },
       "text-input.token-unit": {
-        "status": "current",
-        "updatedAt": "2026-09-03T11:58:15.853Z",
+        "status": "mastered",
+        "updatedAt": "2026-09-03T13:48:48.610Z",
         "note": "从文字如何变成可计算输入开始补齐背景",
-        "evidence": []
+        "evidence": [
+          {
+            "at": "2026-09-03T13:48:48.610Z",
+            "text": "能指出未收录的 playing 可由已知子词 play 和 ing 处理，并说明逐字符切分虽能处理但会产生更多 token、增加序列长度"
+          }
+        ]
+      },
+      "text-input.vocabulary-id": {
+        "status": "mastered",
+        "updatedAt": "2026-09-03T14:28:26.444Z",
+        "note": "文字切分单位已掌握，继续学习如何把每个文字单位稳定映射为整数编号",
+        "evidence": [
+          {
+            "at": "2026-09-03T14:28:26.444Z",
+            "text": "能正确把带起止标记的 token 序列编码为 [2,4,5,6,7,3]，能指出未知单位映射为 ID 1，并明确说明 token 与普通 ID 之间必须保持固定映射"
+          }
+        ]
       }
     },
     "statusCounts": {
-      "mastered": 3,
-      "current": 1,
-      "verify": 3,
+      "mastered": 7,
+      "current": 0,
+      "verify": 1,
       "relearn": 8,
-      "pending": 53
+      "pending": 52
     },
     "totalNodes": 68
   },
   "records": [
+    {
+      "id": "073f28f8-e0fc-454c-8f67-9533a42d2c58",
+      "at": "2026-09-03T16:59:39.622Z",
+      "nodeId": "foundation.axis-transpose",
+      "nodeTitle": "交换张量轴",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "能正确判断 (2,3,4) 张量交换第 1、2 轴后 shape 为 (2,4,3)，正确给出 y[1,2,0] 对应 x[1,0,2]，并说明转置视图共享底层存储、修改该位置会同步影响原张量",
+      "note": null
+    },
+    {
+      "id": "b85bf2ad-4b75-461b-9dda-5ed73ec73ea1",
+      "at": "2026-09-03T16:27:43.433Z",
+      "nodeId": "foundation.axis-transpose",
+      "nodeTitle": "交换张量轴",
+      "action": "current",
+      "fromStatus": "verify",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "张量 shape 与索引已通过实现和测试验证；继续掌握交换轴的 shape 变化与精确索引关系"
+    },
+    {
+      "id": "2de14062-98cb-43ab-9463-a42e5c58d9d7",
+      "at": "2026-09-03T16:12:50.035Z",
+      "nodeId": "foundation.tensor-shape",
+      "nodeTitle": "张量、shape与索引",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "独立完成任意轴数张量的多轴索引与一维 offset 双向转换；指定样例、全部合法索引与全部 offset 的往返测试，以及非法 shape、索引数量和越界测试均通过",
+      "note": null
+    },
+    {
+      "id": "b2b08f61-5658-477d-818a-572b3ac1a457",
+      "at": "2026-09-03T14:28:26.715Z",
+      "nodeId": "foundation.tensor-shape",
+      "nodeTitle": "张量、shape与索引",
+      "action": "current",
+      "fromStatus": "verify",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "进入向量化输入前完成高阶张量轴与索引语义验证；采用高信息密度任务，跳过定义复述"
+    },
+    {
+      "id": "6cf1bb0d-8314-4a21-ba53-cedc3494053a",
+      "at": "2026-09-03T14:28:26.444Z",
+      "nodeId": "text-input.vocabulary-id",
+      "nodeTitle": "词表与整数编号",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "能正确把带起止标记的 token 序列编码为 [2,4,5,6,7,3]，能指出未知单位映射为 ID 1，并明确说明 token 与普通 ID 之间必须保持固定映射",
+      "note": null
+    },
+    {
+      "id": "1f0b9432-373a-47ce-b02b-b86e5a5c37dd",
+      "at": "2026-09-03T13:49:11.971Z",
+      "nodeId": "text-input.vocabulary-id",
+      "nodeTitle": "词表与整数编号",
+      "action": "current",
+      "fromStatus": "pending",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "文字切分单位已掌握，继续学习如何把每个文字单位稳定映射为整数编号"
+    },
+    {
+      "id": "f826ec94-2841-4c44-b480-3e6f87983c1a",
+      "at": "2026-09-03T13:48:48.610Z",
+      "nodeId": "text-input.token-unit",
+      "nodeTitle": "文字切分单位",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "能指出未收录的 playing 可由已知子词 play 和 ing 处理，并说明逐字符切分虽能处理但会产生更多 token、增加序列长度",
+      "note": null
+    },
     {
       "id": "ab78a141-f8a1-4ef4-982a-ec6ef55b64a3",
       "at": "2026-09-03T11:58:15.853Z",
