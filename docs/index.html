@@ -3,89 +3,180 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Transformer学习地图与掌握记录">
-  <title>Transformer 掌握地图</title>
+  <meta name="description" content="Transformer 学习路径、当前任务与掌握证据总览">
+  <title>Transformer 学习驾驶舱</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+
   <header class="site-header">
-    <div>
-      <p class="eyebrow">LEARNING SYSTEM</p>
-      <h1>Transformer 掌握地图</h1>
+    <div class="header-copy">
+      <div class="brand-line">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <p class="eyebrow">TRANSFORMER · FROM FIRST PRINCIPLES</p>
+      </div>
+      <h1>学习驾驶舱</h1>
       <p class="subtitle" id="goal-description"></p>
     </div>
-    <div class="updated-at" id="updated-at"></div>
+    <div class="header-meta">
+      <span id="curriculum-size">—</span>
+      <span id="updated-at">—</span>
+    </div>
   </header>
 
-  <main>
-    <section class="summary-grid" aria-label="学习概览">
-      <article class="summary-card">
-        <span>总体掌握</span>
-        <strong id="mastery-count">—</strong>
-        <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="progress-fill" id="progress-fill"></div>
+  <main id="main-content">
+    <section class="dashboard-grid" aria-label="学习概览">
+      <article class="dashboard-card focus-card">
+        <div class="card-heading-row">
+          <p class="section-kicker">现在只推进这一件事</p>
+          <span class="status-label current" id="current-status">当前学习</span>
+        </div>
+        <p class="focus-stage" id="current-stage">—</p>
+        <h2 id="current-node">—</h2>
+        <p class="focus-summary" id="current-summary"></p>
+        <div class="readiness-line" id="current-readiness"></div>
+        <div class="action-row">
+          <button class="primary-button" id="current-detail-button" type="button">查看掌握要求</button>
+          <button class="quiet-button" id="current-stage-button" type="button">查看所在阶段</button>
         </div>
       </article>
-      <article class="summary-card current-card">
-        <span>当前入口</span>
-        <strong id="current-node">—</strong>
-        <small id="current-stage">—</small>
+
+      <article class="dashboard-card mastery-card">
+        <div>
+          <p class="section-kicker">全局掌握</p>
+          <div class="mastery-dial" id="mastery-dial" aria-hidden="true">
+            <div class="mastery-dial-inner">
+              <strong id="mastery-percentage">—</strong>
+              <span>已掌握</span>
+            </div>
+          </div>
+        </div>
+        <div class="mastery-copy">
+          <strong id="mastery-count">—</strong>
+          <span id="mastery-caption">知识点形成了可核验能力</span>
+          <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
       </article>
-      <article class="summary-card">
-        <span>需要回看</span>
-        <strong id="review-count">—</strong>
-        <small>待验证 + 待系统重学</small>
+
+      <article class="dashboard-card review-card">
+        <div class="review-topline">
+          <p class="section-kicker">能力边界</p>
+          <strong id="review-count">—</strong>
+        </div>
+        <p>这些知识点接触过，但还没有充分证据证明已经掌握。</p>
+        <div class="review-actions">
+          <button type="button" data-quick-filter="verify">
+            <span class="status-dot verify" aria-hidden="true"></span>
+            待验证 <strong id="verify-count">—</strong>
+          </button>
+          <button type="button" data-quick-filter="relearn">
+            <span class="status-dot relearn" aria-hidden="true"></span>
+            待重学 <strong id="relearn-count">—</strong>
+          </button>
+        </div>
+        <div class="ready-count">
+          <span>先修已就绪</span>
+          <strong id="ready-count">—</strong>
+        </div>
       </article>
     </section>
 
-    <section class="toolbar" aria-label="地图筛选">
-      <label>
-        <span>查找知识点</span>
-        <input id="search-input" type="search" placeholder="例如：Softmax、位置、GPT">
+    <section class="roadmap-panel" aria-labelledby="roadmap-heading">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">一眼看全局</p>
+          <h2 id="roadmap-heading">九阶段路线</h2>
+        </div>
+        <span id="stage-summary">—</span>
+      </div>
+      <div class="stage-overview" id="stage-overview"></div>
+    </section>
+
+    <details class="goal-panel">
+      <summary>
+        <span>
+          <span class="section-kicker">最终出口</span>
+          <strong id="goal-title">从基础到独立手搓 Transformer</strong>
+        </span>
+        <span class="summary-hint">查看毕业标准 <span aria-hidden="true">＋</span></span>
+      </summary>
+      <ol id="graduation-criteria" class="graduation-grid"></ol>
+    </details>
+
+    <section class="toolbar" aria-label="知识地图筛选">
+      <label class="search-field" for="search-input">
+        <span>搜索知识点</span>
+        <span class="search-control">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input id="search-input" type="search" placeholder="搜索标题、简介或掌握标准" autocomplete="off">
+          <kbd aria-label="快捷键斜杠">/</kbd>
+        </span>
       </label>
-      <label>
-        <span>学习状态</span>
-        <select id="status-filter">
-          <option value="all">全部状态</option>
-          <option value="mastered">已掌握</option>
-          <option value="current">当前</option>
-          <option value="verify">待验证</option>
-          <option value="relearn">待系统重学</option>
-          <option value="pending">未开始</option>
-        </select>
-      </label>
-      <div class="legend" aria-label="状态图例" id="legend"></div>
+      <div class="filter-field">
+        <span>按学习状态筛选</span>
+        <div class="status-filters" id="status-filters" role="group" aria-label="学习状态">
+          <button type="button" data-status-filter="all" aria-pressed="true">全部 <span></span></button>
+          <button type="button" data-status-filter="mastered" aria-pressed="false">已掌握 <span></span></button>
+          <button type="button" data-status-filter="current" aria-pressed="false">当前 <span></span></button>
+          <button type="button" data-status-filter="verify" aria-pressed="false">待验证 <span></span></button>
+          <button type="button" data-status-filter="relearn" aria-pressed="false">待重学 <span></span></button>
+          <button type="button" data-status-filter="pending" aria-pressed="false">未开始 <span></span></button>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="text-button" id="reset-filters" type="button" hidden>清除筛选</button>
+        <button class="quiet-button compact" id="toggle-stages" type="button">展开全部阶段</button>
+      </div>
     </section>
 
     <div class="workspace">
       <section class="map-panel" aria-labelledby="map-heading">
-        <div class="section-heading">
+        <div class="section-heading map-heading-row">
           <div>
-            <p class="section-kicker">完整路线</p>
-            <h2 id="map-heading">知识依赖地图</h2>
+            <p class="section-kicker">完整依赖路线</p>
+            <h2 id="map-heading">知识地图</h2>
           </div>
-          <span id="visible-count"></span>
+          <span id="visible-count" aria-live="polite"></span>
         </div>
         <div id="learning-map" class="learning-map"></div>
+        <div class="filter-empty" id="filter-empty" hidden>
+          <strong>没有匹配的知识点</strong>
+          <span>换一个关键词或清除状态筛选试试。</span>
+          <button class="quiet-button compact" type="button">清除筛选</button>
+        </div>
       </section>
 
       <aside class="detail-panel" aria-labelledby="detail-title">
         <div class="detail-sticky">
-          <p class="section-kicker">选中知识点</p>
+          <div class="detail-overline">
+            <span id="detail-position">选中知识点</span>
+            <button class="text-button" id="locate-node" type="button">在地图中定位</button>
+          </div>
           <div class="detail-title-row">
             <span class="status-dot" id="detail-dot"></span>
             <h2 id="detail-title">选择一个知识点</h2>
           </div>
           <div id="detail-status" class="status-label"></div>
           <p id="detail-summary" class="detail-summary"></p>
+          <div id="detail-readiness" class="detail-readiness"></div>
+          <div id="detail-note" class="detail-note" hidden></div>
 
           <section class="detail-section">
-            <h3>直接先修</h3>
+            <div class="detail-section-heading">
+              <h3>直接先修</h3>
+              <span id="prerequisite-count"></span>
+            </div>
             <div id="detail-prerequisites" class="dependency-list"></div>
           </section>
 
           <section class="detail-section">
-            <h3>后续会用到它</h3>
+            <div class="detail-section-heading">
+              <h3>下一层会用到它</h3>
+              <span id="dependent-count"></span>
+            </div>
             <div id="detail-dependents" class="dependency-list"></div>
           </section>
 
@@ -95,7 +186,7 @@
           </section>
 
           <section class="detail-section">
-            <h3>掌握证据</h3>
+            <h3>可核验的掌握证据</h3>
             <div id="detail-evidence" class="evidence-list"></div>
           </section>
         </div>
@@ -105,14 +196,19 @@
     <section class="records-panel" aria-labelledby="records-heading">
       <div class="section-heading">
         <div>
-          <p class="section-kicker">追加式记录</p>
+          <p class="section-kicker">能力如何变化</p>
           <h2 id="records-heading">学习轨迹</h2>
         </div>
-        <span>状态只由上报脚本更新</span>
+        <button class="quiet-button compact" id="records-toggle" type="button" hidden>展开全部</button>
       </div>
       <ol id="records-list" class="records-list"></ol>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <span>状态以可观察证据为准，不以“看过”代替“掌握”。</span>
+    <a href="#main-content">回到顶部</a>
+  </footer>
 
   <script src="assets/learning-data.generated.js"></script>
   <script src="assets/app.js"></script>
