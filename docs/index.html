@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Transformer学习地图与掌握记录">
+  <title>Transformer 掌握地图</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">LEARNING SYSTEM</p>
+      <h1>Transformer 掌握地图</h1>
+      <p class="subtitle" id="goal-description"></p>
+    </div>
+    <div class="updated-at" id="updated-at"></div>
+  </header>
+
+  <main>
+    <section class="summary-grid" aria-label="学习概览">
+      <article class="summary-card">
+        <span>总体掌握</span>
+        <strong id="mastery-count">—</strong>
+        <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </article>
+      <article class="summary-card current-card">
+        <span>当前入口</span>
+        <strong id="current-node">—</strong>
+        <small id="current-stage">—</small>
+      </article>
+      <article class="summary-card">
+        <span>需要回看</span>
+        <strong id="review-count">—</strong>
+        <small>待验证 + 待系统重学</small>
+      </article>
+    </section>
+
+    <section class="toolbar" aria-label="地图筛选">
+      <label>
+        <span>查找知识点</span>
+        <input id="search-input" type="search" placeholder="例如：Softmax、位置、GPT">
+      </label>
+      <label>
+        <span>学习状态</span>
+        <select id="status-filter">
+          <option value="all">全部状态</option>
+          <option value="mastered">已掌握</option>
+          <option value="current">当前</option>
+          <option value="verify">待验证</option>
+          <option value="relearn">待系统重学</option>
+          <option value="pending">未开始</option>
+        </select>
+      </label>
+      <div class="legend" aria-label="状态图例" id="legend"></div>
+    </section>
+
+    <div class="workspace">
+      <section class="map-panel" aria-labelledby="map-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">完整路线</p>
+            <h2 id="map-heading">知识依赖地图</h2>
+          </div>
+          <span id="visible-count"></span>
+        </div>
+        <div id="learning-map" class="learning-map"></div>
+      </section>
+
+      <aside class="detail-panel" aria-labelledby="detail-title">
+        <div class="detail-sticky">
+          <p class="section-kicker">选中知识点</p>
+          <div class="detail-title-row">
+            <span class="status-dot" id="detail-dot"></span>
+            <h2 id="detail-title">选择一个知识点</h2>
+          </div>
+          <div id="detail-status" class="status-label"></div>
+          <p id="detail-summary" class="detail-summary"></p>
+
+          <section class="detail-section">
+            <h3>直接先修</h3>
+            <div id="detail-prerequisites" class="dependency-list"></div>
+          </section>
+
+          <section class="detail-section">
+            <h3>后续会用到它</h3>
+            <div id="detail-dependents" class="dependency-list"></div>
+          </section>
+
+          <section class="detail-section">
+            <h3>掌握标准</h3>
+            <ul id="detail-criteria" class="criteria-list"></ul>
+          </section>
+
+          <section class="detail-section">
+            <h3>掌握证据</h3>
+            <div id="detail-evidence" class="evidence-list"></div>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <section class="records-panel" aria-labelledby="records-heading">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">追加式记录</p>
+          <h2 id="records-heading">学习轨迹</h2>
+        </div>
+        <span>状态只由上报脚本更新</span>
+      </div>
+      <ol id="records-list" class="records-list"></ol>
+    </section>
+  </main>
+
+  <script src="assets/learning-data.generated.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "transformer-mastery-map",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "learning:report": "node scripts/report-learning.mjs",
+    "learning:build": "node scripts/build-learning-data.mjs",
+    "learning:validate": "node scripts/validate-learning.mjs",
+    "serve": "node scripts/serve.mjs"
+  }
+}

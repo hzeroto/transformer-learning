@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "currentNodeId": "text-input.token-unit",
+  "updatedAt": "2026-09-03T11:58:15.853Z",
+  "nodes": {
+    "foundation.matrix-multiplication": {
+      "status": "mastered",
+      "updatedAt": "2026-09-03T11:58:07.448Z",
+      "note": null,
+      "evidence": [
+        {
+          "at": "2026-09-03T11:58:07.448Z",
+          "text": "能正确使用普通矩阵乘法的内维匹配逻辑，并据此判断高阶乘法的核心二维部分"
+        }
+      ]
+    },
+    "foundation.batch-matmul": {
+      "status": "mastered",
+      "updatedAt": "2026-09-03T11:58:08.049Z",
+      "note": null,
+      "evidence": [
+        {
+          "at": "2026-09-03T11:58:08.049Z",
+          "text": "能把(7,3,4)@(7,4,6)解释为一个批次内7组(3,4)@(4,6)，并正确得到(7,3,6)"
+        }
+      ]
+    },
+    "foundation.derivative": {
+      "status": "mastered",
+      "updatedAt": "2026-09-03T11:58:08.683Z",
+      "note": null,
+      "evidence": [
+        {
+          "at": "2026-09-03T11:58:08.683Z",
+          "text": "能正确求出(w*x-y)^2对w的偏导为2x(wx-y)，并把导数解释为变化率"
+        }
+      ]
+    },
+    "foundation.tensor-shape": {
+      "status": "verify",
+      "updatedAt": "2026-09-03T11:58:09.277Z",
+      "note": "已能解释常见shape，但高阶张量的轴与索引语义仍需系统确认",
+      "evidence": []
+    },
+    "foundation.axis-transpose": {
+      "status": "verify",
+      "updatedAt": "2026-09-03T11:58:09.869Z",
+      "note": "已接触最后两个轴交换，尚未独立用索引关系完成验证",
+      "evidence": []
+    },
+    "foundation.softmax": {
+      "status": "verify",
+      "updatedAt": "2026-09-03T11:58:10.537Z",
+      "note": "能计算等分情况和减最大值后的结果，数值稳定原因尚需独立复述",
+      "evidence": []
+    },
+    "attention.qkv": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:11.140Z",
+      "note": "曾在输入、参数和模型结构等先修未完成时提前引入",
+      "evidence": []
+    },
+    "attention.score": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:11.712Z",
+      "note": "已接触Q乘K转置的shape，后续按完整先修链重学",
+      "evidence": []
+    },
+    "attention.scaling": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:12.291Z",
+      "note": "已听过平方根缩放原因，尚未建立在点积尺度和训练机制上",
+      "evidence": []
+    },
+    "attention.weights": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:12.895Z",
+      "note": "已听过分数经Softmax变权重，尚未按依赖链验证",
+      "evidence": []
+    },
+    "attention.weighted-read": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:13.496Z",
+      "note": "已听过权重读取V，尚未按依赖链验证",
+      "evidence": []
+    },
+    "attention.mask": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:14.066Z",
+      "note": "已提前接触屏蔽概念，等待输入补齐和逐步预测先修",
+      "evidence": []
+    },
+    "architecture.encoder": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:14.683Z",
+      "note": "名词被提前使用，等待输入管线、基础块和序列角色先修",
+      "evidence": []
+    },
+    "architecture.decoder": {
+      "status": "relearn",
+      "updatedAt": "2026-09-03T11:58:15.276Z",
+      "note": "名词被提前使用，等待训练机制、屏蔽和序列角色先修",
+      "evidence": []
+    },
+    "text-input.token-unit": {
+      "status": "current",
+      "updatedAt": "2026-09-03T11:58:15.853Z",
+      "note": "从文字如何变成可计算输入开始补齐背景",
+      "evidence": []
+    }
+  }
+}
