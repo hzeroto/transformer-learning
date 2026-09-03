@@ -2,12 +2,15 @@
 
 ## Repository identity — mandatory preflight
 
-- The one canonical local repository root for this project is exactly `/Users/bytedance/go/src/github.com/hzeroto/transformer-learning`.
+- Resolve the canonical local repository root from the operating environment before accessing project files:
+  - On macOS (`uname -s` reports `Darwin`), it is exactly `/Users/bytedance/go/src/github.com/hzeroto/transformer-learning`.
+  - On Windows through WSL (`WSL_DISTRO_NAME` is set, or the Linux kernel release contains `microsoft`), it is exactly `/home/hzeroto/playground/transformer-learning`.
+- Do not select a repository path from the process working directory. Detect the operating environment first, then use only the exact canonical path mapped above.
 - The canonical GitHub repository is `hzeroto/transformer-learning`, with expected `origin` URL `https://github.com/hzeroto/transformer-learning.git` and default branch `main`.
-- When the user says “这个项目”, “项目仓库”, “我们的仓库”, or refers to the Transformer learning project, resolve it to this canonical repository. Never infer the repository from the process working directory alone.
-- Before reading, creating, or editing project files, resolve the repository root and verify that it exactly matches the canonical local path above. Use the canonical root explicitly as the working directory for project commands.
+- When the user says “这个项目”, “项目仓库”, “我们的仓库”, or refers to the Transformer learning project, resolve it to the canonical repository for the detected operating environment.
+- Before reading, creating, or editing project files, detect the operating environment, select the mapped canonical path, and verify that the Git root exactly matches it. Use that canonical root explicitly as the working directory for project commands.
 - The Codex-generated directory under `/Users/bytedance/Documents/Codex/` is not this project repository and must not be used for project artifacts.
-- If the canonical path is unavailable, its Git root differs, or `origin` points elsewhere, stop and ask the user before continuing.
+- If the operating environment is not mapped above, the selected canonical path is unavailable, its Git root differs, or `origin` points elsewhere, stop and ask the user before continuing.
 
 - This repository is for learning and implementing Transformer models from first principles.
 - Prefer small, runnable examples and explain non-obvious mathematical or implementation choices.
@@ -41,6 +44,6 @@
 
 ## Git safety
 
-- Before any remote change or push, verify that the repository root is exactly `/Users/bytedance/go/src/github.com/hzeroto/transformer-learning`, the effective Git identity is expected, and the destination owner is exactly `hzeroto`.
+- Before any remote change or push, detect the operating environment and verify that the repository root exactly matches its mapped canonical path above, the effective Git identity is expected, and the destination owner is exactly `hzeroto`.
 - Only push this repository to `https://github.com/hzeroto/transformer-learning.git` or its equivalent SSH URL owned by `hzeroto`.
 - Stop and ask the user if the source path, Git identity, or destination remote is unexpected.
