@@ -14,6 +14,7 @@ A personal repository for learning Transformer models from first principles.
 - `src/` — implementations and reusable code
 - `tests/` — correctness checks
 - `examples/` — small runnable experiments
+- `exercises/` — learner-completed programming assignments and task instructions
 
 ## Learning map
 
