@@ -58,6 +58,17 @@
     statusFilters: document.getElementById('status-filters'),
     resetFilters: document.getElementById('reset-filters'),
     toggleStages: document.getElementById('toggle-stages'),
+    mapPanel: document.getElementById('map-panel'),
+    mapViewSwitch: document.querySelector('.map-view-switch'),
+    topologyPanel: document.getElementById('topology-panel'),
+    stagesPanel: document.getElementById('stages-panel'),
+    topology: document.getElementById('learning-topology'),
+    topologyFullscreen: document.getElementById('topology-fullscreen'),
+    topologyFit: document.getElementById('topology-fit'),
+    topologyZoomIn: document.getElementById('topology-zoom-in'),
+    topologyZoomOut: document.getElementById('topology-zoom-out'),
+    topologyScale: document.getElementById('topology-scale'),
+    topologyEmpty: document.getElementById('topology-empty'),
     map: document.getElementById('learning-map'),
     visibleCount: document.getElementById('visible-count'),
     filterEmpty: document.getElementById('filter-empty'),
@@ -84,7 +95,10 @@
     ? hashNodeId
     : data.progress.currentNodeId || allNodes[0]?.id;
   let activeStatus = 'all';
+  let activeMapView = 'topology';
   let showAllRecords = false;
+  let topologyGraph = null;
+  let pseudoFullscreen = false;
   const nodeButtons = new Map();
   const stageSections = new Map();
   const expandedStages = new Set(
@@ -146,6 +160,7 @@
       button.classList.toggle('is-prerequisite', node.prerequisites.includes(id));
       button.classList.toggle('is-dependent', (dependents.get(node.id) ?? []).includes(id));
     }
+    topologyGraph?.selectNode(nodeId);
 
     const status = node.progress.status;
     const missing = getMissingPrerequisites(node);
@@ -447,6 +462,82 @@
     syncStageExpansion();
   }
 
+  function renderTopology() {
+    if (!window.LearningTopology) {
+      elements.topology.textContent = '拓扑模块加载失败，请刷新页面重试。';
+      return;
+    }
+    topologyGraph = window.LearningTopology.createTopologyGraph({
+      container: elements.topology,
+      nodes: allNodes,
+      stages: data.stages,
+      statusMeta,
+      onSelect: (nodeId) => showNode(nodeId),
+      onTransform: ({ scale }) => {
+        elements.topologyScale.textContent = `${Math.round(scale * 100)}%`;
+      }
+    });
+  }
+
+  function setMapView(view) {
+    if (!['topology', 'stages'].includes(view)) return;
+    activeMapView = view;
+    const showTopology = view === 'topology';
+    elements.topologyPanel.hidden = !showTopology;
+    elements.stagesPanel.hidden = showTopology;
+    elements.toggleStages.hidden = showTopology;
+    for (const button of elements.mapViewSwitch.querySelectorAll('[data-map-view]')) {
+      const isActive = button.dataset.mapView === view;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+      button.tabIndex = isActive ? 0 : -1;
+    }
+    if (showTopology) requestAnimationFrame(() => topologyGraph?.fit());
+  }
+
+  function scheduleTopologyFit() {
+    requestAnimationFrame(() => requestAnimationFrame(() => topologyGraph?.fit()));
+  }
+
+  function syncFullscreenState() {
+    const isNativeFullscreen = document.fullscreenElement === elements.topologyPanel;
+    const isFullscreen = isNativeFullscreen || pseudoFullscreen;
+    elements.topologyPanel.classList.toggle('is-pseudo-fullscreen', pseudoFullscreen);
+    document.body.classList.toggle('topology-fullscreen-open', pseudoFullscreen);
+    elements.topologyFullscreen.textContent = isFullscreen ? '退出全屏' : '全屏查看';
+    elements.topologyFullscreen.setAttribute('aria-pressed', String(isFullscreen));
+    elements.topologyFullscreen.setAttribute('aria-label', isFullscreen ? '退出拓扑图全屏' : '全屏查看拓扑图');
+    scheduleTopologyFit();
+  }
+
+  async function toggleTopologyFullscreen() {
+    if (document.fullscreenElement === elements.topologyPanel) {
+      try {
+        await document.exitFullscreen?.();
+      } catch (_error) {
+        // 全屏状态仍由 fullscreenchange 与实际 DOM 状态校准。
+      }
+      syncFullscreenState();
+      return;
+    }
+    if (pseudoFullscreen) {
+      pseudoFullscreen = false;
+      syncFullscreenState();
+      return;
+    }
+    if (elements.topologyPanel.requestFullscreen) {
+      try {
+        await elements.topologyPanel.requestFullscreen();
+        syncFullscreenState();
+        return;
+      } catch (_error) {
+        // 浏览器拒绝原生全屏时，退化为覆盖整个页面的沉浸视图。
+      }
+    }
+    pseudoFullscreen = true;
+    syncFullscreenState();
+  }
+
   function toggleStage(stageId) {
     if (expandedStages.has(stageId)) expandedStages.delete(stageId);
     else expandedStages.add(stageId);
@@ -464,6 +555,7 @@
   }
 
   function revealStage(stageId) {
+    setMapView('stages');
     expandedStages.add(stageId);
     if (activeStatus !== 'all' || elements.searchInput.value) clearFilters();
     syncStageExpansion();
@@ -474,13 +566,17 @@
   function locateSelectedNode() {
     const node = nodeIndex.get(selectedNodeId);
     if (!node) return;
-    expandedStages.add(node.stageId);
     if (activeStatus !== 'all' && node.progress.status !== activeStatus) setStatusFilter('all');
     const query = elements.searchInput.value.trim().toLocaleLowerCase('zh-CN');
     if (query && !nodeButtons.get(node.id)?.dataset.search.includes(query)) {
       elements.searchInput.value = '';
       applyFilters();
     }
+    if (activeMapView === 'topology') {
+      topologyGraph?.focusNode(node.id);
+      return;
+    }
+    expandedStages.add(node.stageId);
     syncStageExpansion(activeStatus !== 'all' || Boolean(elements.searchInput.value));
     nodeButtons.get(node.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     window.setTimeout(() => nodeButtons.get(node.id)?.focus({ preventScroll: true }), 350);
@@ -515,6 +611,8 @@
       ? `筛选结果 ${visible} / ${allNodes.length}`
       : `共 ${allNodes.length} 个知识点`;
     elements.filterEmpty.hidden = visible !== 0;
+    elements.topologyEmpty.hidden = visible !== 0;
+    topologyGraph?.setFilter({ query, status: activeStatus });
     elements.resetFilters.hidden = !filtersActive;
   }
 
@@ -580,9 +678,11 @@
   renderOverview();
   renderStageOverview();
   renderMap();
+  renderTopology();
   renderRecords();
   showNode(selectedNodeId);
   applyFilters();
+  setMapView(activeMapView);
 
   elements.searchInput.addEventListener('input', applyFilters);
   elements.statusFilters.addEventListener('click', (event) => {
@@ -592,11 +692,31 @@
   for (const button of document.querySelectorAll('[data-quick-filter]')) {
     button.addEventListener('click', () => {
       setStatusFilter(button.dataset.quickFilter);
-      elements.map.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      elements.mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
   elements.resetFilters.addEventListener('click', clearFilters);
   elements.filterEmpty.querySelector('button').addEventListener('click', clearFilters);
+  elements.topologyEmpty.querySelector('button').addEventListener('click', clearFilters);
+  elements.topologyFullscreen.addEventListener('click', toggleTopologyFullscreen);
+  document.addEventListener('fullscreenchange', syncFullscreenState);
+  elements.mapViewSwitch.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-map-view]');
+    if (button) setMapView(button.dataset.mapView);
+  });
+  elements.mapViewSwitch.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = [...elements.mapViewSwitch.querySelectorAll('[data-map-view]')];
+    const currentIndex = buttons.indexOf(document.activeElement);
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const nextButton = buttons[(currentIndex + direction + buttons.length) % buttons.length];
+    setMapView(nextButton.dataset.mapView);
+    nextButton.focus();
+  });
+  elements.topologyFit.addEventListener('click', () => topologyGraph?.fit());
+  elements.topologyZoomIn.addEventListener('click', () => topologyGraph?.zoomIn());
+  elements.topologyZoomOut.addEventListener('click', () => topologyGraph?.zoomOut());
   elements.toggleStages.addEventListener('click', () => {
     if (expandedStages.size === data.stages.length) {
       expandedStages.clear();
@@ -629,6 +749,13 @@
   document.addEventListener('keydown', (event) => {
     const target = event.target;
     const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+    if (event.key === 'Escape' && pseudoFullscreen) {
+      event.preventDefault();
+      pseudoFullscreen = false;
+      syncFullscreenState();
+      elements.topologyFullscreen.focus();
+      return;
+    }
     if (event.key === '/' && !isTyping) {
       event.preventDefault();
       elements.searchInput.focus();

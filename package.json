@@ -7,6 +7,7 @@
     "learning:report": "node scripts/report-learning.mjs",
     "learning:build": "node scripts/build-learning-data.mjs",
     "learning:validate": "node scripts/validate-learning.mjs",
+    "test:frontend": "node --test tests/frontend/*.test.mjs",
     "serve": "node scripts/serve.mjs"
   }
 }

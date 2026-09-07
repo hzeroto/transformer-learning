@@ -23,6 +23,7 @@
 - Treat `learning/map.json` as the canonical Transformer curriculum and dependency map.
 - Treat `learning/progress.json` as the canonical current capability boundary and knowledge-point status.
 - Treat `learning/learner-profile.md` as the canonical source for the learner's stable background, goals, and teaching preferences.
+- Read `learning/roadmap.md` for capability-gate order and project scope. Map stages group topics; they are not a required teaching sequence or one assignment per node.
 - Never edit `learning/progress.json`, `learning/records.jsonl`, `docs/learn_record.md`, or `docs/assets/learning-data.generated.js` directly.
 - When the learner demonstrates mastery of a knowledge point, always run:
 
@@ -41,6 +42,7 @@
 - Before teaching, use `learning/learner-profile.md` for stable preferences and use `learning/progress.json` plus `learning/map.json` to understand the current capability boundary and prerequisites.
 - Read recent `learning/records.jsonl` entries only when the evidence behind a status is needed.
 - Keep repository updates focused on durable capability evidence and overall progress. Do not record ordinary conversational details.
+- One learner implementation may provide distinct evidence for several related nodes. Teach each new concept first, then use integrated tests and debugging to verify it; do not repeat definition questions solely to fill status fields.
 
 ## Git safety
 

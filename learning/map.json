@@ -2,13 +2,15 @@
   "schemaVersion": 1,
   "goal": {
     "title": "从基础到独立手搓 Transformer",
-    "description": "在理解数学、数据流和训练机制的基础上，独立实现、验证、排错并改造 Transformer 及常见变体。",
+    "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
     "graduationCriteria": [
       "能从空文件实现核心 Transformer，不依赖高级 Transformer 封装",
       "能解释每个张量的来源、shape、数学作用和梯度路径",
       "能实现 Encoder-only、Decoder-only 和 Encoder–Decoder 三类架构",
       "能通过数值对齐、性质测试和极小数据过拟合验证实现",
-      "能阅读一个新变体的结构说明并独立完成改造与实验"
+      "能阅读一个新变体的结构说明并独立完成改造与实验",
+      "能实现小型 GPT、原版 Transformer、BERT、T5 和明确配置的 LLaMA 风格模型",
+      "能验证缓存推理、计算参数和KV存储成本，并用基准解释一次优化的收益或无收益"
     ]
   },
   "stages": [
@@ -86,6 +88,20 @@
           "summary": "利用已有Go/C++能力，只补齐数值计算必需的Python和PyTorch写法。",
           "prerequisites": ["foundation.tensor-shape"],
           "masteryCriteria": ["能独立阅读基础张量代码", "能创建、索引、变形和计算PyTorch张量"]
+        },
+        {
+          "id": "foundation.mean-variance",
+          "title": "均值、方差与尺度",
+          "summary": "按需建立归一化与点积缩放所需的统计语言，不扩展成完整概率论课程。",
+          "prerequisites": ["foundation.tensor-shape"],
+          "masteryCriteria": ["能区分均值、方差和标准差并解释按轴计算的语义", "能说明独立或不相关假设何时允许方差相加，以及乘常数时方差如何变化"]
+        },
+        {
+          "id": "foundation.tensor-layout",
+          "title": "张量变形与存储布局",
+          "summary": "连接逻辑shape、stride、共享存储和实际复制，在拆头合头时补齐。",
+          "prerequisites": ["foundation.axis-transpose", "foundation.python-pytorch"],
+          "masteryCriteria": ["能解释reshape、view与contiguous的使用条件和可能的复制", "能定位非连续张量的变形错误，并用索引验证head与token没有混淆"]
         }
       ]
     },
@@ -135,6 +151,13 @@
           "summary": "把文本转换为带位置、批次和有效位置标记的向量张量。",
           "prerequisites": ["text-input.embedding", "text-input.batch-padding", "text-input.position"],
           "masteryCriteria": ["能追踪一段文本在每一步的内容和shape", "能独立实现最小输入管线"]
+        },
+        {
+          "id": "text-input.sinusoidal-position",
+          "title": "正弦位置编码",
+          "summary": "在原版Transformer分支实现固定的正弦余弦位置表示，与已掌握的可学习位置表区分。",
+          "prerequisites": ["text-input.position", "foundation.broadcasting"],
+          "masteryCriteria": ["在先理解频率与位置下标后实现编码，验证shape、位置偏移和奇偶维处理约定", "能区分可计算更长位置和模型能可靠外推到更长序列"]
         }
       ]
     },
@@ -167,30 +190,37 @@
         {
           "id": "learning-mechanics.loss",
           "title": "损失与交叉熵",
-          "summary": "用一个标量衡量当前预测与正确答案之间的差距。",
+          "summary": "先解释对数与正确答案概率，再从logits计算稳定交叉熵，并明确有效标签的归约方式。",
           "prerequisites": ["learning-mechanics.logits-probability"],
-          "masteryCriteria": ["能解释正确答案概率与损失的关系", "能手写稳定的交叉熵计算"]
+          "masteryCriteria": ["能解释正确答案概率与负对数损失的关系", "能用log-sum-exp手写稳定交叉熵并与参考对齐", "能排除PAD标签并按有效标签数量求平均，明确全无效输入的处理约定"]
         },
         {
           "id": "learning-mechanics.backward-update",
           "title": "反向传播与参数更新",
           "summary": "计算每个参数对损失的影响并修改参数以降低损失。",
-          "prerequisites": ["learning-mechanics.loss", "foundation.chain-rule"],
-          "masteryCriteria": ["能跟踪一次梯度产生和参数更新", "能用有限差分验证简单梯度"]
+          "prerequisites": ["learning-mechanics.loss", "foundation.chain-rule", "foundation.python-pytorch", "learning-mechanics.forward"],
+          "masteryCriteria": ["能手写一次SGD更新并解释学习率、清梯度和不记录更新计算图的原因", "能用有限差分验证简单梯度，并定位断图与意外梯度累积"]
         },
         {
           "id": "learning-mechanics.train-infer",
           "title": "训练与实际使用",
-          "summary": "训练阶段拥有正确答案用于计算误差，实际使用阶段只能依赖输入和已生成结果。",
+          "summary": "区分拥有监督标签的训练与逐步预测，并分别理解模型模式和自动求导开关。",
           "prerequisites": ["learning-mechanics.forward", "learning-mechanics.backward-update"],
-          "masteryCriteria": ["能分别画出训练和实际使用的数据流", "能说明参数何时改变、何时固定"]
+          "masteryCriteria": ["能分别画出训练和实际使用的数据流", "能说明参数何时改变，并区分eval模式与no_grad的作用"]
         },
         {
           "id": "learning-mechanics.next-token",
           "title": "预测下一个文字单位",
           "summary": "根据已有内容产生下一个单位，再把结果加入输入继续预测。",
-          "prerequisites": ["learning-mechanics.logits-probability", "learning-mechanics.train-infer"],
-          "masteryCriteria": ["能解释逐步生成循环", "能说明训练时如何同时计算多个位置"]
+          "prerequisites": ["learning-mechanics.logits-probability", "text-input.vocabulary-id", "text-input.batch-padding"],
+          "masteryCriteria": ["能构造错开一位的输入与标签并正确对齐有效位置", "能解释逐步生成循环及训练时并行计算多个位置所需的因果可见范围"]
+        },
+        {
+          "id": "learning-mechanics.tiny-training-loop",
+          "title": "最小可训练语言模型",
+          "summary": "用当前token的Embedding预测下一token，把分数、损失、反向、更新与生成串成首个可运行闭环。",
+          "prerequisites": ["text-input.embedding", "block.linear", "learning-mechanics.next-token", "learning-mechanics.backward-update", "learning-mechanics.train-infer"],
+          "masteryCriteria": ["能在每个输入token都有确定后继的玩具数据上降低损失并学到转移规律", "能验证标签对齐、PAD排除、参数更新与清梯度，定位一个注入的训练错误", "能解释这个基线只看当前token，无法区分需要更早上下文的任务"]
         }
       ]
     },
@@ -203,7 +233,7 @@
           "id": "attention.qkv",
           "title": "Q、K、V的计算与分工",
           "summary": "从输入向量分别计算匹配请求、匹配依据和被读取内容。",
-          "prerequisites": ["text-input.embedding", "learning-mechanics.parameter-activation", "foundation.matrix-multiplication"],
+          "prerequisites": ["text-input.embedding", "learning-mechanics.parameter-activation", "block.linear"],
           "masteryCriteria": ["能区分参数矩阵和动态计算结果", "能不用后续架构术语解释Q、K、V"]
         },
         {
@@ -217,8 +247,8 @@
           "id": "attention.scaling",
           "title": "分数缩放",
           "summary": "根据每个头的特征数缩放点积，避免Softmax过早饱和。",
-          "prerequisites": ["attention.score", "foundation.softmax"],
-          "masteryCriteria": ["能从点积方差解释平方根缩放", "能解释不缩放对概率和梯度的影响"]
+          "prerequisites": ["attention.score", "foundation.softmax", "foundation.mean-variance", "foundation.chain-rule"],
+          "masteryCriteria": ["能在独立、零均值及单位方差假设下解释平方根缩放，不将假设当成所有真实特征的定律", "能用实验解释不缩放对概率集中程度和梯度的影响"]
         },
         {
           "id": "attention.weights",
@@ -239,7 +269,7 @@
           "title": "屏蔽无效位置和未来位置",
           "summary": "在Softmax之前禁止读取补齐内容或尚未允许看到的位置。",
           "prerequisites": ["attention.weights", "text-input.batch-padding", "learning-mechanics.next-token"],
-          "masteryCriteria": ["能区分两类屏蔽", "能解释为什么屏蔽必须影响Softmax归一化"]
+          "masteryCriteria": ["能区分两类屏蔽，并解释屏蔽如何影响归一化", "能用未来扰动和PAD扰动测试验证可见范围", "能区分key有效性、query有效性与损失有效性，明确全屏蔽行的处理约定"]
         },
         {
           "id": "attention.single-head",
@@ -252,8 +282,8 @@
           "id": "attention.multi-head",
           "title": "多头Attention",
           "summary": "把特征拆成多组，让不同组学习不同的匹配和信息读取方式。",
-          "prerequisites": ["attention.single-head", "foundation.axis-transpose"],
-          "masteryCriteria": ["能完成拆头和合头", "能解释头数与每头特征数的约束", "能实现输出投影"]
+          "prerequisites": ["attention.single-head", "foundation.tensor-layout"],
+          "masteryCriteria": ["能用精确索引关系完成拆头和合头", "能解释不同参数子空间产生独立注意力分布，以及C=H×Dh是当前等宽实现的约定", "能实现输出投影并说明它如何混合各头的内容"]
         },
         {
           "id": "attention.source-types",
@@ -301,8 +331,8 @@
           "id": "block.layer-norm",
           "title": "层归一化",
           "summary": "对每个位置的特征进行标准化和可学习的缩放平移。",
-          "prerequisites": ["foundation.tensor-shape", "learning-mechanics.parameter-activation"],
-          "masteryCriteria": ["能选择正确归一化轴", "能手写计算并与参考实现对齐"]
+          "prerequisites": ["foundation.tensor-shape", "learning-mechanics.parameter-activation", "foundation.mean-variance"],
+          "masteryCriteria": ["能选择特征轴并解释总体方差、epsilon与可学习缩放平移", "能手写计算并验证前向和梯度与参考实现对齐"]
         },
         {
           "id": "block.dropout",
@@ -316,41 +346,41 @@
           "title": "完整Transformer块",
           "summary": "组合Attention、前馈网络、残差和归一化形成可堆叠模块。",
           "prerequisites": ["attention.multi-head", "block.ffn", "block.residual", "block.layer-norm", "block.dropout"],
-          "masteryCriteria": ["能闭卷实现一个完整块", "能追踪所有子层的数据流和shape"]
+          "masteryCriteria": ["能说明各组件的作用和组合顺序", "能追踪所有子层的数据流和shape；与手写块使用同一份实现验收"]
         }
       ]
     },
     {
       "id": "architecture",
       "title": "完整架构与训练目标",
-      "description": "先理解序列两侧各自承担的角色，再学习常见架构家族。",
+      "description": "优先形成Decoder-only训练闭环；双序列角色与跨序列读取在Encoder–Decoder分支补齐。",
       "nodes": [
         {
           "id": "architecture.sequence-roles",
           "title": "输入序列与输出序列",
           "summary": "区分被读取的源序列、正在生成的目标序列，以及只有一条序列的任务。",
-          "prerequisites": ["text-input.complete-pipeline", "learning-mechanics.next-token"],
+          "prerequisites": ["text-input.vocabulary-id", "learning-mechanics.next-token"],
           "masteryCriteria": ["能用翻译和语言生成分别画出输入输出", "能说明何时存在两条独立序列"]
         },
         {
           "id": "architecture.encoder",
           "title": "Encoder",
           "summary": "读取完整输入序列，为每个位置产生包含上下文的表示。",
-          "prerequisites": ["block.complete", "text-input.position", "architecture.sequence-roles"],
+          "prerequisites": ["block.complete", "text-input.position"],
           "masteryCriteria": ["能从输入到输出逐层说明数据流", "能解释为何通常允许读取输入两侧内容"]
         },
         {
           "id": "architecture.decoder",
           "title": "Decoder",
           "summary": "根据已经可见的目标内容产生用于预测下一个单位的表示。",
-          "prerequisites": ["block.complete", "attention.mask", "learning-mechanics.next-token", "architecture.sequence-roles"],
+          "prerequisites": ["block.complete", "attention.mask", "learning-mechanics.next-token", "text-input.position"],
           "masteryCriteria": ["能解释未来信息为何必须屏蔽", "能区分训练输入和实际生成输入"]
         },
         {
           "id": "architecture.encoder-decoder",
           "title": "原版Encoder–Decoder",
           "summary": "先读取源序列，再由目标侧按需读取源表示并生成目标序列。",
-          "prerequisites": ["architecture.encoder", "architecture.decoder", "attention.source-types"],
+          "prerequisites": ["architecture.encoder", "architecture.decoder", "attention.source-types", "architecture.sequence-roles"],
           "masteryCriteria": ["能解释三处Attention的数据来源", "能实现小型序列转换任务"]
         },
         {
@@ -358,7 +388,7 @@
           "title": "Decoder-only / GPT",
           "summary": "使用带未来屏蔽的模块，根据已有文本持续预测下一个单位。",
           "prerequisites": ["architecture.decoder", "learning-mechanics.next-token"],
-          "masteryCriteria": ["能画出训练和生成流程", "能从空文件实现小型GPT"]
+          "masteryCriteria": ["能画出训练和生成流程并解释因果可见范围", "能给出小型GPT各模块的接口；与Mini-GPT使用同一份实现验收"]
         },
         {
           "id": "architecture.encoder-only",
@@ -370,9 +400,9 @@
         {
           "id": "architecture.t5",
           "title": "T5式文本到文本架构",
-          "summary": "用Encoder–Decoder把分类、摘要、翻译等任务统一成文本输入和文本输出。",
-          "prerequisites": ["architecture.encoder-decoder"],
-          "masteryCriteria": ["能解释任务统一方式", "能完成一个小型文本到文本任务"]
+          "summary": "用Encoder–Decoder统一文本任务，并明确T5的位置偏置、归一化和片段去噪目标。",
+          "prerequisites": ["architecture.encoder-decoder", "modern.rmsnorm", "modern.pre-post-ln"],
+          "masteryCriteria": ["能解释文本到文本形式以及片段遮盖与哨兵token目标", "能说明选定T5版本的相对位置分桶、归一化和前馈层配置，不能只改模型名称"]
         }
       ]
     },
@@ -383,8 +413,9 @@
       "nodes": [
         {
           "id": "implementation.numpy-attention",
-          "title": "NumPy单头Attention",
-          "summary": "不使用自动求导或高级接口实现单头Attention。",
+          "title": "NumPy单头Attention（可选）",
+          "summary": "仅在需要比较数组后端时复写；默认PyTorch主线不重复此作业，也不把它作为毕业先修。",
+          "optional": true,
           "prerequisites": ["attention.single-head", "foundation.python-pytorch"],
           "masteryCriteria": ["与参考结果数值对齐", "通过shape和屏蔽性质测试"]
         },
@@ -392,43 +423,57 @@
           "id": "implementation.pytorch-mha",
           "title": "PyTorch多头Attention",
           "summary": "只用基础张量运算和参数实现多头Attention。",
-          "prerequisites": ["attention.multi-head", "foundation.python-pytorch"],
-          "masteryCriteria": ["禁止使用现成多头Attention接口", "前向和梯度与参考实现对齐"]
+          "prerequisites": ["attention.multi-head", "foundation.python-pytorch", "implementation.testing-debugging"],
+          "masteryCriteria": ["禁止使用现成多头Attention接口，前向与梯度在声明容差内对齐", "通过非连续输入、不同query/key长度、拆合头索引和mask性质测试"]
         },
         {
           "id": "implementation.transformer-block",
           "title": "手写完整Transformer块",
           "summary": "把所有基础组件实现成可配置、可测试模块。",
           "prerequisites": ["block.complete", "implementation.pytorch-mha"],
-          "masteryCriteria": ["能从空文件重写", "能在极小数据上成功过拟合"]
+          "masteryCriteria": ["能根据接口从空文件实现，与block.complete合并验收", "能验证前向、反向和参数注册，完整模型的过拟合在Mini-GPT关卡验收"]
         },
         {
           "id": "implementation.mini-gpt",
           "title": "Mini-GPT",
           "summary": "实现数据处理、模型、训练、保存、恢复和文本生成。",
-          "prerequisites": ["architecture.decoder-only", "implementation.transformer-block"],
-          "masteryCriteria": ["没有未来信息泄漏", "能让单批数据接近完全拟合", "能生成学习到的文本模式"]
+          "prerequisites": ["architecture.decoder-only", "implementation.transformer-block", "learning-mechanics.tiny-training-loop", "text-input.complete-pipeline", "modern.pre-post-ln"],
+          "masteryCriteria": ["未来token扰动不改变更早位置logits，PAD标签不参与损失", "能在明确可拟合的小批数据上接近完全拟合，并在独立验证集观察记忆与泛化差异", "能生成学习到的模式，保存并恢复参数、配置和训练状态，解释初始化、参数注册、优化器与模式切换"]
         },
         {
           "id": "implementation.original-transformer",
           "title": "原版Transformer",
           "summary": "实现完整的源序列到目标序列模型。",
-          "prerequisites": ["architecture.encoder-decoder", "implementation.transformer-block"],
-          "masteryCriteria": ["能完成复制、反转或小型翻译任务", "所有补齐和未来屏蔽测试通过"]
+          "prerequisites": ["architecture.encoder-decoder", "implementation.transformer-block", "text-input.sinusoidal-position", "learning-mechanics.tiny-training-loop"],
+          "masteryCriteria": ["实现Post-LN、正弦位置、目标右移与三处Attention，并声明与原论文训练配方的简化差异", "在未见组合上验证复制或反转任务，排除仅记忆固定样本", "源序列、目标序列长度不同，补齐与未来屏蔽均正确"]
         },
         {
           "id": "implementation.bert",
           "title": "Mini-BERT",
           "summary": "实现双向表示、内容遮盖训练和下游分类。",
-          "prerequisites": ["architecture.encoder-only", "implementation.transformer-block"],
-          "masteryCriteria": ["遮盖标签逻辑正确", "能在极小数据上验证学习能力"]
+          "prerequisites": ["architecture.encoder-only", "implementation.transformer-block", "learning-mechanics.tiny-training-loop"],
+          "masteryCriteria": ["实现双向可见范围、内容/位置/句段表示及仅在选中位置计算的遮盖预测损失", "能区分遮盖位置选择与输入替换策略，并实现原版BERT的句对预测小任务或明确标注省略后的模型范围", "能在极小数据上验证学习能力，避免把双向读取与标签泄漏混淆"]
+        },
+        {
+          "id": "implementation.t5",
+          "title": "Mini-T5",
+          "summary": "在Encoder–Decoder骨架上实现选定T5版本的结构与片段去噪训练。",
+          "prerequisites": ["architecture.t5", "implementation.original-transformer"],
+          "masteryCriteria": ["实现相对位置分桶偏置、选定版本的归一化与前馈层，并列明具体配置", "片段遮盖、哨兵token顺序、目标右移与PAD损失处理正确", "在小型去噪任务上训练和生成，通过跨序列读取测试"]
+        },
+        {
+          "id": "implementation.llama",
+          "title": "LLaMA风格模型",
+          "summary": "在Mini-GPT上逐项替换Pre-LN、RMSNorm、SwiGLU和RoPE，构成明确配置的模型并验证缓存。",
+          "prerequisites": ["implementation.mini-gpt", "modern.rmsnorm", "modern.swiglu", "modern.rope", "modern.mqa-gqa", "modern.kv-cache"],
+          "masteryCriteria": ["每次组件替换都有独立测试和参数量核对，并说明所选版本与自定义配置的区别", "使用所选MHA或GQA配置完成小数据训练，不能将GQA泛称为所有LLaMA版本的固有结构", "RoPE位置偏移与缓存追加正确，全量和增量logits在预设容差内对齐"]
         },
         {
           "id": "implementation.testing-debugging",
           "title": "测试与故障排查",
-          "summary": "用数值对齐、梯度检查、性质测试和小数据过拟合证明实现正确。",
-          "prerequisites": ["implementation.numpy-attention"],
-          "masteryCriteria": ["能定位shape、屏蔽、NaN和信息泄漏问题", "能为新模块自行设计测试"]
+          "summary": "从训练闭环开始使用数值、梯度和性质测试；Attention的屏蔽与泄漏排错在对应实现中继续验收。",
+          "prerequisites": ["foundation.python-pytorch", "foundation.chain-rule", "foundation.softmax"],
+          "masteryCriteria": ["能为简单模块自行设计有区分力的性质测试，并解释它能捕获哪种错误", "能结合有限差分与参考对齐定位一个注入的梯度或数值错误；小数据过拟合在训练闭环后继续使用", "能声明容差、随机种子和输入约定，不把教师提供的测试通过自动等同于会设计测试"]
         }
       ]
     },
@@ -441,8 +486,8 @@
           "id": "modern.pre-post-ln",
           "title": "Pre-LN与Post-LN",
           "summary": "比较归一化在残差分支中的位置以及深层训练差异。",
-          "prerequisites": ["block.layer-norm", "block.residual", "implementation.transformer-block"],
-          "masteryCriteria": ["能切换两种实现", "能解释梯度路径和稳定性差异"]
+          "prerequisites": ["block.layer-norm", "block.residual"],
+          "masteryCriteria": ["能在相同子层上切换两种排列，并理解常见Pre-LN堆栈末尾的归一化", "能解释梯度路径差异，用实验讨论稳定性而非宣称某种排列总是更优"]
         },
         {
           "id": "modern.rmsnorm",
@@ -459,25 +504,32 @@
           "masteryCriteria": ["能实现门控前馈层", "能计算和比较参数量"]
         },
         {
-          "id": "modern.rope-alibi",
-          "title": "RoPE与ALiBi",
-          "summary": "通过旋转或分数偏置表达相对位置关系。",
+          "id": "modern.rope",
+          "title": "旋转位置编码RoPE",
+          "summary": "先补齐二维旋转所需的三角关系，再对Q和K按位置旋转并验证相对位移性质。",
           "prerequisites": ["text-input.position", "attention.score"],
-          "masteryCriteria": ["能实现至少一种方案", "能解释它如何影响位置关系和长度外推"]
+          "masteryCriteria": ["能实现成对特征旋转并验证相对位置与旋转保持长度的性质", "能处理生成位置偏移并解释可计算长位置不保证模型可靠外推"]
+        },
+        {
+          "id": "modern.rope-alibi",
+          "title": "ALiBi与RoPE对照",
+          "summary": "保留原节点ID；在已实现RoPE后实现按头配置的线性距离偏置，比较两种位置机制。",
+          "prerequisites": ["modern.rope", "attention.mask"],
+          "masteryCriteria": ["独立实现ALiBi并验证头斜率、距离方向和因果可见范围", "用实验比较RoPE与ALiBi，明确两种方案均已实现而非二选一"]
         },
         {
           "id": "modern.mqa-gqa",
           "title": "MQA与GQA",
           "summary": "减少K、V的头数，降低逐步生成时的存储和带宽成本。",
           "prerequisites": ["attention.multi-head"],
-          "masteryCriteria": ["能实现头的共享与分组", "能验证特殊配置退化为普通多头"]
+          "masteryCriteria": ["能实现头的共享与分组，验证KV头数等于Q头数时退化为MHA、等于1时为MQA", "能计算KV参数及存储量，区分临时展开与把KV复制成所有Q头后永久缓存"]
         },
         {
           "id": "modern.kv-cache",
           "title": "KV Cache",
           "summary": "复用历史位置已经计算的K和V，避免每次生成重复计算。",
-          "prerequisites": ["learning-mechanics.next-token", "architecture.decoder-only", "attention.qkv"],
-          "masteryCriteria": ["缓存与无缓存输出严格对齐", "能分析计算量和存储量变化"]
+          "prerequisites": ["implementation.mini-gpt", "attention.qkv"],
+          "masteryCriteria": ["关闭随机失活，在相同位置与可见范围下逐步比较缓存和全量logits，满足事先声明的dtype/device容差", "验证不同前缀长度、分块追加、容量边界、缓存重置和请求隔离", "能区分整段预填充与逐token解码，并分析计算和存储变化"]
         },
         {
           "id": "modern.sampling",
@@ -489,16 +541,16 @@
         {
           "id": "modern.sliding-window",
           "title": "滑动窗口Attention",
-          "summary": "限制每个位置只读取局部范围，降低长序列计算量。",
+          "summary": "限制局部可见范围，并区分稠密mask与真正跳过窗口外计算的实现。",
           "prerequisites": ["attention.mask", "attention.single-head"],
-          "masteryCriteria": ["窗口外权重严格为零", "能分析时间和空间复杂度"]
+          "masteryCriteria": ["窗口外权重严格为零，窗口起止和序列边界符合约定；缓存联调在KV Cache掌握后验证", "能实现不生成完整T×T矩阵的局部读取，并与稠密窗口mask参考对齐", "能解释单纯加mask不会降低稠密矩阵乘法复杂度，区分操作量减少与实际运行加速"]
         },
         {
           "id": "modern.flash-attention",
           "title": "FlashAttention核心思想",
           "summary": "通过分块计算和在线Softmax减少显存读写，而不改变Attention数学结果。",
-          "prerequisites": ["attention.single-head", "foundation.softmax", "implementation.testing-debugging"],
-          "masteryCriteria": ["能解释瓶颈为何不仅是计算次数", "能完成简化分块实现并数值对齐"]
+          "prerequisites": ["attention.single-head", "foundation.softmax", "implementation.testing-debugging", "systems.cost-model"],
+          "masteryCriteria": ["能解释片上存储与设备内存读写，并说明完整精确Attention的二次算术量没有自动消失", "能实现在线归一化的简化分块Attention并在容差内对齐", "能区分CPU算法验证与融合GPU内核的性能验证，不把Python分块循环当成加速实现"]
         },
         {
           "id": "modern.moe",
@@ -506,6 +558,41 @@
           "summary": "让不同输入只激活部分前馈专家，以增加参数容量而控制单次计算量。",
           "prerequisites": ["block.ffn", "learning-mechanics.loss"],
           "masteryCriteria": ["能实现玩具路由器和专家层", "能解释负载均衡问题"]
+        }
+      ]
+    },
+    {
+      "id": "systems",
+      "title": "模型执行与AI Infra桥接",
+      "description": "从自己的模型建立资源与性能基线；正确性可在CPU验证，硬件相关性能结论必须来自相应后端实测。",
+      "nodes": [
+        {
+          "id": "systems.cost-model",
+          "title": "参数、算术量与存储账本",
+          "summary": "在MHA和FFN实现后计算主要乘加与张量字节数，后续随模型和缓存逐步扩充。",
+          "prerequisites": ["implementation.pytorch-mha", "block.ffn", "foundation.tensor-layout"],
+          "masteryCriteria": ["能推导线性层、注意力矩阵和前馈层的主要算术量，并声明乘加计数约定", "能为已实现的参数、激活和已学梯度分别记账；优化器额外状态与KV账本在对应节点后扩充", "能用元素数乘每元素字节数核对张量存储，并区分视图、实际分配和分配器预留"]
+        },
+        {
+          "id": "systems.benchmarking",
+          "title": "可复现性能基线与Profiling",
+          "summary": "在优化前记录设备、版本、dtype和workload，用热身、重复测量和执行轨迹验证瓶颈假设。",
+          "prerequisites": ["implementation.mini-gpt", "systems.cost-model"],
+          "masteryCriteria": ["提供可重跑的基准，包含shape、线程/设备、热身、重复次数和计时范围", "能解释异步设备为何需要同步或事件计时，并用算子轨迹支持瓶颈判断", "在固定输入条件下报告模型延迟和吞吐，缓存加入后分别测预填充与解码；不冒充端到端服务延迟"]
+        },
+        {
+          "id": "systems.mixed-precision",
+          "title": "数值精度与混合精度实验",
+          "summary": "比较FP32、FP16和BF16的范围与精度，按算子选择精度并检查误差和梯度。",
+          "prerequisites": ["learning-mechanics.tiny-training-loop", "systems.benchmarking"],
+          "masteryCriteria": ["能解释浮点范围、舍入与归约误差，区分混合精度和把整个模型强转低精度", "在支持的后端完成一次autocast对照，验证logits、loss和梯度；若使用FP16训练，解释梯度缩放", "报告后端能力及未验证项目，不将CPU或MPS结果推广为CUDA性能结论"]
+        },
+        {
+          "id": "systems.serving-bridge",
+          "title": "有状态推理与服务边界",
+          "summary": "把后端经验连接到请求持有的KV状态、批处理与资源约束，形成后续推理服务项目的接口说明。",
+          "prerequisites": ["modern.kv-cache", "modern.mqa-gqa", "systems.benchmarking"],
+          "masteryCriteria": ["能给出请求进入、预填充、解码、结束释放的状态流，并验证两个请求不会串用缓存", "能解释上下文长度与并发对KV预算的影响，区别模型计时、首token延迟和持续输出间隔", "能说明连续批处理与分页KV要解决的问题及后续服务实验方案；不要求在此实现生产调度器"]
         }
       ]
     },
@@ -539,15 +626,15 @@
           "id": "mastery.performance",
           "title": "参数量、计算量与性能分析",
           "summary": "从公式和实际测量分析参数量、计算量、内存、吞吐和生成延迟。",
-          "prerequisites": ["implementation.testing-debugging", "modern.kv-cache", "modern.flash-attention"],
-          "masteryCriteria": ["能手算核心模块参数量和主要计算量", "能用基准测试验证优化收益"]
+          "prerequisites": ["systems.cost-model", "systems.benchmarking", "modern.kv-cache", "modern.mqa-gqa", "modern.flash-attention"],
+          "masteryCriteria": ["能把缓存字节数与实际张量核对，并解释预填充和解码的不同成本", "围绕一个瓶颈做单变量改动，在同一workload与精度约定下复测正确性、内存和性能", "能解释加速或无收益的证据，明确硬件性能未验证的部分，不设置必须达到的加速倍数"]
         },
         {
           "id": "mastery.capstone",
           "title": "可配置Transformer毕业项目",
           "summary": "用一套代码支持多种基础架构、位置方案、归一化、前馈层和注意力头配置。",
-          "prerequisites": ["mastery.paper-to-code", "mastery.performance", "mastery.vit"],
-          "masteryCriteria": ["能实现、训练、验证、排错并完整讲解", "能根据新需求选择和组合组件"]
+          "prerequisites": ["mastery.paper-to-code", "mastery.performance", "mastery.vit", "implementation.bert", "implementation.t5", "implementation.llama", "modern.sampling", "modern.sliding-window", "modern.moe"],
+          "masteryCriteria": ["按roadmap覆盖表展示所需架构与变体的实现、训练、性质测试和独立排错证据", "能根据新需求选择组件，并声明所选架构版本与训练配方简化", "能闭卷重建核心模型；AI Infra桥接实验单独记录，不以未知GPU条件阻塞核心正确性毕业"]
         }
       ]
     }

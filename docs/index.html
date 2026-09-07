@@ -128,24 +128,63 @@
       </div>
       <div class="toolbar-actions">
         <button class="text-button" id="reset-filters" type="button" hidden>清除筛选</button>
-        <button class="quiet-button compact" id="toggle-stages" type="button">展开全部阶段</button>
+        <button class="quiet-button compact" id="toggle-stages" type="button" hidden>展开全部阶段</button>
       </div>
     </section>
 
     <div class="workspace">
-      <section class="map-panel" aria-labelledby="map-heading">
+      <section class="map-panel" id="map-panel" aria-labelledby="map-heading">
         <div class="section-heading map-heading-row">
           <div>
             <p class="section-kicker">完整依赖路线</p>
             <h2 id="map-heading">知识地图</h2>
           </div>
-          <span id="visible-count" aria-live="polite"></span>
+          <div class="map-heading-tools">
+            <div class="map-view-switch" role="tablist" aria-label="知识地图视图">
+              <button class="is-active" id="topology-tab" type="button" role="tab" aria-selected="true" aria-controls="topology-panel" data-map-view="topology">拓扑总览</button>
+              <button id="stages-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="stages-panel" data-map-view="stages">阶段列表</button>
+            </div>
+            <span id="visible-count" aria-live="polite"></span>
+          </div>
         </div>
-        <div id="learning-map" class="learning-map"></div>
-        <div class="filter-empty" id="filter-empty" hidden>
-          <strong>没有匹配的知识点</strong>
-          <span>换一个关键词或清除状态筛选试试。</span>
-          <button class="quiet-button compact" type="button">清除筛选</button>
+
+        <div id="topology-panel" role="tabpanel" aria-labelledby="topology-tab">
+          <div class="topology-toolbar">
+            <div class="topology-legend" aria-label="拓扑图图例">
+              <span class="legend-edge"><span aria-hidden="true"></span>箭头由先修指向后续</span>
+              <span class="legend-path upstream"><span aria-hidden="true"></span>上游先修</span>
+              <span class="legend-path downstream"><span aria-hidden="true"></span>下游影响</span>
+              <span><span class="status-dot mastered" aria-hidden="true"></span>已掌握</span>
+              <span><span class="status-dot current" aria-hidden="true"></span>当前</span>
+              <span><span class="status-dot verify" aria-hidden="true"></span>待验证</span>
+              <span><span class="status-dot relearn" aria-hidden="true"></span>待重学</span>
+              <span><span class="status-dot pending" aria-hidden="true"></span>未开始</span>
+            </div>
+            <div class="topology-controls" role="group" aria-label="拓扑图缩放">
+              <button class="quiet-button compact topology-fullscreen-button" id="topology-fullscreen" type="button" aria-pressed="false">全屏查看</button>
+              <button class="quiet-button compact" id="topology-fit" type="button">适合屏幕</button>
+              <button class="icon-button" id="topology-zoom-out" type="button" aria-label="缩小拓扑图">−</button>
+              <output id="topology-scale" aria-label="当前缩放比例">—</output>
+              <button class="icon-button" id="topology-zoom-in" type="button" aria-label="放大拓扑图">＋</button>
+            </div>
+          </div>
+          <div class="topology-frame">
+            <div id="learning-topology" class="learning-topology"></div>
+            <div class="topology-empty" id="topology-empty" hidden>
+              <strong>没有匹配的知识点</strong>
+              <button class="text-button" type="button">清除筛选</button>
+            </div>
+          </div>
+          <p class="topology-hint">按住 Ctrl/⌘ 滚轮或使用按钮缩放 · 拖动浏览 · 点选节点查看完整依赖路径</p>
+        </div>
+
+        <div id="stages-panel" role="tabpanel" aria-labelledby="stages-tab" hidden>
+          <div id="learning-map" class="learning-map"></div>
+          <div class="filter-empty" id="filter-empty" hidden>
+            <strong>没有匹配的知识点</strong>
+            <span>换一个关键词或清除状态筛选试试。</span>
+            <button class="quiet-button compact" type="button">清除筛选</button>
+          </div>
         </div>
       </section>
 
@@ -211,6 +250,7 @@
   </footer>
 
   <script src="assets/learning-data.generated.js"></script>
+  <script src="assets/topology.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>

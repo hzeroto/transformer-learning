@@ -2,6 +2,12 @@
 
 A personal repository for learning Transformer models from first principles.
 
+面向有后端经验、准备转向 AI Infra 的学习者：从最小训练闭环到独立实现
+Transformer，再验证缓存推理和分析模型执行成本。
+
+当前教学顺序与完成标准见 [能力关卡路线](learning/roadmap.md)，本次调整依据见
+[学习计划审查](learning/reviews/2026-09-05-plan-review.md)。知识地图的主题分组不等于授课顺序。
+
 ## Goals
 
 - Build an intuitive understanding of attention and Transformer architecture.
@@ -21,6 +27,7 @@ A personal repository for learning Transformer models from first principles.
 The repository contains a persistent, evidence-driven learning system:
 
 - `learning/map.json` — complete curriculum, dependencies, and mastery criteria
+- `learning/roadmap.md` — capability gates, recommended order, implementation boundaries, and AI Infra bridge
 - `learning/learner-profile.md` — stable learner background and teaching preferences
 - `learning/progress.json` — current capability boundary and evidence for each knowledge point
 - `learning/records.jsonl` — append-only learning event log

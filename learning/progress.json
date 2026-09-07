@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "currentNodeId": null,
-  "updatedAt": "2026-09-03T16:59:39.622Z",
+  "currentNodeId": "learning-mechanics.backward-update",
+  "updatedAt": "2026-09-07T13:49:46.172Z",
   "nodes": {
     "foundation.matrix-multiplication": {
       "status": "mastered",
@@ -59,10 +59,19 @@
       ]
     },
     "foundation.softmax": {
-      "status": "verify",
-      "updatedAt": "2026-09-03T11:58:10.537Z",
-      "note": "能计算等分情况和减最大值后的结果，数值稳定原因尚需独立复述",
-      "evidence": []
+      "status": "mastered",
+      "updatedAt": "2026-09-04T13:10:03.495Z",
+      "note": "Softmax基础关卡已通过原理解释、独立实现与边界测试；包含逐组归一化、平移不变性及防止整组指数下溢。非有限输入与Attention mask留待相关节点处理",
+      "evidence": [
+        {
+          "at": "2026-09-04T13:07:15.192Z",
+          "text": "独立实现 exercises/ex004_stable_softmax/stable_softmax.py：沿末轴保留单例维取最大值与求和，平移后指数归一化，不修改输入且保持自动求导路径；本题10项和全仓36项Python测试全部通过、无跳过，覆盖跨组极端分数、逐组平移不变、不同shape/dtype、允许微小概率下溢及与官方实现的梯度对齐"
+        },
+        {
+          "at": "2026-09-04T13:10:03.495Z",
+          "text": "独立写出两候选平移后的Softmax表达式，并指出分子分母可以约去公共因子e^(-c)，完成平移不变性的代数解释；结合此前稳定Softmax独立实现、本题10项及全仓36项Python测试通过，完成归一化轴、数值稳定性与计算图保持的验收"
+        }
+      ]
     },
     "attention.qkv": {
       "status": "relearn",
@@ -131,6 +140,176 @@
         {
           "at": "2026-09-03T14:28:26.444Z",
           "text": "能正确把带起止标记的 token 序列编码为 [2,4,5,6,7,3]，能指出未知单位映射为 ID 1，并明确说明 token 与普通 ID 之间必须保持固定映射"
+        }
+      ]
+    },
+    "text-input.embedding": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T06:59:57.153Z",
+      "note": "已通过编号重映射的边界验证，理解Embedding按ID查行及重映射不改变表与输出shape",
+      "evidence": [
+        {
+          "at": "2026-09-04T06:59:57.153Z",
+          "text": "在token ID 0与2重新编号的反例中，能说明编号虽可任意选择但查表对应关系必须一致，准确要求交换E的第0与第2行以保持输出数值不变，并指出输出shape不变"
+        }
+      ]
+    },
+    "text-input.batch-padding": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T08:41:41.577Z",
+      "note": "已通过实现与性质测试验证批处理补齐、输出shape/dtype及真实内容与PAD位置的区分；循环生成valid逻辑正确，向量化仅为可选改进",
+      "evidence": [
+        {
+          "at": "2026-09-04T08:41:41.577Z",
+          "text": "独立完成 exercises/ex002_batch_padding/batch_padding.py 的 make_batch：按最长序列右侧补齐，正确生成 long 编号张量和 bool 有效位置标记，支持非零PAD且保留UNK与真实ID 0，不修改输入；本题8项测试及全仓18项测试在项目PyTorch环境中全部通过且无跳过"
+        }
+      ]
+    },
+    "foundation.broadcasting": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T09:13:12.273Z",
+      "note": "已验证右对齐的合法性与实际索引语义，能识别shape合法但数据语义错误的广播；API名称熟练度单独在Python/PyTorch语法节点跟踪",
+      "evidence": [
+        {
+          "at": "2026-09-04T09:13:12.273Z",
+          "text": "在X为(2,2,2)、valid为(2,2)的静默错误案例中，准确判断运算不报错且实际读取valid[t,c]；澄清修正意图是用unsqueeze(-1)增加末尾单例轴，使有效位置标记沿特征轴复用，先前仅混淆API名称"
+        }
+      ]
+    },
+    "foundation.python-pytorch": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T12:20:06.449Z",
+      "note": "基础张量代码与自动求导边界理解已验证，不代表熟悉全部Python/PyTorch API；后续新API仍先解释，梯度累积及其他机制按实际需要学习",
+      "evidence": [
+        {
+          "at": "2026-09-04T12:20:06.449Z",
+          "text": "已独立完成基础Tensor创建、切片赋值、布尔标记、内容查表和位置广播相加，相关作业全仓26项测试通过；在自动求导反例中准确判断item取数后重建Tensor不改变L，但切断w经a的路径，w.grad仅剩grad_b*a，实测为216"
+        }
+      ]
+    },
+    "text-input.position": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T11:34:02.422Z",
+      "note": "基础绝对位置表示已通过解释、实现及长度边界和不修改输入等测试；正弦位置编码与其他位置机制留待对应阶段",
+      "evidence": [
+        {
+          "at": "2026-09-04T11:34:02.422Z",
+          "text": "能解释交换token后位置向量由当前位置决定而非跟随token移动，并独立实现按token ID查内容表、按前T行取位置表及广播相加；已自行修正shape属性调用错误，位置表示8项测试和全仓26项测试全部通过且无跳过"
+        }
+      ]
+    },
+    "learning-mechanics.parameter-activation": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T11:48:36.269Z",
+      "note": "模型参数与请求数据生命周期已验证；这类基础程序概念后续不再安排定义复述式检查",
+      "evidence": [
+        {
+          "at": "2026-09-04T11:48:36.269Z",
+          "text": "能将E、P、W识别为跨请求长期保留的模型参数，将ids、valid、X、Y归为请求相关数据，并指出不同输入导致输出变化并不能说明模型发生学习或参数更新"
+        }
+      ]
+    },
+    "foundation.chain-rule": {
+      "status": "mastered",
+      "updatedAt": "2026-09-04T12:05:02.607Z",
+      "note": "已通过多步标量链式求导与共享参数多路径累加验证；后续进入PyTorch自动求导使用，不将API熟练度与数学理解混为一谈",
+      "evidence": [
+        {
+          "at": "2026-09-04T12:05:02.607Z",
+          "text": "对a=w*x、b=a*w、L=b*b的共享参数计算，独立给出grad_b=2*b、grad_a=grad_b*w、grad_w=grad_b*a+grad_a*x，明确沿局部导数传递并累加w的两条路径贡献"
+        }
+      ]
+    },
+    "learning-mechanics.logits-probability": {
+      "status": "verify",
+      "updatedAt": "2026-09-07T13:49:45.649Z",
+      "note": "原始分数的代码使用与候选轴形状已验证；词表候选列语义的独立解释可结合生成或配置检查完成，不以教师重编号测试通过代替全部解释证据。",
+      "evidence": [
+        {
+          "at": "2026-09-07T13:49:45.649Z",
+          "text": "在 forward_logits 中独立使用 embedding 查表结果与 W 相乘，正确返回 (B,T,N) 原始分数而不提前 Softmax，并直接交给稳定交叉熵；实现通过前向参考及交换 embedding 行和输出列的重编号性质测试。"
+        }
+      ]
+    },
+    "learning-mechanics.loss": {
+      "status": "mastered",
+      "updatedAt": "2026-09-07T08:21:13.122Z",
+      "note": "已完成批量稳定交叉熵的原理、实现和边界验证；不据此推定已掌握参数更新或完整训练闭环。",
+      "evidence": [
+        {
+          "at": "2026-09-06T10:43:43.047Z",
+          "text": "能指出以最大预测概率构造损失会奖励确定性、可能使模型对错误答案过度自信，区分它与奖励正确答案概率的目标；关于固定错误目标时标签置乱不影响损失和梯度，已通过补充讲解澄清，尚不作为独立推导证据"
+        },
+        {
+          "at": "2026-09-06T11:15:06.239Z",
+          "text": "能独立说明稳定交叉熵通过数学等价变形适应有限精度计算；对把正确答案概率下限截断到1e-8的方案，准确指出进入截断区间后损失被固定、该损失项梯度为零，而原目标应随正确答案概率继续降低而增大，因而截断改变了训练目标"
+        },
+        {
+          "at": "2026-09-07T06:51:10.461Z",
+          "text": "能指出先逐序列求平均再平均会让短序列中的单个有效 token 因分母更小而获得更大权重，判断这与所有有效 token 等权的目标不同。"
+        },
+        {
+          "at": "2026-09-07T08:21:13.122Z",
+          "text": "独立完成 exercises/ex005_training_loop/loss.py：沿候选轴平移分数并计算稳定交叉熵，按 targets gather 正确答案分数，使用 target_valid 筛选后等权平均，整个 batch 无有效标签时抛出 ValueError；未使用高级封装、不修改输入且保留梯度。本题 12 项及全部 48 项练习测试通过且无跳过，覆盖极端错误预测、标签选择、PAD 不变性、全无效输入和参考梯度对齐。结合此前负对数目标、概率截断改变目标及短序列权重偏大的独立解释，完成本节点验收。"
+        }
+      ]
+    },
+    "learning-mechanics.next-token": {
+      "status": "verify",
+      "updatedAt": "2026-09-07T13:49:45.478Z",
+      "note": "标签构造、EOS/PAD 对齐及因果可见性解释已验证；逐步生成循环仍待同一作业后续验收。",
+      "evidence": [
+        {
+          "at": "2026-09-07T11:49:51.133Z",
+          "text": "能独立指出训练时读取下一输入位置可以直接复制正确答案，解释低训练损失与逐步生成时缺少未来答案、表现差并不矛盾；准确区分 target_valid 仅排除无效标签损失，不能限制输入数据的可见性。"
+        },
+        {
+          "at": "2026-09-07T13:49:45.478Z",
+          "text": "独立实现 prepare_next_token_batch：以 ids[:, :-1] 和 ids[:, 1:] 构造错位输入与目标，使用 valid[:, 1:] 对齐目标有效性；通过 EOS 有效而 EOS 后 PAD 无效、真实 ID 0、单位置、全无效目标及不修改输入测试。结合此前独立解释答案泄漏与损失筛选的区别，标签构造部分验收通过。"
+        }
+      ]
+    },
+    "learning-mechanics.backward-update": {
+      "status": "current",
+      "updatedAt": "2026-09-07T13:49:46.172Z",
+      "note": "SGD 实现与训练演示已验收；下一步讲解并验证有限差分，用独立数值变化检查梯度，再通过排错验证梯度累积和计算图边界，不重写已正确实现的函数。",
+      "evidence": [
+        {
+          "at": "2026-09-07T13:49:46.172Z",
+          "text": "独立完成 train_step：先将 E.grad/W.grad 置 None，再前向并调用 backward，在 no_grad 范围内原地更新 E、W，最后返回更新前 loss.item()。通过一次与连续两次精确参考更新、旧梯度污染、学习率缩放、PAD 不变性、全无效输入不改参数及参数继续求导测试。"
+        }
+      ]
+    },
+    "learning-mechanics.forward": {
+      "status": "mastered",
+      "updatedAt": "2026-09-07T13:49:45.305Z",
+      "note": "前向计算与 shape 数据流已通过同一训练闭环实现验收，不要求额外重画流程图；不据此推定完整训练或生成能力。",
+      "evidence": [
+        {
+          "at": "2026-09-07T13:49:45.305Z",
+          "text": "独立实现 forward_logits：按 input_ids 查 E 得到 (B,T,C)，在代码中正确标注 shape，并以共享 W 做矩阵乘法得到 (B,T,N)；在 train_step 中继续接入已有交叉熵得到标量 loss，保留自动求导路径且不修改前向输入。教师复跑本题 20 项及全部 68 项练习测试均通过、无跳过，验证原始分数、单位置形状、参数共享和后续求导。"
+        }
+      ]
+    },
+    "block.linear": {
+      "status": "verify",
+      "updatedAt": "2026-09-07T13:49:45.822Z",
+      "note": "无偏置线性前向已验证；参数量与配置关系保留后续综合验收，不重复低价值定义题。",
+      "evidence": [
+        {
+          "at": "2026-09-07T13:49:45.822Z",
+          "text": "在 forward_logits 中独立手写 (B,T,C) @ (C,N) 的共享无偏置线性前向，并正确标注最后一轴由 C 变 N；通过参考计算、不同 dtype 和单位置形状测试。"
+        }
+      ]
+    },
+    "learning-mechanics.tiny-training-loop": {
+      "status": "verify",
+      "updatedAt": "2026-09-07T13:49:45.995Z",
+      "note": "最小模型的训练执行闭环已跑通；演示和测试框架由教师提供，不能据此宣告已能独立设计排错测试。生成、表达能力限制解释及独立故障定位仍待验收。",
+      "evidence": [
+        {
+          "at": "2026-09-07T13:49:45.995Z",
+          "text": "学习者完成 ex005 的标签构造、前向及 train_step 核心实现，并运行教师提供的演示；教师独立复跑后，确定后继数据的损失从 1.6260374015677406 降至 0.0034785792437921105，有效位置预测 [2,3,4,3,4] 全部正确。本题 20 项及全部 68 项练习测试通过、无跳过。"
         }
       ]
     }
