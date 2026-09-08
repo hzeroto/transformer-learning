@@ -21,3 +21,4 @@ exercises/
 - [003：内容与位置的相加表示](ex003_position_embedding/README.md)
 - [004：稳定的逐组 Softmax](ex004_stable_softmax/README.md)
 - [005：最小训练闭环（当前实现批量交叉熵）](ex005_training_loop/README.md)
+- [006：单头 Attention（当前实现投影与原始分数）](ex006_single_head_attention/README.md)
