@@ -5,10 +5,10 @@
 ## 当前状态
 
 - 当前知识点：多头Attention
-- 已掌握：29 / 79
+- 已掌握：30 / 79
 - 待验证：5
 - 待系统重学：2
-- 最近更新：2026-09-10T11:05:35.623Z
+- 最近更新：2026-09-10T13:57:12.228Z
 
 ## 知识点状态
 
@@ -65,7 +65,7 @@
 | 按权重读取V | 已掌握 | 学习者实现 output = weights @ V，并标注 (B,Tq,Dv)，没有额外加回 Q/X 或添加输出投影。本题 19 项及全仓 114 项测试通过、无跳过，覆盖 Tq/Tk 与 Dk/Dv 不同、K/V 同序重排保持输出、单独改变 V 不改变 weights 但改变 output，以及 V 和返回值的梯度。结合此前 K/V 配对解释，本次代码明确消除了把读取误说为额外加回自身特征的歧义。 |
 | 屏蔽无效位置和未来位置 | 已掌握 | 学习者以 torch.tril 的含对角线下三角布尔矩阵和 input_valid.unsqueeze(1) 组合 (B,T,T) 权限，正确约束 key 列且不清空 PAD query 行；在 Softmax 前 masked_fill 为负无穷，并用 any(all(~allowed,dim=-1)) 对任意全屏蔽行抛出 ValueError。本题 19 项及全仓 114 项测试通过、无跳过，涵盖精确轴语义、未来/PAD 扰动、截断前缀对齐、强匹配但被禁候选、禁止 K 不影响归一化、PAD query 仍有合法读取分布及全屏蔽拒绝。此前已独立解释 target_valid 只影响 loss 而不能解决输入可见性；本次实现只使用 input_valid，不混用标签有效性。 |
 | 单头Attention实现 | 已掌握 | 学习者独立完成 ex006 新增的 make_causal_allowed、scaled_dot_product_attention 和 single_head_self_attention，复用已验收的 project_qkv 与 raw_attention_scores，将投影、固定 sqrt(Dk) 缩放、前屏蔽、沿 Tk 归一化和 weights@V 串成因果单头自注意力；未使用高级 Attention 封装。教师复跑真实文件，本题 19 项、全仓 114 项全部通过、无跳过，前向、dtype/shape、输入及已有梯度不变、Q/K/V 与 X/Wq/Wk/Wv 梯度均通过。实际 demo 的未来/PAD 扰动对受保护输出的最大影响均为 0，最后相同 query 能通过不同前文的 V 得到不同内容输出。教师未修改学习者代码。 |
-| 多头Attention | 当前学习 | 学习者在讨论多头动机时主动指出标准多头的 value 投影参数在不同头中也不同，追问其与不同位置权重、不同内容表示的关系。这提供了区分内容投影与读取权重的部分观察证据；尚未独立给出多头数据流、共同权重时可合并宽 V 的解释，亦未实现拆合头或 Wo。 |
+| 多头Attention | 当前学习 | 本次复查直接运行学习者当前 ex007/attention.py：15 项 MHA 综合测试及全仓 140 项 Python 回归均通过、无跳过。代码以 C//H 得到 Dh，分别拆分 Q/K/V，以 sqrt(Dh) 缩放、allowed.unsqueeze(1) 广播权限、沿 key 轴 Softmax，读取后合头乘 Wo；自注意力入口复用 project_qkv、make_causal_allowed 和 multi_head_attention。两条接口的前向及输入/参数梯度、非连续输入、不同 Tq/Tk、H=1、各头隔离和未来/PAD/前缀保护均通过教师测试。本轮未修改学习者答案。 |
 | 同序列与跨序列Attention | 未开始 | — |
 
 ### Transformer 基础积木
@@ -97,7 +97,7 @@
 | 知识点 | 状态 | 最近证据或备注 |
 |---|---|---|
 | NumPy单头Attention（可选） | 未开始 | — |
-| PyTorch多头Attention | 未开始 | — |
+| PyTorch多头Attention | 已掌握 | 学习者完成 ex007/attention.py 的 multi_head_attention 和 multi_head_self_attention，经本轮 review 提示自行修正 C 校验顺序、allowed=None 分支及 masked_fill 广播。教师未修改答案，实跑 15 项 MHA 综合测试和 11 项拆合头测试全部通过、无跳过；覆盖 CPU float32/float64 前向、不同 Tq/Tk、非连续输入、拆合头精确索引、每头 sqrt(Dh)、独立读取分布、共享权限、Wo 内容投影、未来/PAD/前缀可见性、全屏蔽拒绝，以及两条接口输入和参数的梯度对齐。实现仅使用基础 Tensor 运算和既有函数。 |
 | 手写完整Transformer块 | 未开始 | — |
 | Mini-GPT | 未开始 | — |
 | 原版Transformer | 未开始 | — |
@@ -145,6 +145,9 @@
 
 | 时间 | 知识点 | 状态变化 | 证据或备注 |
 |---|---|---|---|
+| 2026-09-10T13:57:12.228Z | 多头Attention | 当前学习 → 当前学习 | 本次复查直接运行学习者当前 ex007/attention.py：15 项 MHA 综合测试及全仓 140 项 Python 回归均通过、无跳过。代码以 C//H 得到 Dh，分别拆分 Q/K/V，以 sqrt(Dh) 缩放、allowed.unsqueeze(1) 广播权限、沿 key 轴 Softmax，读取后合头乘 Wo；自注意力入口复用 project_qkv、make_causal_allowed 和 multi_head_attention。两条接口的前向及输入/参数梯度、非连续输入、不同 Tq/Tk、H=1、各头隔离和未来/PAD/前缀保护均通过教师测试。本轮未修改学习者答案。 |
+| 2026-09-10T13:55:21.444Z | 多头Attention | 当前学习 → 当前学习 | 学习者已完成 ex007 两个 MHA 接口，真实实现通过 15 项综合测试及 11 项拆合头测试，无跳过；实现能力已记录在 implementation.pytorch-mha。此前空框架描述已过时。当前继续保留多头为学习焦点，Wo 如何混合同一 token 各头内容及不同参数子空间的独立解释尚未单独获得，不将测试通过推定为全部概念掌握。布局复制条件及 scaling 观察仍为非阻塞待验证；无需重写已通过代码或重复逐运算符提问。 |
+| 2026-09-10T13:55:20.786Z | PyTorch多头Attention | 未开始 → 已掌握 | 学习者完成 ex007/attention.py 的 multi_head_attention 和 multi_head_self_attention，经本轮 review 提示自行修正 C 校验顺序、allowed=None 分支及 masked_fill 广播。教师未修改答案，实跑 15 项 MHA 综合测试和 11 项拆合头测试全部通过、无跳过；覆盖 CPU float32/float64 前向、不同 Tq/Tk、非连续输入、拆合头精确索引、每头 sqrt(Dh)、独立读取分布、共享权限、Wo 内容投影、未来/PAD/前缀可见性、全屏蔽拒绝，以及两条接口输入和参数的梯度对齐。实现仅使用基础 Tensor 运算和既有函数。 |
 | 2026-09-10T11:05:35.623Z | 多头Attention | 待验证 → 当前学习 | 按学习者明确加速要求，改为一次讲清完整 MHA 并用同一份整合代码验收：大投影按列分配各头、(B,H) 批次前缀逐头匹配与 sqrt(Dh)、key 轴 Softmax、(B,1,Tq,Tk) 共享权限、合头及 Wo 对同一 token 各头内容的可学习线性组合。强调 C=H*Dh 为当前等宽配置；输出仍为特征而非 logits，Wo 不重新读取其他 token。已准备 notes/multi-head-attention.md 与 ex007/attention.py 的两个待实现接口，通用读取保留不同 Tq/Tk，因果自注意力组合既有投影及 mask；不改用户既有答案。新增 15 项前向/梯度/布局/可见性综合测试，教师内存临时参照新 15 项及全仓 140 项通过；错误缩放、漏 Wo、weights 断图及 B==H 静默 mask 错配均被检出。真实新文件仍是两处 NotImplementedError，预期两项未实现失败与两个行为类跳过，原有 125 项仍通过。教师自检不作为学习者实现或掌握证据。下一步等待整合实现后一次 review，不逐运算符提问；tensor-layout 复制解释与 scaling 观察保留非阻塞待验证。完整语言模型尚未端到端组合。 |
 | 2026-09-10T11:05:29.858Z | 张量变形与存储布局 | 当前学习 → 待验证 | 拆头与合头实现已通过真实 11 项布局测试及全仓旧 125 项、无跳过，精确映射、非连续输入和梯度均已确认。布局实现不再阻塞推进；学习者要求加速，主焦点转入完整 MHA 综合实现。view/reshape/contiguous 的实际复制条件解释仍留待集成时核验，故本节点暂保留 verify，不把教师存储诊断当作学习者掌握证据；不重做已有拆轴口头题。 |
 | 2026-09-10T10:56:36.680Z | 张量变形与存储布局 | 当前学习 → 当前学习 | 学习者完成 ex007 的 split_heads 与 merge_heads：先将 (B,T,C) reshape 为 (B,T,H,Dh) 再 transpose(1,2)；合头先 transpose(1,2) 再 reshape 为 (B,T,H*Dh)，并在 split 中校验 H>0 及 C 可整除 H。教师未修改实现，实跑 11 项布局测试及全仓 125 项回归均通过、无跳过；覆盖独立索引、单元素扰动、连续/转置/步长切片输入、两方向往返、不修改输入或已有梯度及梯度回到原始 Tensor。 |

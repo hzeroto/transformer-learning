@@ -44,8 +44,35 @@ def multi_head_attention(
     """
     # 将 ex006 的读取数学推广到 (B,H) 批次前缀，再接 Wo。
     # 不直接向 ex006 的三维接口传入四维张量；该接口合同未扩展。
-    raise NotImplementedError("请完成 multi_head_attention")
 
+
+    # error check
+    C = Q.shape[2]
+    if num_heads <= 0 or C % num_heads != 0:
+        raise ValueError("xx")
+    Dh = C // num_heads
+   
+    # 1. 拆head
+    mQ = split_heads(Q, num_heads) # (B, H, Tq, Dh)
+    mK = split_heads(K, num_heads) # (B, H, Tk, Dh)
+    mV = split_heads(V, num_heads) # (B, H, Tk, Dh)
+    # 1. 计算分数
+    grades = mQ @ mK.transpose(-2, -1) # (B, H, Tq, Tk)
+    # 2. 变形处理
+    grades_sq = grades/math.sqrt(Dh)
+    # 3. mask
+    if allowed is not None:
+        # 4. softmax
+        if torch.any(torch.all(~allowed, dim=-1)):
+            raise ValueError("None of the keys are allowed for some queries.")
+        grades_sq = grades_sq.masked_fill(~allowed.unsqueeze(1), float("-inf"))
+
+    
+    grades_sm = torch.softmax(grades_sq, dim=-1)
+    
+    outputs = grades_sm @ mV # (B, H, Tq, Dh)
+    m_outputs =  merge_heads(outputs)
+    return m_outputs @ Wo, grades_sm
 
 def multi_head_self_attention(
     X: torch.Tensor,
@@ -66,4 +93,6 @@ def multi_head_self_attention(
     其余合同同上；参数共享于所有 batch/token，不在函数内创建或更新参数。
     输出是含上下文的特征，不是词表 logits，也不是整个 Transformer Block。
     """
-    raise NotImplementedError("请完成 multi_head_self_attention")
+    Q, K, V = project_qkv(X, Wq, Wk, Wv)  
+    allowed = make_causal_allowed(input_valid)
+    return multi_head_attention(Q, K, V, Wo, num_heads, allowed)

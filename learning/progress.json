@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "currentNodeId": "attention.multi-head",
-  "updatedAt": "2026-09-10T11:05:35.623Z",
+  "updatedAt": "2026-09-10T13:57:12.228Z",
   "nodes": {
     "foundation.matrix-multiplication": {
       "status": "mastered",
@@ -479,12 +479,27 @@
     },
     "attention.multi-head": {
       "status": "current",
-      "updatedAt": "2026-09-10T11:05:35.623Z",
-      "note": "按学习者明确加速要求，改为一次讲清完整 MHA 并用同一份整合代码验收：大投影按列分配各头、(B,H) 批次前缀逐头匹配与 sqrt(Dh)、key 轴 Softmax、(B,1,Tq,Tk) 共享权限、合头及 Wo 对同一 token 各头内容的可学习线性组合。强调 C=H*Dh 为当前等宽配置；输出仍为特征而非 logits，Wo 不重新读取其他 token。已准备 notes/multi-head-attention.md 与 ex007/attention.py 的两个待实现接口，通用读取保留不同 Tq/Tk，因果自注意力组合既有投影及 mask；不改用户既有答案。新增 15 项前向/梯度/布局/可见性综合测试，教师内存临时参照新 15 项及全仓 140 项通过；错误缩放、漏 Wo、weights 断图及 B==H 静默 mask 错配均被检出。真实新文件仍是两处 NotImplementedError，预期两项未实现失败与两个行为类跳过，原有 125 项仍通过。教师自检不作为学习者实现或掌握证据。下一步等待整合实现后一次 review，不逐运算符提问；tensor-layout 复制解释与 scaling 观察保留非阻塞待验证。完整语言模型尚未端到端组合。",
+      "updatedAt": "2026-09-10T13:57:12.228Z",
+      "note": "完整 MHA 实现已通过验收；implementation.pytorch-mha 已有掌握记录，本次只补充独立复跑全仓 140 项的证据，不重复计为新掌握。作业说明的空框架/待实现状态已修正。后续可进入 Transformer Block，不要求重写或逐运算符口头复述；不同投影子空间、等宽配置与 Wo 内容组合的独立解释，以及布局复制条件和 scaling 观察仍可在整合中核验，不能用教师说明代替学习者证据。这里只验收 CPU 基础 Tensor MHA，尚未完成整块、完整语言模型或 GPU 性能验证。",
       "evidence": [
         {
           "at": "2026-09-09T08:13:19.262Z",
           "text": "学习者在讨论多头动机时主动指出标准多头的 value 投影参数在不同头中也不同，追问其与不同位置权重、不同内容表示的关系。这提供了区分内容投影与读取权重的部分观察证据；尚未独立给出多头数据流、共同权重时可合并宽 V 的解释，亦未实现拆合头或 Wo。"
+        },
+        {
+          "at": "2026-09-10T13:57:12.228Z",
+          "text": "本次复查直接运行学习者当前 ex007/attention.py：15 项 MHA 综合测试及全仓 140 项 Python 回归均通过、无跳过。代码以 C//H 得到 Dh，分别拆分 Q/K/V，以 sqrt(Dh) 缩放、allowed.unsqueeze(1) 广播权限、沿 key 轴 Softmax，读取后合头乘 Wo；自注意力入口复用 project_qkv、make_causal_allowed 和 multi_head_attention。两条接口的前向及输入/参数梯度、非连续输入、不同 Tq/Tk、H=1、各头隔离和未来/PAD/前缀保护均通过教师测试。本轮未修改学习者答案。"
+        }
+      ]
+    },
+    "implementation.pytorch-mha": {
+      "status": "mastered",
+      "updatedAt": "2026-09-10T13:55:20.786Z",
+      "note": "本次验收基础 Tensor 多头实现，测试为教师提供。没有验收 GPU 性能或完整语言模型；概念口头解释和布局复制条件不由测试通过自动推定。",
+      "evidence": [
+        {
+          "at": "2026-09-10T13:55:20.786Z",
+          "text": "学习者完成 ex007/attention.py 的 multi_head_attention 和 multi_head_self_attention，经本轮 review 提示自行修正 C 校验顺序、allowed=None 分支及 masked_fill 广播。教师未修改答案，实跑 15 项 MHA 综合测试和 11 项拆合头测试全部通过、无跳过；覆盖 CPU float32/float64 前向、不同 Tq/Tk、非连续输入、拆合头精确索引、每头 sqrt(Dh)、独立读取分布、共享权限、Wo 内容投影、未来/PAD/前缀可见性、全屏蔽拒绝，以及两条接口输入和参数的梯度对齐。实现仅使用基础 Tensor 运算和既有函数。"
         }
       ]
     }
