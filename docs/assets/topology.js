@@ -149,7 +149,7 @@
     };
   }
 
-  function truncateLabel(value, maxUnits = 24) {
+  function truncateLabel(value, maxUnits = 20) {
     let units = 0;
     let output = '';
     for (const character of value) {
@@ -167,6 +167,7 @@
       nodes,
       stages,
       statusMeta,
+      initialNodeId = nodes.find((node) => node.progress.status === 'current')?.id ?? nodes[0]?.id,
       onSelect,
       onTransform
     } = options;
@@ -177,7 +178,9 @@
     let selectedNodeId = null;
     let transform = { x: 0, y: 0, scale: 1 };
     let pointerStart = null;
-    let autoFit = true;
+    let viewMode = nodeById.has(initialNodeId) ? 'focus' : 'all';
+    let focusedNodeId = initialNodeId;
+    let previousViewportSize = null;
     let resizeFrame = null;
     const instanceId = `learning-topology-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -365,6 +368,7 @@
     }
 
     function emitTransform() {
+      previousViewportSize = getViewportSize();
       viewport.setAttribute('transform', `translate(${transform.x} ${transform.y}) scale(${transform.scale})`);
       canvas.classList.toggle('is-overview', transform.scale < 0.5);
       onTransform?.({ ...transform });
@@ -389,7 +393,7 @@
         x: (viewportSize.width - layout.width * scale) / 2,
         y: (viewportSize.height - layout.height * scale) / 2
       };
-      autoFit = true;
+      viewMode = 'all';
       emitTransform();
     }
 
@@ -405,28 +409,46 @@
         x: pointX - worldX * nextScale,
         y: pointY - worldY * nextScale
       };
-      autoFit = false;
+      viewMode = 'manual';
       emitTransform();
     }
 
     function zoom(scaleFactor) {
-      const viewportSize = getViewportSize();
-      zoomAt(scaleFactor, viewportSize.width / 2, viewportSize.height / 2);
+      const bounds = svg.getBoundingClientRect();
+      zoomAt(scaleFactor, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
     }
 
-    function focusNode(nodeId) {
+    function focusNode(nodeId, { moveFocus = true } = {}) {
       const position = layout.positions.get(nodeId);
       if (!position) return;
+      focusedNodeId = nodeId;
+      viewMode = 'focus';
       const viewportSize = getViewportSize();
-      const nextScale = Math.max(0.72, Math.min(1.15, transform.scale));
+      if (viewportSize.width === 0 || viewportSize.height === 0) return;
+      // 保证文字可读；远处依赖通过拖动或“查看全图”浏览，不再用整图尺寸压缩当前节点。
+      const nextScale = 1.15;
       transform = {
         scale: nextScale,
         x: viewportSize.width / 2 - (position.x + position.width / 2) * nextScale,
         y: viewportSize.height / 2 - (position.y + position.height / 2) * nextScale
       };
-      autoFit = false;
       emitTransform();
-      nodeElements.get(nodeId)?.focus({ preventScroll: true });
+      if (moveFocus) nodeElements.get(nodeId)?.focus({ preventScroll: true });
+    }
+
+    function refreshViewport() {
+      const size = getViewportSize();
+      if (!size.width || !size.height) return;
+      if (viewMode === 'all') fit();
+      else if (viewMode === 'focus') focusNode(focusedNodeId, { moveFocus: false });
+      else {
+        // 手动浏览时保留画布中心的世界坐标，适配全屏和容器尺寸变化。
+        if (previousViewportSize) {
+          transform.x += (size.width - previousViewportSize.width) / 2;
+          transform.y += (size.height - previousViewportSize.height) / 2;
+        }
+        emitTransform();
+      }
     }
 
     function selectNode(nodeId) {
@@ -510,7 +532,7 @@
       if (!pointerStart || pointerStart.pointerId !== event.pointerId) return;
       transform.x = pointerStart.originX + event.clientX - pointerStart.x;
       transform.y = pointerStart.originY + event.clientY - pointerStart.y;
-      autoFit = false;
+      viewMode = 'manual';
       emitTransform();
     });
     function stopDragging(event) {
@@ -524,15 +546,15 @@
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
       : new ResizeObserver(() => {
-        if (!autoFit) return;
         cancelAnimationFrame(resizeFrame);
-        resizeFrame = requestAnimationFrame(fit);
+        resizeFrame = requestAnimationFrame(refreshViewport);
       });
     resizeObserver?.observe(svg);
-    requestAnimationFrame(fit);
+    requestAnimationFrame(refreshViewport);
 
     return {
       fit,
+      refreshViewport,
       zoomIn: () => zoom(1.2),
       zoomOut: () => zoom(1 / 1.2),
       focusNode,

@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-08T16:40:09.301Z",
+  "generatedAt": "2026-09-10T12:40:55.567Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -261,10 +261,23 @@ window.LEARNING_DATA = {
             "能说明独立或不相关假设何时允许方差相加，以及乘常数时方差如何变化"
           ],
           "progress": {
-            "status": "current",
-            "updatedAt": "2026-09-08T16:37:16.126Z",
-            "note": "为 Attention 分数缩放就地补齐先修：先定义一组数的均值、方差与标准差及按轴统计，解释平移和乘常数如何改变尺度；再讲方差相加所需的不相关假设及相关项的反例。当前仅开始讲解，无新掌握证据；后续在同一 Attention 练习中验证缩放的作用。",
-            "evidence": []
+            "status": "verify",
+            "updatedAt": "2026-09-09T03:38:59.960Z",
+            "note": "理论期望与有限样本统计量、维度数与数据、复制项不独立的理解检查已通过；不再重复这些代数问答。此前的方差展开和按轴统计代码为教师讲解，尚不记录成学习者独立实现或完整推导；按轴统计及常数缩放的方差平方关系可在后续综合尺度实验中一并确认，不阻塞已讲解步骤的组合。",
+            "evidence": [
+              {
+                "at": "2026-09-09T03:12:19.656Z",
+                "text": "学习者判断按每行 scores 的标准差缩放不等价于除固定 sqrt(Dk)，指出候选统计范围随 T 改变可能影响缩放，并正确识别全等分数的标准差为 0、直接除法会出问题。将该量称为参数需要术语澄清：它是当前数据计算的缩放因子而非可训练参数，且即使 Tk 固定也可能随分数值或 query 改变；后两点为教师补充。"
+              },
+              {
+                "at": "2026-09-09T03:19:51.963Z",
+                "text": "学习者将乘积平均的分解写成两条配对样本的等式 (a1*b1+a2*b2)/2=((a1+a2)/2)*((b1+b2)/2)，正确指出该等式一般不成立并追问独立性的作用，暴露讲解中理论平均与有限样本均值之间尚未建立清晰区分。"
+              },
+              {
+                "at": "2026-09-09T03:38:59.960Z",
+                "text": "学习者明确区分当前推导的概率分布分析与实际有限样本统计，并独立回答：将 Q/K 特征各原样复制拼接后，按新维度平方根缩放的分数为原来的 sqrt(2) 倍；复制项与原项有关联，并非独立。结合此前否定有限样本乘积平均的错误等式、识别全等分数行的标准差为零，关键概念检查通过。教师补充：理论与样本统计的区分不意味着采样不属于概率分析，且复制项实际上完全相同。"
+              }
+            ]
           }
         },
         {
@@ -280,7 +293,19 @@ window.LEARNING_DATA = {
             "能定位非连续张量的变形错误，并用索引验证head与token没有混淆"
           ],
           "progress": {
-            "status": "pending"
+            "status": "verify",
+            "updatedAt": "2026-09-10T11:05:29.858Z",
+            "note": "拆头与合头实现已通过真实 11 项布局测试及全仓旧 125 项、无跳过，精确映射、非连续输入和梯度均已确认。布局实现不再阻塞推进；学习者要求加速，主焦点转入完整 MHA 综合实现。view/reshape/contiguous 的实际复制条件解释仍留待集成时核验，故本节点暂保留 verify，不把教师存储诊断当作学习者掌握证据；不重做已有拆轴口头题。",
+            "evidence": [
+              {
+                "at": "2026-09-10T10:30:27.448Z",
+                "text": "学习者针对直接 reshape 为 (B,H,T,Dh) 再 reshape 回 (B,T,C) 的检查，指出 bad_heads 的 head/token 维度分组顺序混用、从原 BTC 拆分会让后面维度的数据对应关系错乱。已识别中间布局的语义问题；其表述“2、3维反了”仍需区分目标 shape 与实际元素分组，尚未独立给出具体索引断言。教师补充例子：heads[0,0,1,0] 应等于 Q[0,1,0]=4，而错误写法取到 Q[0,0,2]=2。"
+              },
+              {
+                "at": "2026-09-10T10:56:36.680Z",
+                "text": "学习者完成 ex007 的 split_heads 与 merge_heads：先将 (B,T,C) reshape 为 (B,T,H,Dh) 再 transpose(1,2)；合头先 transpose(1,2) 再 reshape 为 (B,T,H*Dh)，并在 split 中校验 H>0 及 C 可整除 H。教师未修改实现，实跑 11 项布局测试及全仓 125 项回归均通过、无跳过；覆盖独立索引、单元素扰动、连续/转置/步长切片输入、两方向往返、不修改输入或已有梯度及梯度回到原始 Tensor。"
+              }
+            ]
           }
         }
       ]
@@ -772,10 +797,15 @@ window.LEARNING_DATA = {
             "能用实验解释不缩放对概率集中程度和梯度的影响"
           ],
           "progress": {
-            "status": "relearn",
-            "updatedAt": "2026-09-03T11:58:12.291Z",
-            "note": "已听过平方根缩放原因，尚未建立在点积尺度和训练机制上",
-            "evidence": []
+            "status": "verify",
+            "updatedAt": "2026-09-09T07:14:46.630Z",
+            "note": "缩放代码已通过，不再记录为待实现。scale_probe 的原始/缩放分数统计与局部梯度输出为教师演示，尚未收到学习者对实验现象的独立解释；与 foundation.mean-variance 的剩余统计观察一起保留待核验，不要求重写已通过实现。",
+            "evidence": [
+              {
+                "at": "2026-09-09T07:14:46.630Z",
+                "text": "学习者实现从 Q.shape[-1] 取得整数 Dk，以 math.sqrt(Dk) 缩放原始点积，而非统计当前分数行的标准差；本题包含 Dk=4、Tk=2、Dv=1 的区分性数值测试及完整梯度对齐，真实实现通过本题 19 项与全仓 114 项、无跳过。结合此前复制 Q/K 特征后分数为 sqrt(2) 倍且复制项非独立的回答，固定维度缩放及代码路径已确认。"
+              }
+            ]
           }
         },
         {
@@ -791,10 +821,19 @@ window.LEARNING_DATA = {
             "能解释每一行权重之和为何为1"
           ],
           "progress": {
-            "status": "relearn",
-            "updatedAt": "2026-09-03T11:58:12.895Z",
-            "note": "已听过分数经Softmax变权重，尚未按依赖链验证",
-            "evidence": []
+            "status": "mastered",
+            "updatedAt": "2026-09-09T07:14:45.799Z",
+            "note": "基于学习者实现和已有独立配对解释验收，不把教师提供的测试记作学习者独立设计；无需重做 Softmax 或候选重排问答。",
+            "evidence": [
+              {
+                "at": "2026-09-09T04:57:10.854Z",
+                "text": "学习者在固定 Q、无 mask 的候选重排检查中，正确选择 K/V 同序交换保持输出不变，并指出只交换 K 会使原 K0 的权重对应到 V2，体现了权重随 key 候选排列而变化的理解。"
+              },
+              {
+                "at": "2026-09-09T07:14:45.799Z",
+                "text": "学习者在 scaled_dot_product_attention 中沿 scores 的末轴 Tk 调用 torch.softmax，返回未断图的 weights。实际学习者代码通过本题全部 19 项及全仓 114 项测试、无跳过，覆盖不同 Tq/Tk、每行非负与和为 1、None 时全可读、屏蔽位置权重为零、极端有限分数的稳定性及两个返回值的梯度。结合此前独立解释候选重排时权重与 K 的对应关系，归一化轴及读取比例语义通过验收。"
+              }
+            ]
           }
         },
         {
@@ -810,10 +849,19 @@ window.LEARNING_DATA = {
             "能说明V为什么不参与匹配分数计算"
           ],
           "progress": {
-            "status": "relearn",
-            "updatedAt": "2026-09-03T11:58:13.496Z",
-            "note": "已听过权重读取V，尚未按依赖链验证",
-            "evidence": []
+            "status": "mastered",
+            "updatedAt": "2026-09-09T07:14:45.977Z",
+            "note": "加权读取及输出维度通过实现与性质/梯度测试验收；残差连接尚未学习，不能据此上报残差掌握。",
+            "evidence": [
+              {
+                "at": "2026-09-09T04:57:11.023Z",
+                "text": "学习者独立判断固定 Q、无 mask 时 K/V 同序交换保证输出不变，并解释只换 K 会让原 K0 对应的权重作用到 V2，抓住匹配与内容的配对关系。其表述“把 V 加到自身特征”需要教师澄清：当前只是 weights @ V，权重乘向量再求和，没有额外执行 X+output。"
+              },
+              {
+                "at": "2026-09-09T07:14:45.977Z",
+                "text": "学习者实现 output = weights @ V，并标注 (B,Tq,Dv)，没有额外加回 Q/X 或添加输出投影。本题 19 项及全仓 114 项测试通过、无跳过，覆盖 Tq/Tk 与 Dk/Dv 不同、K/V 同序重排保持输出、单独改变 V 不改变 weights 但改变 output，以及 V 和返回值的梯度。结合此前 K/V 配对解释，本次代码明确消除了把读取误说为额外加回自身特征的歧义。"
+              }
+            ]
           }
         },
         {
@@ -831,10 +879,15 @@ window.LEARNING_DATA = {
             "能区分key有效性、query有效性与损失有效性，明确全屏蔽行的处理约定"
           ],
           "progress": {
-            "status": "relearn",
-            "updatedAt": "2026-09-03T11:58:14.066Z",
-            "note": "已提前接触屏蔽概念，等待输入补齐和逐步预测先修",
-            "evidence": []
+            "status": "mastered",
+            "updatedAt": "2026-09-09T07:14:46.202Z",
+            "note": "在 CPU、同序列对齐因果规则、显式权限及全屏蔽行报错的约定内验收。教师提供扰动测试，不推定学习者独立设计了全部测试，也不推广成缓存偏移 mask 已掌握。",
+            "evidence": [
+              {
+                "at": "2026-09-09T07:14:46.202Z",
+                "text": "学习者以 torch.tril 的含对角线下三角布尔矩阵和 input_valid.unsqueeze(1) 组合 (B,T,T) 权限，正确约束 key 列且不清空 PAD query 行；在 Softmax 前 masked_fill 为负无穷，并用 any(all(~allowed,dim=-1)) 对任意全屏蔽行抛出 ValueError。本题 19 项及全仓 114 项测试通过、无跳过，涵盖精确轴语义、未来/PAD 扰动、截断前缀对齐、强匹配但被禁候选、禁止 K 不影响归一化、PAD query 仍有合法读取分布及全屏蔽拒绝。此前已独立解释 target_valid 只影响 loss 而不能解决输入可见性；本次实现只使用 input_valid，不混用标签有效性。"
+              }
+            ]
           }
         },
         {
@@ -854,7 +907,15 @@ window.LEARNING_DATA = {
             "能通过数值、shape和屏蔽性质测试"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-09T07:14:46.429Z",
+            "note": "单头核心实现关卡通过。当前合同仅 CPU float32/float64、输入和原始点积分数有限、显式 mask 形状、全屏蔽行 ValueError；不推定 GPU 性能、多头、残差或语言训练能力。尺度分布/梯度实验的独立解释仍在相关节点保留待验证，不影响本次代码验收。",
+            "evidence": [
+              {
+                "at": "2026-09-09T07:14:46.429Z",
+                "text": "学习者独立完成 ex006 新增的 make_causal_allowed、scaled_dot_product_attention 和 single_head_self_attention，复用已验收的 project_qkv 与 raw_attention_scores，将投影、固定 sqrt(Dk) 缩放、前屏蔽、沿 Tk 归一化和 weights@V 串成因果单头自注意力；未使用高级 Attention 封装。教师复跑真实文件，本题 19 项、全仓 114 项全部通过、无跳过，前向、dtype/shape、输入及已有梯度不变、Q/K/V 与 X/Wq/Wk/Wv 梯度均通过。实际 demo 的未来/PAD 扰动对受保护输出的最大影响均为 0，最后相同 query 能通过不同前文的 V 得到不同内容输出。教师未修改学习者代码。"
+              }
+            ]
           }
         },
         {
@@ -871,7 +932,15 @@ window.LEARNING_DATA = {
             "能实现输出投影并说明它如何混合各头的内容"
           ],
           "progress": {
-            "status": "pending"
+            "status": "current",
+            "updatedAt": "2026-09-10T11:05:35.623Z",
+            "note": "按学习者明确加速要求，改为一次讲清完整 MHA 并用同一份整合代码验收：大投影按列分配各头、(B,H) 批次前缀逐头匹配与 sqrt(Dh)、key 轴 Softmax、(B,1,Tq,Tk) 共享权限、合头及 Wo 对同一 token 各头内容的可学习线性组合。强调 C=H*Dh 为当前等宽配置；输出仍为特征而非 logits，Wo 不重新读取其他 token。已准备 notes/multi-head-attention.md 与 ex007/attention.py 的两个待实现接口，通用读取保留不同 Tq/Tk，因果自注意力组合既有投影及 mask；不改用户既有答案。新增 15 项前向/梯度/布局/可见性综合测试，教师内存临时参照新 15 项及全仓 140 项通过；错误缩放、漏 Wo、weights 断图及 B==H 静默 mask 错配均被检出。真实新文件仍是两处 NotImplementedError，预期两项未实现失败与两个行为类跳过，原有 125 项仍通过。教师自检不作为学习者实现或掌握证据。下一步等待整合实现后一次 review，不逐运算符提问；tensor-layout 复制解释与 scaling 观察保留非阻塞待验证。完整语言模型尚未端到端组合。",
+            "evidence": [
+              {
+                "at": "2026-09-09T08:13:19.262Z",
+                "text": "学习者在讨论多头动机时主动指出标准多头的 value 投影参数在不同头中也不同，追问其与不同位置权重、不同内容表示的关系。这提供了区分内容投影与读取权重的部分观察证据；尚未独立给出多头数据流、共同权重时可合并宽 V 的解释，亦未实现拆合头或 Wo。"
+              }
+            ]
           }
         },
         {
@@ -1704,8 +1773,8 @@ window.LEARNING_DATA = {
   ],
   "progress": {
     "schemaVersion": 1,
-    "currentNodeId": "foundation.mean-variance",
-    "updatedAt": "2026-09-08T16:37:16.126Z",
+    "currentNodeId": "attention.multi-head",
+    "updatedAt": "2026-09-10T11:05:35.623Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -1800,28 +1869,56 @@ window.LEARNING_DATA = {
         ]
       },
       "attention.scaling": {
-        "status": "relearn",
-        "updatedAt": "2026-09-03T11:58:12.291Z",
-        "note": "已听过平方根缩放原因，尚未建立在点积尺度和训练机制上",
-        "evidence": []
+        "status": "verify",
+        "updatedAt": "2026-09-09T07:14:46.630Z",
+        "note": "缩放代码已通过，不再记录为待实现。scale_probe 的原始/缩放分数统计与局部梯度输出为教师演示，尚未收到学习者对实验现象的独立解释；与 foundation.mean-variance 的剩余统计观察一起保留待核验，不要求重写已通过实现。",
+        "evidence": [
+          {
+            "at": "2026-09-09T07:14:46.630Z",
+            "text": "学习者实现从 Q.shape[-1] 取得整数 Dk，以 math.sqrt(Dk) 缩放原始点积，而非统计当前分数行的标准差；本题包含 Dk=4、Tk=2、Dv=1 的区分性数值测试及完整梯度对齐，真实实现通过本题 19 项与全仓 114 项、无跳过。结合此前复制 Q/K 特征后分数为 sqrt(2) 倍且复制项非独立的回答，固定维度缩放及代码路径已确认。"
+          }
+        ]
       },
       "attention.weights": {
-        "status": "relearn",
-        "updatedAt": "2026-09-03T11:58:12.895Z",
-        "note": "已听过分数经Softmax变权重，尚未按依赖链验证",
-        "evidence": []
+        "status": "mastered",
+        "updatedAt": "2026-09-09T07:14:45.799Z",
+        "note": "基于学习者实现和已有独立配对解释验收，不把教师提供的测试记作学习者独立设计；无需重做 Softmax 或候选重排问答。",
+        "evidence": [
+          {
+            "at": "2026-09-09T04:57:10.854Z",
+            "text": "学习者在固定 Q、无 mask 的候选重排检查中，正确选择 K/V 同序交换保持输出不变，并指出只交换 K 会使原 K0 的权重对应到 V2，体现了权重随 key 候选排列而变化的理解。"
+          },
+          {
+            "at": "2026-09-09T07:14:45.799Z",
+            "text": "学习者在 scaled_dot_product_attention 中沿 scores 的末轴 Tk 调用 torch.softmax，返回未断图的 weights。实际学习者代码通过本题全部 19 项及全仓 114 项测试、无跳过，覆盖不同 Tq/Tk、每行非负与和为 1、None 时全可读、屏蔽位置权重为零、极端有限分数的稳定性及两个返回值的梯度。结合此前独立解释候选重排时权重与 K 的对应关系，归一化轴及读取比例语义通过验收。"
+          }
+        ]
       },
       "attention.weighted-read": {
-        "status": "relearn",
-        "updatedAt": "2026-09-03T11:58:13.496Z",
-        "note": "已听过权重读取V，尚未按依赖链验证",
-        "evidence": []
+        "status": "mastered",
+        "updatedAt": "2026-09-09T07:14:45.977Z",
+        "note": "加权读取及输出维度通过实现与性质/梯度测试验收；残差连接尚未学习，不能据此上报残差掌握。",
+        "evidence": [
+          {
+            "at": "2026-09-09T04:57:11.023Z",
+            "text": "学习者独立判断固定 Q、无 mask 时 K/V 同序交换保证输出不变，并解释只换 K 会让原 K0 对应的权重作用到 V2，抓住匹配与内容的配对关系。其表述“把 V 加到自身特征”需要教师澄清：当前只是 weights @ V，权重乘向量再求和，没有额外执行 X+output。"
+          },
+          {
+            "at": "2026-09-09T07:14:45.977Z",
+            "text": "学习者实现 output = weights @ V，并标注 (B,Tq,Dv)，没有额外加回 Q/X 或添加输出投影。本题 19 项及全仓 114 项测试通过、无跳过，覆盖 Tq/Tk 与 Dk/Dv 不同、K/V 同序重排保持输出、单独改变 V 不改变 weights 但改变 output，以及 V 和返回值的梯度。结合此前 K/V 配对解释，本次代码明确消除了把读取误说为额外加回自身特征的歧义。"
+          }
+        ]
       },
       "attention.mask": {
-        "status": "relearn",
-        "updatedAt": "2026-09-03T11:58:14.066Z",
-        "note": "已提前接触屏蔽概念，等待输入补齐和逐步预测先修",
-        "evidence": []
+        "status": "mastered",
+        "updatedAt": "2026-09-09T07:14:46.202Z",
+        "note": "在 CPU、同序列对齐因果规则、显式权限及全屏蔽行报错的约定内验收。教师提供扰动测试，不推定学习者独立设计了全部测试，也不推广成缓存偏移 mask 已掌握。",
+        "evidence": [
+          {
+            "at": "2026-09-09T07:14:46.202Z",
+            "text": "学习者以 torch.tril 的含对角线下三角布尔矩阵和 input_valid.unsqueeze(1) 组合 (B,T,T) 权限，正确约束 key 列且不清空 PAD query 行；在 Softmax 前 masked_fill 为负无穷，并用 any(all(~allowed,dim=-1)) 对任意全屏蔽行抛出 ValueError。本题 19 项及全仓 114 项测试通过、无跳过，涵盖精确轴语义、未来/PAD 扰动、截断前缀对齐、强匹配但被禁候选、禁止 K 不影响归一化、PAD query 仍有合法读取分布及全屏蔽拒绝。此前已独立解释 target_valid 只影响 loss 而不能解决输入可见性；本次实现只使用 input_valid，不混用标签有效性。"
+          }
+        ]
       },
       "architecture.encoder": {
         "status": "relearn",
@@ -2109,22 +2206,391 @@ window.LEARNING_DATA = {
         ]
       },
       "foundation.mean-variance": {
+        "status": "verify",
+        "updatedAt": "2026-09-09T03:38:59.960Z",
+        "note": "理论期望与有限样本统计量、维度数与数据、复制项不独立的理解检查已通过；不再重复这些代数问答。此前的方差展开和按轴统计代码为教师讲解，尚不记录成学习者独立实现或完整推导；按轴统计及常数缩放的方差平方关系可在后续综合尺度实验中一并确认，不阻塞已讲解步骤的组合。",
+        "evidence": [
+          {
+            "at": "2026-09-09T03:12:19.656Z",
+            "text": "学习者判断按每行 scores 的标准差缩放不等价于除固定 sqrt(Dk)，指出候选统计范围随 T 改变可能影响缩放，并正确识别全等分数的标准差为 0、直接除法会出问题。将该量称为参数需要术语澄清：它是当前数据计算的缩放因子而非可训练参数，且即使 Tk 固定也可能随分数值或 query 改变；后两点为教师补充。"
+          },
+          {
+            "at": "2026-09-09T03:19:51.963Z",
+            "text": "学习者将乘积平均的分解写成两条配对样本的等式 (a1*b1+a2*b2)/2=((a1+a2)/2)*((b1+b2)/2)，正确指出该等式一般不成立并追问独立性的作用，暴露讲解中理论平均与有限样本均值之间尚未建立清晰区分。"
+          },
+          {
+            "at": "2026-09-09T03:38:59.960Z",
+            "text": "学习者明确区分当前推导的概率分布分析与实际有限样本统计，并独立回答：将 Q/K 特征各原样复制拼接后，按新维度平方根缩放的分数为原来的 sqrt(2) 倍；复制项与原项有关联，并非独立。结合此前否定有限样本乘积平均的错误等式、识别全等分数行的标准差为零，关键概念检查通过。教师补充：理论与样本统计的区分不意味着采样不属于概率分析，且复制项实际上完全相同。"
+          }
+        ]
+      },
+      "attention.single-head": {
+        "status": "mastered",
+        "updatedAt": "2026-09-09T07:14:46.429Z",
+        "note": "单头核心实现关卡通过。当前合同仅 CPU float32/float64、输入和原始点积分数有限、显式 mask 形状、全屏蔽行 ValueError；不推定 GPU 性能、多头、残差或语言训练能力。尺度分布/梯度实验的独立解释仍在相关节点保留待验证，不影响本次代码验收。",
+        "evidence": [
+          {
+            "at": "2026-09-09T07:14:46.429Z",
+            "text": "学习者独立完成 ex006 新增的 make_causal_allowed、scaled_dot_product_attention 和 single_head_self_attention，复用已验收的 project_qkv 与 raw_attention_scores，将投影、固定 sqrt(Dk) 缩放、前屏蔽、沿 Tk 归一化和 weights@V 串成因果单头自注意力；未使用高级 Attention 封装。教师复跑真实文件，本题 19 项、全仓 114 项全部通过、无跳过，前向、dtype/shape、输入及已有梯度不变、Q/K/V 与 X/Wq/Wk/Wv 梯度均通过。实际 demo 的未来/PAD 扰动对受保护输出的最大影响均为 0，最后相同 query 能通过不同前文的 V 得到不同内容输出。教师未修改学习者代码。"
+          }
+        ]
+      },
+      "foundation.tensor-layout": {
+        "status": "verify",
+        "updatedAt": "2026-09-10T11:05:29.858Z",
+        "note": "拆头与合头实现已通过真实 11 项布局测试及全仓旧 125 项、无跳过，精确映射、非连续输入和梯度均已确认。布局实现不再阻塞推进；学习者要求加速，主焦点转入完整 MHA 综合实现。view/reshape/contiguous 的实际复制条件解释仍留待集成时核验，故本节点暂保留 verify，不把教师存储诊断当作学习者掌握证据；不重做已有拆轴口头题。",
+        "evidence": [
+          {
+            "at": "2026-09-10T10:30:27.448Z",
+            "text": "学习者针对直接 reshape 为 (B,H,T,Dh) 再 reshape 回 (B,T,C) 的检查，指出 bad_heads 的 head/token 维度分组顺序混用、从原 BTC 拆分会让后面维度的数据对应关系错乱。已识别中间布局的语义问题；其表述“2、3维反了”仍需区分目标 shape 与实际元素分组，尚未独立给出具体索引断言。教师补充例子：heads[0,0,1,0] 应等于 Q[0,1,0]=4，而错误写法取到 Q[0,0,2]=2。"
+          },
+          {
+            "at": "2026-09-10T10:56:36.680Z",
+            "text": "学习者完成 ex007 的 split_heads 与 merge_heads：先将 (B,T,C) reshape 为 (B,T,H,Dh) 再 transpose(1,2)；合头先 transpose(1,2) 再 reshape 为 (B,T,H*Dh)，并在 split 中校验 H>0 及 C 可整除 H。教师未修改实现，实跑 11 项布局测试及全仓 125 项回归均通过、无跳过；覆盖独立索引、单元素扰动、连续/转置/步长切片输入、两方向往返、不修改输入或已有梯度及梯度回到原始 Tensor。"
+          }
+        ]
+      },
+      "attention.multi-head": {
         "status": "current",
-        "updatedAt": "2026-09-08T16:37:16.126Z",
-        "note": "为 Attention 分数缩放就地补齐先修：先定义一组数的均值、方差与标准差及按轴统计，解释平移和乘常数如何改变尺度；再讲方差相加所需的不相关假设及相关项的反例。当前仅开始讲解，无新掌握证据；后续在同一 Attention 练习中验证缩放的作用。",
-        "evidence": []
+        "updatedAt": "2026-09-10T11:05:35.623Z",
+        "note": "按学习者明确加速要求，改为一次讲清完整 MHA 并用同一份整合代码验收：大投影按列分配各头、(B,H) 批次前缀逐头匹配与 sqrt(Dh)、key 轴 Softmax、(B,1,Tq,Tk) 共享权限、合头及 Wo 对同一 token 各头内容的可学习线性组合。强调 C=H*Dh 为当前等宽配置；输出仍为特征而非 logits，Wo 不重新读取其他 token。已准备 notes/multi-head-attention.md 与 ex007/attention.py 的两个待实现接口，通用读取保留不同 Tq/Tk，因果自注意力组合既有投影及 mask；不改用户既有答案。新增 15 项前向/梯度/布局/可见性综合测试，教师内存临时参照新 15 项及全仓 140 项通过；错误缩放、漏 Wo、weights 断图及 B==H 静默 mask 错配均被检出。真实新文件仍是两处 NotImplementedError，预期两项未实现失败与两个行为类跳过，原有 125 项仍通过。教师自检不作为学习者实现或掌握证据。下一步等待整合实现后一次 review，不逐运算符提问；tensor-layout 复制解释与 scaling 观察保留非阻塞待验证。完整语言模型尚未端到端组合。",
+        "evidence": [
+          {
+            "at": "2026-09-09T08:13:19.262Z",
+            "text": "学习者在讨论多头动机时主动指出标准多头的 value 投影参数在不同头中也不同，追问其与不同位置权重、不同内容表示的关系。这提供了区分内容投影与读取权重的部分观察证据；尚未独立给出多头数据流、共同权重时可合并宽 V 的解释，亦未实现拆合头或 Wo。"
+          }
+        ]
       }
     },
     "statusCounts": {
-      "mastered": 25,
+      "mastered": 29,
       "current": 1,
-      "verify": 2,
-      "relearn": 6,
-      "pending": 45
+      "verify": 5,
+      "relearn": 2,
+      "pending": 42
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "9b2fe273-6384-476e-bb64-6b710982375f",
+      "at": "2026-09-10T11:05:35.623Z",
+      "nodeId": "attention.multi-head",
+      "nodeTitle": "多头Attention",
+      "action": "current",
+      "fromStatus": "verify",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "按学习者明确加速要求，改为一次讲清完整 MHA 并用同一份整合代码验收：大投影按列分配各头、(B,H) 批次前缀逐头匹配与 sqrt(Dh)、key 轴 Softmax、(B,1,Tq,Tk) 共享权限、合头及 Wo 对同一 token 各头内容的可学习线性组合。强调 C=H*Dh 为当前等宽配置；输出仍为特征而非 logits，Wo 不重新读取其他 token。已准备 notes/multi-head-attention.md 与 ex007/attention.py 的两个待实现接口，通用读取保留不同 Tq/Tk，因果自注意力组合既有投影及 mask；不改用户既有答案。新增 15 项前向/梯度/布局/可见性综合测试，教师内存临时参照新 15 项及全仓 140 项通过；错误缩放、漏 Wo、weights 断图及 B==H 静默 mask 错配均被检出。真实新文件仍是两处 NotImplementedError，预期两项未实现失败与两个行为类跳过，原有 125 项仍通过。教师自检不作为学习者实现或掌握证据。下一步等待整合实现后一次 review，不逐运算符提问；tensor-layout 复制解释与 scaling 观察保留非阻塞待验证。完整语言模型尚未端到端组合。"
+    },
+    {
+      "id": "113aa37f-d29b-48ae-abe6-3bb5b0f702da",
+      "at": "2026-09-10T11:05:29.858Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "verify",
+      "fromStatus": "current",
+      "toStatus": "verify",
+      "evidence": null,
+      "note": "拆头与合头实现已通过真实 11 项布局测试及全仓旧 125 项、无跳过，精确映射、非连续输入和梯度均已确认。布局实现不再阻塞推进；学习者要求加速，主焦点转入完整 MHA 综合实现。view/reshape/contiguous 的实际复制条件解释仍留待集成时核验，故本节点暂保留 verify，不把教师存储诊断当作学习者掌握证据；不重做已有拆轴口头题。"
+    },
+    {
+      "id": "9ec27bc9-c67f-4157-818e-8a568faef802",
+      "at": "2026-09-10T10:56:36.680Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "学习者完成 ex007 的 split_heads 与 merge_heads：先将 (B,T,C) reshape 为 (B,T,H,Dh) 再 transpose(1,2)；合头先 transpose(1,2) 再 reshape 为 (B,T,H*Dh)，并在 split 中校验 H>0 及 C 可整除 H。教师未修改实现，实跑 11 项布局测试及全仓 125 项回归均通过、无跳过；覆盖独立索引、单元素扰动、连续/转置/步长切片输入、两方向往返、不修改输入或已有梯度及梯度回到原始 Tensor。",
+      "note": "ex007 拆头与合头实现已验收，作业说明已同步；不再等待这两个函数，也不重复旧的错误 reshape 口头题。布局实现证据充分；view/reshape/contiguous 的复制条件尚无学习者独立解释，暂不将整个 tensor-layout 节点标记掌握，后续结合 MHA 集成验证而不重复低价值练习。教师存储诊断确认拆头后立即合头样例共享存储，而将 heads 连续化后再合头的样例发生复制且值正确；此诊断不作为学习者解释证据。下一步教学衔接各头 Attention、mask 的 head 轴与输出投影 Wo，完整 MHA 尚未实现。既有整体复习的梯度检查、尺度观察未验收边界保留；ex005/ex006 尚未端到端集成。"
+    },
+    {
+      "id": "0ab4c15f-d3ae-450f-b75d-f25a3f2574f8",
+      "at": "2026-09-10T10:39:54.122Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "学习者要求继续，现恢复布局实现并创建 ex007_multi_head_attention 第一部分：heads.py 仅含 split_heads 与 merge_heads 两个待填写接口。明确其分别位于 Q/K/V 投影之后、每头读取之后，只按精确索引改变布局，不做 Attention/残差/Wo；支持 CPU float32/float64、连续/转置/步长切片输入，不保证输出共享或独立存储；split 检查正整数头数及特征可整除性，保持梯度。讲义补充切片 start:stop:step、//、% 语法及整体数据流位置。教师新增 11 项测试，按 token 特征切片/stack 和各头 cat 独立构造参照；临时内存正确实现及显式 contiguous/view 变体均通过，新 11 项和全仓 125 项通过。教师确认错误 split/merge 配对能通过往返但被独立索引测试拒绝，不兼容 view 与 detach 也被检出。真实文件仍有两个 NotImplementedError：原有 114 项通过，新测试为两个预期未实现失败和三个行为类跳过；参照未写入学习者函数，不上报新掌握。既有整体复习、尺度观察和 MHA/Wo 的未验收边界保留，ex005/ex006 尚未端到端集成。下一步等待学习者完成两个函数，再结合实际布局和复制路径 review，不重复错误 reshape 的口头题。"
+    },
+    {
+      "id": "b1b0f9e4-f4d6-4037-9bc8-7533f876a728",
+      "at": "2026-09-10T10:30:27.448Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "学习者针对直接 reshape 为 (B,H,T,Dh) 再 reshape 回 (B,T,C) 的检查，指出 bad_heads 的 head/token 维度分组顺序混用、从原 BTC 拆分会让后面维度的数据对应关系错乱。已识别中间布局的语义问题；其表述“2、3维反了”仍需区分目标 shape 与实际元素分组，尚未独立给出具体索引断言。教师补充例子：heads[0,0,1,0] 应等于 Q[0,1,0]=4，而错误写法取到 Q[0,0,2]=2。",
+      "note": "保留此前整体复习和多头部分理解的上下文：ex005 是可训练逐位置基线，ex006 是已验收单头组件，二者尚未端到端集成；整体复习的梯度路径检查不因本次回答而视为完成。学习者此次回到原布局结构检查，已指出直接 reshape 的 head/token 分组混乱；教师用 shape 与元素对应关系的区别、head 0 小表及一个精确索引补全说明。后续不重复同一道口头题，用拆合头实现、精确索引和布局/复制性质测试继续验收。当前仍为 tensor-layout；view/reshape/contiguous 与完整拆合头实现尚未通过学习者验收，MHA/Wo 状态保持不变，不新增掌握节点。"
+    },
+    {
+      "id": "d9ac025c-4a55-482a-9b54-082b27e4d70f",
+      "at": "2026-09-09T09:50:23.659Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "根据学习者要求，暂缓新布局练习与多头推进，先用 notes/global-review.md 完成整体复习：输入与错位标签、内容/位置表示、词表分数与稳定损失、梯度及参数更新、逐步生成、单头上下文读取，再定位多头和完整块。ex005 当前是 E[input_ids]@W 的可训练基线，ex006 是单头读取组件，两者尚未端到端集成；讲义连接部分明确为组合草图。保留既有 29 个掌握节点；本轮没有新的学习者解释或实现证据，不升级任何掌握状态。主焦点仍是 tensor-layout，精确拆合头索引及 view/reshape/contiguous 验收待完成；multi-head 保持部分理解待验证，Wo 与完整多头实现尚待后续讲解和验收。复习后的综合检查将连接单位置损失到前文 K/V 与 embedding 的梯度路径，待学习者回答后再判断。"
+    },
+    {
+      "id": "5b04d299-9dec-4e09-b1e3-a18554199230",
+      "at": "2026-09-09T08:13:19.262Z",
+      "nodeId": "attention.multi-head",
+      "nodeTitle": "多头Attention",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在讨论多头动机时主动指出标准多头的 value 投影参数在不同头中也不同，追问其与不同位置权重、不同内容表示的关系。这提供了区分内容投影与读取权重的部分观察证据；尚未独立给出多头数据流、共同权重时可合并宽 V 的解释，亦未实现拆合头或 Wo。",
+      "note": "已补充 head 是一路完整 Attention、单头对每个 query 的全部 V 特征共享一套位置权重、多头允许多套位置权重与多种内容表示联合学习。强调 Wv 是共享于各位置的每头参数，V=X@Wv 是本次表示；共同 weights 下不同线性 V 投影可在读取阶段等价合成宽 V，只有内容投影差异并非多套读取方式。当前为部分理解待验证，不上报掌握；tensor-layout 仍是主焦点，布局检查暂缓至 head 含义清晰，再结合多头实现和测试验收。"
+    },
+    {
+      "id": "a5ac41b7-0b6b-404d-afdf-45ef6e6a7930",
+      "at": "2026-09-09T07:56:41.604Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "暂停后续 stride、拆合头实现和上一题的错误 reshape 检查，先补清 head 的计算含义：在当前标准多头设计中，每个 head 使用各自 Q/K/V 投影，为每个 query 分别生成候选位置权重并读取 V；一个 head 处理全部 query，不是一个 token、一个轴或一层。单头每个 query 的所有 V 内容分量共享一套位置权重，多头保留多套读取结果；各头分别计算不表示统计独立或必然学到互异语义。同一 X 经不同参数投影，与完全相同 Q/K/V 的重复计算要区分。讲义补充先有多路计算，再将各路参数列合并并用 reshape/transpose 组织的因果顺序。尚无这部分的学习者回答，既不推定多头理解已掌握，也不撤销已通过的单头实现；布局状态继续 current，已有教师示例不算学习者证据。"
+    },
+    {
+      "id": "44587511-5e07-4447-9ebe-2432597f9aec",
+      "at": "2026-09-09T07:38:51.918Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "已开始拆头/合头的布局讲解，讲义 notes/tensor-layout.md 与教师实验 examples/tensor_layout_probe.py 已同步。明确 Q 来自当前等宽投影 X@Wq，H/Dh 是分组数量和宽度，先 reshape(B,T,H,Dh) 再 transpose(1,2)，精确关系为 heads[b,h,t,d]=Q[b,t,h*Dh+d]；C=H*Dh 是本例等分投影宽度的约定。讲解 stride 以元素为单位、视图共享存储、默认连续布局、view 的兼容性与 reshape/contiguous 的可能复制，合头先恢复 token/head 顺序；指出复制仍保留 autograd。教师实际跑通确定性 12 元素示例，包括非连续 view 部分可行/部分报错、两种合头、共享视图与独立副本，以及复制路径梯度回传；这些不是学习者证据。当前待检查：直接 reshape 到 B,H,T,Dh 后再 reshape 回 B,T,C 能通过往返测试，要求学习者给出一条能拒绝错误 head/token 配对的精确断言。尚未收到回答或布局实现，不上报掌握；不重做已通过的单头 Attention。"
+    },
+    {
+      "id": "46725442-6835-496c-80e0-18913a9f65da",
+      "at": "2026-09-09T07:14:46.883Z",
+      "nodeId": "foundation.tensor-layout",
+      "nodeTitle": "张量变形与存储布局",
+      "action": "current",
+      "fromStatus": "pending",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "单头 Attention 真实实现已通过 19 项新测试和全仓 114 项测试，无跳过。下一学习块将围绕多头拆合建立 reshape/view/stride/contiguous 的逻辑 shape 与存储关系；此前基础转置和 Python/PyTorch 已掌握，但本块尚未讲解或验收，不推定已掌握。后续用精确索引、非连续输入及拆合往返测试验证，再进入 MHA。尺度实验独立解释仍保留在 mean-variance/scaling 的 verify 状态，可结合后续观察收束，不重做单头练习。"
+    },
+    {
+      "id": "1b2fc831-cc15-437a-94e3-8b9b564b51db",
+      "at": "2026-09-09T07:14:46.630Z",
+      "nodeId": "attention.scaling",
+      "nodeTitle": "分数缩放",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者实现从 Q.shape[-1] 取得整数 Dk，以 math.sqrt(Dk) 缩放原始点积，而非统计当前分数行的标准差；本题包含 Dk=4、Tk=2、Dv=1 的区分性数值测试及完整梯度对齐，真实实现通过本题 19 项与全仓 114 项、无跳过。结合此前复制 Q/K 特征后分数为 sqrt(2) 倍且复制项非独立的回答，固定维度缩放及代码路径已确认。",
+      "note": "缩放代码已通过，不再记录为待实现。scale_probe 的原始/缩放分数统计与局部梯度输出为教师演示，尚未收到学习者对实验现象的独立解释；与 foundation.mean-variance 的剩余统计观察一起保留待核验，不要求重写已通过实现。"
+    },
+    {
+      "id": "539cdb0a-c714-49f4-baf0-ad4d8195d808",
+      "at": "2026-09-09T07:14:46.429Z",
+      "nodeId": "attention.single-head",
+      "nodeTitle": "单头Attention实现",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "学习者独立完成 ex006 新增的 make_causal_allowed、scaled_dot_product_attention 和 single_head_self_attention，复用已验收的 project_qkv 与 raw_attention_scores，将投影、固定 sqrt(Dk) 缩放、前屏蔽、沿 Tk 归一化和 weights@V 串成因果单头自注意力；未使用高级 Attention 封装。教师复跑真实文件，本题 19 项、全仓 114 项全部通过、无跳过，前向、dtype/shape、输入及已有梯度不变、Q/K/V 与 X/Wq/Wk/Wv 梯度均通过。实际 demo 的未来/PAD 扰动对受保护输出的最大影响均为 0，最后相同 query 能通过不同前文的 V 得到不同内容输出。教师未修改学习者代码。",
+      "note": "单头核心实现关卡通过。当前合同仅 CPU float32/float64、输入和原始点积分数有限、显式 mask 形状、全屏蔽行 ValueError；不推定 GPU 性能、多头、残差或语言训练能力。尺度分布/梯度实验的独立解释仍在相关节点保留待验证，不影响本次代码验收。"
+    },
+    {
+      "id": "6759ac27-7153-4542-b46e-24899356b272",
+      "at": "2026-09-09T07:14:46.202Z",
+      "nodeId": "attention.mask",
+      "nodeTitle": "屏蔽无效位置和未来位置",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者以 torch.tril 的含对角线下三角布尔矩阵和 input_valid.unsqueeze(1) 组合 (B,T,T) 权限，正确约束 key 列且不清空 PAD query 行；在 Softmax 前 masked_fill 为负无穷，并用 any(all(~allowed,dim=-1)) 对任意全屏蔽行抛出 ValueError。本题 19 项及全仓 114 项测试通过、无跳过，涵盖精确轴语义、未来/PAD 扰动、截断前缀对齐、强匹配但被禁候选、禁止 K 不影响归一化、PAD query 仍有合法读取分布及全屏蔽拒绝。此前已独立解释 target_valid 只影响 loss 而不能解决输入可见性；本次实现只使用 input_valid，不混用标签有效性。",
+      "note": "在 CPU、同序列对齐因果规则、显式权限及全屏蔽行报错的约定内验收。教师提供扰动测试，不推定学习者独立设计了全部测试，也不推广成缓存偏移 mask 已掌握。"
+    },
+    {
+      "id": "ebb4556b-a7b8-4409-84f1-b75712c567f9",
+      "at": "2026-09-09T07:14:45.977Z",
+      "nodeId": "attention.weighted-read",
+      "nodeTitle": "按权重读取V",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者实现 output = weights @ V，并标注 (B,Tq,Dv)，没有额外加回 Q/X 或添加输出投影。本题 19 项及全仓 114 项测试通过、无跳过，覆盖 Tq/Tk 与 Dk/Dv 不同、K/V 同序重排保持输出、单独改变 V 不改变 weights 但改变 output，以及 V 和返回值的梯度。结合此前 K/V 配对解释，本次代码明确消除了把读取误说为额外加回自身特征的歧义。",
+      "note": "加权读取及输出维度通过实现与性质/梯度测试验收；残差连接尚未学习，不能据此上报残差掌握。"
+    },
+    {
+      "id": "28fd4b20-36ba-460f-8a1f-d0d82232ee0f",
+      "at": "2026-09-09T07:14:45.799Z",
+      "nodeId": "attention.weights",
+      "nodeTitle": "分数变注意力权重",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者在 scaled_dot_product_attention 中沿 scores 的末轴 Tk 调用 torch.softmax，返回未断图的 weights。实际学习者代码通过本题全部 19 项及全仓 114 项测试、无跳过，覆盖不同 Tq/Tk、每行非负与和为 1、None 时全可读、屏蔽位置权重为零、极端有限分数的稳定性及两个返回值的梯度。结合此前独立解释候选重排时权重与 K 的对应关系，归一化轴及读取比例语义通过验收。",
+      "note": "基于学习者实现和已有独立配对解释验收，不把教师提供的测试记作学习者独立设计；无需重做 Softmax 或候选重排问答。"
+    },
+    {
+      "id": "9e545095-21d4-492c-8b36-53e8bc8489c4",
+      "at": "2026-09-09T05:24:36.625Z",
+      "nodeId": "attention.single-head",
+      "nodeTitle": "单头Attention实现",
+      "action": "current",
+      "fromStatus": "pending",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "在 ex006 的既有 project_qkv/raw_attention_scores 后新增三个待实现接口：make_causal_allowed、scaled_dot_product_attention、single_head_self_attention；已通过的两函数保持不变。补齐接口合同、arange/unsqueeze/&/any/all/可选参数语法、教师 demo 和尺度敏感度观察。新增 19 项综合测试；教师在内存临时接入独立于逐 query 测试参照的稠密实现，新 19 项及全仓 114 项通过、无跳过，并验证测试能抓住漏缩放、后置 mask、输出断图、误清空 PAD query 和静默接受全屏蔽行五类故障。实际文件仍是三个 NotImplementedError 占位：原有 95 项测试通过，新测试为 3 个预期未实现失败及 3 个行为类跳过，不视为学习者完成。参照答案未写入文件。下一步等待学习者实现，结合尺度实验的简短观察验证缩放/统计、权重、读取与 mask；不因框架和教师自检上报掌握。"
+    },
+    {
+      "id": "fae87f88-ceaf-4e6f-a4f3-b90ccf7de077",
+      "at": "2026-09-09T05:24:36.464Z",
+      "nodeId": "attention.mask",
+      "nodeTitle": "屏蔽无效位置和未来位置",
+      "action": "verify",
+      "fromStatus": "current",
+      "toStatus": "verify",
+      "evidence": null,
+      "note": "因果权限、PAD key 与 query/target_valid 的角色区别、Softmax 前屏蔽和全屏蔽行 ValueError 约定均已讲解。input_valid 已明确来自输入位置对应的 valid 切片，True=真实、False=PAD；学习者表示理解不单独作为掌握证据。已进入综合实现：测试将验证精确权限轴、PAD query 不自动清空、未来/PAD 扰动、禁止 K 对归一化的隔离及任意全屏蔽行拒绝。保留为待验证，不重复口头定义题。"
+    },
+    {
+      "id": "738499af-d596-4fa8-b4e3-a6a543e6e294",
+      "at": "2026-09-09T04:57:11.271Z",
+      "nodeId": "attention.mask",
+      "nodeTitle": "屏蔽无效位置和未来位置",
+      "action": "current",
+      "fromStatus": "relearn",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "继续完整单头 Attention 数据流，讲解 True=允许 的 (B,Tq,Tk) 权限、同序列对齐位置的 j<=i 因果规则、Softmax 前负无穷填充及 bool Tensor 取反和 masked_fill 语法。区分 input_valid 对 key 列的约束、query 输出有效性与错位 target_valid 的损失作用；基础接口约定每行至少一个允许 key，否则 Softmax 前 ValueError，不自动将 PAD query 整行屏蔽。教师已用 CPU float64 小例验证 Softmax 后清零仍受被禁 K 分数影响、全屏蔽行产生 NaN；这不是学习者测试证据。下一步把相关步骤接入同一综合作业，验收前向/梯度、未来/PAD 扰动、全屏蔽边界及输出无额外残差；本轮只更新讲义和记录，未修改学习者代码。"
+    },
+    {
+      "id": "356a48f7-cb4e-4203-b4f1-d010a5a3cf8c",
+      "at": "2026-09-09T04:57:11.023Z",
+      "nodeId": "attention.weighted-read",
+      "nodeTitle": "按权重读取V",
+      "action": "verify",
+      "fromStatus": "relearn",
+      "toStatus": "verify",
+      "evidence": "学习者独立判断固定 Q、无 mask 时 K/V 同序交换保证输出不变，并解释只换 K 会让原 K0 对应的权重作用到 V2，抓住匹配与内容的配对关系。其表述“把 V 加到自身特征”需要教师澄清：当前只是 weights @ V，权重乘向量再求和，没有额外执行 X+output。",
+      "note": "K/V 配对性质检查通过；不把口头“加到自身”的措辞直接当作额外残差已理解，也不推断实现错误。讲义已区分自身作为带权候选与另加原输入，后者留到残差连接学习。输出 shape、加权计算及不额外加 X 在综合实现中继续验收，不重复候选重排问答。"
+    },
+    {
+      "id": "2bc91d32-7a53-4147-9a82-9c6a0f0eb7d4",
+      "at": "2026-09-09T04:57:10.854Z",
+      "nodeId": "attention.weights",
+      "nodeTitle": "分数变注意力权重",
+      "action": "verify",
+      "fromStatus": "relearn",
+      "toStatus": "verify",
+      "evidence": "学习者在固定 Q、无 mask 的候选重排检查中，正确选择 K/V 同序交换保持输出不变，并指出只交换 K 会使原 K0 的权重对应到 V2，体现了权重随 key 候选排列而变化的理解。",
+      "note": "已将 Softmax 作为沿 Tk 候选轴的读取比例讲解，候选重排语义获得部分独立证据；归一化轴、行和以及前向/梯度留待同一 Attention 综合实现验证，不因教师代码示例而标记掌握。"
+    },
+    {
+      "id": "c74d8477-ba90-43d9-a298-57d447ca6415",
+      "at": "2026-09-09T04:57:10.679Z",
+      "nodeId": "attention.scaling",
+      "nodeTitle": "分数缩放",
+      "action": "verify",
+      "fromStatus": "current",
+      "toStatus": "verify",
+      "evidence": null,
+      "note": "复制特征后的 sqrt(2) 缩放倍数与非独立性已通过学习者解释，相关证据保存在 foundation.mean-variance；理论推导及教师尺度演示已讲解，不重设同类口头题。概率集中与梯度的独立实验解释、缩放代码仍待综合实现验收。焦点继续沿权重、读取和 mask 推进。"
+    },
+    {
+      "id": "7e98785f-0bcd-455b-9471-3cd83229422d",
+      "at": "2026-09-09T03:39:00.144Z",
+      "nodeId": "attention.scaling",
+      "nodeTitle": "分数缩放",
+      "action": "current",
+      "fromStatus": "relearn",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "已通过复制 Q/K 维度后缩放分数为 sqrt(2) 倍且复制项不独立的结构检查；讲解已明确理想分布假设、固定 sqrt(Dk) 与实际行标准差的区别。学习焦点从尺度推导转向缩放、沿 Tk 的 Softmax 及 weights @ V 的连续数据流，讲义补充 K/V 候选配对、(B,Tq,Dv) 输出、上下文读取路径和固定 Q 无 mask 的候选重排检查。尚未收到权重读取检查的回答；概率集中与梯度的实验解释、组合实现均待后续验收，不推定完整 Attention 已掌握。"
+    },
+    {
+      "id": "e9ffb726-3b88-46c8-9968-7d8106976c3d",
+      "at": "2026-09-09T03:38:59.960Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "verify",
+      "fromStatus": "current",
+      "toStatus": "verify",
+      "evidence": "学习者明确区分当前推导的概率分布分析与实际有限样本统计，并独立回答：将 Q/K 特征各原样复制拼接后，按新维度平方根缩放的分数为原来的 sqrt(2) 倍；复制项与原项有关联，并非独立。结合此前否定有限样本乘积平均的错误等式、识别全等分数行的标准差为零，关键概念检查通过。教师补充：理论与样本统计的区分不意味着采样不属于概率分析，且复制项实际上完全相同。",
+      "note": "理论期望与有限样本统计量、维度数与数据、复制项不独立的理解检查已通过；不再重复这些代数问答。此前的方差展开和按轴统计代码为教师讲解，尚不记录成学习者独立实现或完整推导；按轴统计及常数缩放的方差平方关系可在后续综合尺度实验中一并确认，不阻塞已讲解步骤的组合。"
+    },
+    {
+      "id": "dc49a917-8fcd-4ab7-99f6-4ac15e69a3b5",
+      "at": "2026-09-09T03:26:22.938Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "继续以期望而非有限样本均值讲解尺度推导：在明确的独立、零期望、单位方差假设下复接单项乘积的期望与方差，再展开两个零期望乘积之和的平方，明确期望对加法的线性性不需独立，而消去交叉项时使用独立（一般只需不相关）。推广到 Dk 个项得理论方差 Dk，并由常数缩放的平方关系得到除 sqrt(Dk)。Dk 仍是整数维度数，不是数组或实测标准差；真实 Q/K 不保证满足假设。讲义已补充推导和结构检查：将 Q/K 特征从 64 维原样复制拼接成 128 维，各按新维度平方根缩放，要求解释新旧分数倍数及复制项为何不独立。尚无该检查的学习者回答，不上报掌握，不重复已经回答的逐行标准差替代问题。"
+    },
+    {
+      "id": "25ca2015-0c6a-4af6-bc07-6701eb15e626",
+      "at": "2026-09-09T03:19:51.963Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "学习者将乘积平均的分解写成两条配对样本的等式 (a1*b1+a2*b2)/2=((a1+a2)/2)*((b1+b2)/2)，正确指出该等式一般不成立并追问独立性的作用，暴露讲解中理论平均与有限样本均值之间尚未建立清晰区分。",
+      "note": "当前先定义样本均值与期望，暂停单项乘积方差及 Dk 项求和。独立保证乘积的期望可分解，并不保证任意有限样本的配对乘积均值等于两个样本均值之积。用独立公平符号变量的四个等概率组合解释期望，再区分偶然观察到同号样本与整个分布规定 b=a。讲义已将乘积分解明确写为期望，后续不得用含混的平均或 mean 代替该概率概念。当前仅记录学习者的有效代数质疑，不推定已掌握独立性与期望。"
+    },
+    {
+      "id": "94a1e670-3ea8-4067-a679-011146c9936d",
+      "at": "2026-09-09T03:12:19.656Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "学习者判断按每行 scores 的标准差缩放不等价于除固定 sqrt(Dk)，指出候选统计范围随 T 改变可能影响缩放，并正确识别全等分数的标准差为 0、直接除法会出问题。将该量称为参数需要术语澄清：它是当前数据计算的缩放因子而非可训练参数，且即使 Tk 固定也可能随分数值或 query 改变；后两点为教师补充。",
+      "note": "已获得统计尺度依赖输入和零标准差边界的判断证据，尚不据此验收独立性与完整方差推导。当前回到单项 a=q[r]、b=k[r]、z=a*b：明确理论平均的样本对象，利用零均值下平方平均等于方差，以及独立时乘积平均可分解，逐步解释 z 均值 0、方差 1。下一步才用跨维独立分析 Dk 项求和；暂不进入完整权重与读取实现。"
+    },
+    {
+      "id": "7f9507bf-d58a-4920-ac24-e589a7ecfe77",
+      "at": "2026-09-09T03:03:47.615Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "缩放推导继续暂停于符号和统计对象边界：先明确 q/k 是数据向量，Dk 是各向量的分量数量，即一维 q 的长度或 Q.shape[-1] 得到的 Python int；例如 Q.shape=(2,3,64) 时 sqrt(Dk)=8，缩放只把每个 score 除以固定数字 8，并不从本次 q/k 数据计算标准差。讲义已增加符号对照，区分理论分数标准差的尺度推导与对实际数据求标准差的操作。此前独立性的对象已展开，但尚未验证；接下来回到单项 q[r]*k[r] 的均值和方差，再讨论独立乘积求和。暂不做逐行标准差替代方案的综合题，不将本次讲解计为掌握证据。"
+    },
+    {
+      "id": "becab9ca-c084-40d6-8774-d31447c00840",
+      "at": "2026-09-09T02:58:56.588Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "缩放推导暂停，先补齐统计独立的对象与分析范围。当前讲解明确 q=Q[b,i,:]、k=K[b,j,:]，用于推导的强假设是 2*Dk 个标量全部相互独立：包含 q 内部、k 内部及两向量之间，不把参数独立、存储独立或一次取值不同等同于统计独立。通过独立硬币抽取的构造和 q=[a,a]、k=[c,c] 的反例区分向量之间独立与乘积项之间独立；真实投影共享 X，不能无条件假设独立。讲义已补充这些边界。后续先讲单项乘积为何均值 0、方差 1，再讲独立乘积之和的方差，尚未验证当前知识块；暂不要求回答逐行标准差替代 sqrt(Dk) 的综合题，不上报新掌握。"
+    },
+    {
+      "id": "1c3baf16-b8bc-4fbd-8a90-f2fcd1bf24cd",
+      "at": "2026-09-09T02:10:02.953Z",
+      "nodeId": "foundation.mean-variance",
+      "nodeTitle": "均值、方差与尺度",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "已从另一设备同步的状态接续：点积、Q/K/V 投影、原始分数和投影参数量已验收，当前补齐均值方差。复跑全部 95 项练习测试通过。新课在 ex006 README 第二部分就地定义按轴均值、方差、标准差，解释常数缩放、方差相加的不相关条件，再在所有 q/k 分量独立、零均值、单位方差假设下推导点积分数方差 Dk 与 sqrt(Dk) 缩放；区分分布分析与单行候选统计，以及缩放改变 Softmax 和减最大值保持概率不变。新增教师 scale_probe.py，以独立采样验证原始标准差约 2/8/16、缩放后接近 1；不是学习者掌握证据，未修改已通过的 attention.py。等待学习者判断按每个 query 的候选行标准差替代固定 sqrt(Dk) 是否等价，并说明统计轴、缩放量和全等行的边界；随后在同一 Attention 作业中连接权重与读取，不增加单行缩放的重复实现任务。"
+    },
     {
       "id": "a8581778-2ce3-4584-a07e-71c90b5bb427",
       "at": "2026-09-08T16:37:16.126Z",

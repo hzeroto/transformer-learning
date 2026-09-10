@@ -14,9 +14,8 @@
     <div class="header-copy">
       <div class="brand-line">
         <span class="brand-mark" aria-hidden="true">T</span>
-        <p class="eyebrow">TRANSFORMER · FROM FIRST PRINCIPLES</p>
+        <h1>Transformer <span>学习驾驶舱</span></h1>
       </div>
-      <h1>学习驾驶舱</h1>
       <p class="subtitle" id="goal-description"></p>
     </div>
     <div class="header-meta">
@@ -161,8 +160,9 @@
               <span><span class="status-dot pending" aria-hidden="true"></span>未开始</span>
             </div>
             <div class="topology-controls" role="group" aria-label="拓扑图缩放">
+              <button class="quiet-button compact topology-current-button" id="topology-current" type="button">回到当前</button>
               <button class="quiet-button compact topology-fullscreen-button" id="topology-fullscreen" type="button" aria-pressed="false">全屏查看</button>
-              <button class="quiet-button compact" id="topology-fit" type="button">适合屏幕</button>
+              <button class="quiet-button compact" id="topology-fit" type="button">查看全图</button>
               <button class="icon-button" id="topology-zoom-out" type="button" aria-label="缩小拓扑图">−</button>
               <output id="topology-scale" aria-label="当前缩放比例">—</output>
               <button class="icon-button" id="topology-zoom-in" type="button" aria-label="放大拓扑图">＋</button>
@@ -175,7 +175,7 @@
               <button class="text-button" type="button">清除筛选</button>
             </div>
           </div>
-          <p class="topology-hint">按住 Ctrl/⌘ 滚轮或使用按钮缩放 · 拖动浏览 · 点选节点查看完整依赖路径</p>
+          <p class="topology-hint">默认聚焦当前学习点 · 拖动浏览附近依赖 · Ctrl/⌘ + 滚轮缩放 · 查看全图可浏览完整路线</p>
         </div>
 
         <div id="stages-panel" role="tabpanel" aria-labelledby="stages-tab" hidden>

@@ -65,6 +65,7 @@
     topology: document.getElementById('learning-topology'),
     topologyFullscreen: document.getElementById('topology-fullscreen'),
     topologyFit: document.getElementById('topology-fit'),
+    topologyCurrent: document.getElementById('topology-current'),
     topologyZoomIn: document.getElementById('topology-zoom-in'),
     topologyZoomOut: document.getElementById('topology-zoom-out'),
     topologyScale: document.getElementById('topology-scale'),
@@ -472,6 +473,7 @@
       nodes: allNodes,
       stages: data.stages,
       statusMeta,
+      initialNodeId: selectedNodeId,
       onSelect: (nodeId) => showNode(nodeId),
       onTransform: ({ scale }) => {
         elements.topologyScale.textContent = `${Math.round(scale * 100)}%`;
@@ -492,11 +494,11 @@
       button.setAttribute('aria-selected', String(isActive));
       button.tabIndex = isActive ? 0 : -1;
     }
-    if (showTopology) requestAnimationFrame(() => topologyGraph?.fit());
+    if (showTopology) requestAnimationFrame(() => topologyGraph?.refreshViewport());
   }
 
-  function scheduleTopologyFit() {
-    requestAnimationFrame(() => requestAnimationFrame(() => topologyGraph?.fit()));
+  function scheduleTopologyRefresh() {
+    requestAnimationFrame(() => requestAnimationFrame(() => topologyGraph?.refreshViewport()));
   }
 
   function syncFullscreenState() {
@@ -507,7 +509,7 @@
     elements.topologyFullscreen.textContent = isFullscreen ? '退出全屏' : '全屏查看';
     elements.topologyFullscreen.setAttribute('aria-pressed', String(isFullscreen));
     elements.topologyFullscreen.setAttribute('aria-label', isFullscreen ? '退出拓扑图全屏' : '全屏查看拓扑图');
-    scheduleTopologyFit();
+    scheduleTopologyRefresh();
   }
 
   async function toggleTopologyFullscreen() {
@@ -715,6 +717,14 @@
     nextButton.focus();
   });
   elements.topologyFit.addEventListener('click', () => topologyGraph?.fit());
+  elements.topologyCurrent.disabled = !nodeIndex.has(data.progress.currentNodeId);
+  elements.topologyCurrent.addEventListener('click', () => {
+    const currentId = data.progress.currentNodeId;
+    if (!nodeIndex.has(currentId)) return;
+    clearFilters();
+    showNode(currentId);
+    topologyGraph?.focusNode(currentId, { moveFocus: false });
+  });
   elements.topologyZoomIn.addEventListener('click', () => topologyGraph?.zoomIn());
   elements.topologyZoomOut.addEventListener('click', () => topologyGraph?.zoomOut());
   elements.toggleStages.addEventListener('click', () => {

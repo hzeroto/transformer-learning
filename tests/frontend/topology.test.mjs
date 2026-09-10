@@ -76,7 +76,7 @@ test('循环依赖会被明确拒绝', () => {
 
 test('页面在主应用之前加载拓扑模块，且交互挂载点唯一', () => {
   assert.ok(html.indexOf('assets/topology.js') < html.indexOf('assets/app.js'));
-  for (const id of ['topology-panel', 'stages-panel', 'learning-topology', 'topology-fit', 'topology-fullscreen']) {
+  for (const id of ['topology-panel', 'stages-panel', 'learning-topology', 'topology-fit', 'topology-current', 'topology-fullscreen']) {
     assert.equal(html.match(new RegExp(`id="${id}"`, 'g'))?.length, 1, `${id} 应唯一`);
   }
 });
@@ -89,6 +89,7 @@ test('全屏控制支持原生 API、状态同步和沉浸式降级', () => {
 });
 
 test('拓扑渲染器可创建完整 SVG，并执行选中、筛选和定位', () => {
+  let viewportBounds = { left: 240, top: 800, width: 1000, height: 700 };
   class FakeClassList {
     constructor(element) { this.element = element; }
     values() { return new Set(this.element.className.split(/\s+/).filter(Boolean)); }
@@ -126,7 +127,7 @@ test('拓扑渲染器可创建完整 SVG，并执行选中、筛选和定位', (
     appendChild(child) { child.parentElement = this; this.children.push(child); return child; }
     replaceChildren(...children) { this.children = []; this.append(...children); }
     addEventListener(name, listener) { this.listeners.set(name, listener); }
-    getBoundingClientRect() { return { left: 0, top: 0, width: 1000, height: 700 }; }
+    getBoundingClientRect() { return viewportBounds; }
     setPointerCapture() {}
     focus() { this.isFocused = true; }
     closest(selector) {
@@ -152,8 +153,8 @@ test('拓扑渲染器可创建完整 SVG，并执行选中、筛选和定位', (
     ...stage,
     nodes: stage.nodes.map((node) => ({ ...node, progress: { status: 'pending' } }))
   }));
-  let lastScale = 0;
-  const graph = context.LearningTopology.createTopologyGraph({
+  let lastTransform;
+  const options = {
     container,
     nodes,
     stages: testStages,
@@ -165,12 +166,87 @@ test('拓扑渲染器可创建完整 SVG，并执行选中、筛选和定位', (
       pending: { label: '未开始', shortLabel: '未开始' }
     },
     onSelect: () => {},
-    onTransform: ({ scale }) => { lastScale = scale; }
-  });
+    initialNodeId: 'attention.multi-head',
+    onTransform: (transform) => { lastTransform = transform; }
+  };
+  const graph = context.LearningTopology.createTopologyGraph(options);
+
+  function worldCenter() {
+    return {
+      x: (viewportBounds.width / 2 - lastTransform.x) / lastTransform.scale,
+      y: (viewportBounds.height / 2 - lastTransform.y) / lastTransform.scale
+    };
+  }
+
+  function assertCenter(expected) {
+    const actual = worldCenter();
+    assert.ok(Math.abs(actual.x - expected.x) < 0.001, '横向聚焦位置应保持');
+    assert.ok(Math.abs(actual.y - expected.y) < 0.001, '纵向聚焦位置应保持');
+  }
 
   assert.equal(container.children.length, 1);
-  assert.ok(lastScale > 0);
+  assert.ok(lastTransform.scale >= 1, '首次打开时文字必须保持可读');
+  const currentPosition = graph.getLayout().positions.get('attention.multi-head');
+  const currentCenter = {
+    x: currentPosition.x + currentPosition.width / 2,
+    y: currentPosition.y + currentPosition.height / 2
+  };
+  assertCenter(currentCenter);
+  const canvas = container.children[0];
+  assert.equal(canvas.classList.contains('is-overview'), false, '默认视角不能隐藏节点文字');
+  const svg = canvas.children[0];
+  const viewport = svg.children.find((child) => child.classList.contains('topology-viewport'));
+  const renderedNodes = viewport.children.find((child) => child.classList.contains('topology-nodes')).children;
+  assert.ok(renderedNodes.every((node) => !node.isFocused), '初始化不抢占键盘焦点');
+
+  viewportBounds = { ...viewportBounds, width: 1800, height: 1000 };
+  graph.refreshViewport();
+  assertCenter(currentCenter);
+  assert.ok(lastTransform.scale >= 1, '进入全屏仍以可读比例聚焦');
+
+  graph.fit();
+  assert.ok(lastTransform.scale < 0.5, '查看全图仍可容纳完整课程');
+  viewportBounds = { ...viewportBounds, width: 1000, height: 700 };
+  graph.refreshViewport();
+  const layout = graph.getLayout();
+  assertCenter({ x: layout.width / 2, y: layout.height / 2 });
+  assert.ok(layout.width * lastTransform.scale <= viewportBounds.width);
+  assert.ok(layout.height * lastTransform.scale <= viewportBounds.height);
+
+  graph.focusNode('attention.multi-head', { moveFocus: false });
+  graph.zoomIn();
+  assertCenter(currentCenter);
+  graph.zoomOut();
+  assertCenter(currentCenter);
+
+  svg.listeners.get('pointerdown')({ button: 0, target: svg, pointerId: 1, clientX: 500, clientY: 1000 });
+  svg.listeners.get('pointermove')({ pointerId: 1, clientX: 580, clientY: 1040 });
+  svg.listeners.get('pointerup')({ pointerId: 1 });
+  const pannedCenter = worldCenter();
+  const pannedScale = lastTransform.scale;
+  viewportBounds = { ...viewportBounds, width: 0, height: 0 };
+  graph.refreshViewport();
+  viewportBounds = { ...viewportBounds, width: 1200, height: 800 };
+  graph.refreshViewport();
+  assertCenter(pannedCenter);
+  assert.equal(lastTransform.scale, pannedScale, '隐藏、恢复和全屏后保留手动缩放');
+
+  viewportBounds = { ...viewportBounds, width: 280, height: 500 };
+  graph.focusNode('attention.multi-head', { moveFocus: false });
+  assertCenter(currentCenter);
+  assert.ok(currentPosition.width * lastTransform.scale < viewportBounds.width, '窄屏可完整显示当前节点');
   assert.doesNotThrow(() => graph.selectNode('attention.single-head'));
   assert.equal(graph.setFilter({ query: 'softmax', status: 'all' }), 5);
   assert.doesNotThrow(() => graph.focusNode('foundation.softmax'));
+
+  const currentNodes = nodes.map((node) => ({
+    ...node,
+    progress: { status: node.id === 'attention.multi-head' ? 'current' : 'pending' }
+  }));
+  context.LearningTopology.createTopologyGraph({ ...options, nodes: currentNodes, initialNodeId: undefined });
+  assertCenter(currentCenter);
+
+  const linkedGraph = context.LearningTopology.createTopologyGraph({ ...options, initialNodeId: 'foundation.softmax' });
+  const linkedPosition = linkedGraph.getLayout().positions.get('foundation.softmax');
+  assertCenter({ x: linkedPosition.x + linkedPosition.width / 2, y: linkedPosition.y + linkedPosition.height / 2 });
 });

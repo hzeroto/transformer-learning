@@ -20,5 +20,12 @@ exercises/
 - [002：批处理与长度补齐](ex002_batch_padding/README.md)
 - [003：内容与位置的相加表示](ex003_position_embedding/README.md)
 - [004：稳定的逐组 Softmax](ex004_stable_softmax/README.md)
-- [005：最小训练闭环（当前实现批量交叉熵）](ex005_training_loop/README.md)
-- [006：单头 Attention（当前实现投影与原始分数）](ex006_single_head_attention/README.md)
+- [005：最小训练闭环与逐步生成](ex005_training_loop/README.md)
+- [006：完整因果单头 Attention](ex006_single_head_attention/README.md)
+- [007：多头 Attention（拆合头已验收，当前整合完整多头）](ex007_multi_head_attention/README.md)
+
+## 衔接讲义
+
+- [全局复习：从 token 到预测，从错误到上下文读取](../notes/global-review.md)：将输入、训练、生成与单头 Attention 串成完整数据流，明确已完成与待组合的边界。
+- [拆头与合头：逻辑形状和实际存储](../notes/tensor-layout.md)：进入多头 Attention 前的布局知识。
+- [完整多头 Attention：逐头读取、mask 与输出投影](../notes/multi-head-attention.md)：用一份综合实现贯通完整模块。
