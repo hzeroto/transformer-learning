@@ -239,6 +239,26 @@ test('拓扑渲染器可创建完整 SVG，并执行选中、筛选和定位', (
   assert.equal(graph.setFilter({ query: 'softmax', status: 'all' }), 5);
   assert.doesNotThrow(() => graph.focusNode('foundation.softmax'));
 
+  for (const stage of map.stages) {
+    const expectedIds = new Set(stage.nodes.map((node) => node.id));
+    assert.equal(graph.setFilter({ stageId: stage.id }), expectedIds.size);
+    for (const element of renderedNodes) {
+      const inStage = expectedIds.has(element.getAttribute('data-node-id'));
+      assert.equal(element.classList.contains('is-outside-stage'), !inStage);
+      assert.equal(element.getAttribute('aria-hidden'), String(!inStage));
+      assert.equal(element.getAttribute('tabindex'), inStage ? '0' : '-1');
+    }
+    const edgeLayer = viewport.children.find((child) => child.classList.contains('topology-edges'));
+    for (const edge of edgeLayer.children) {
+      const inStage = expectedIds.has(edge.getAttribute('data-source-id'))
+        && expectedIds.has(edge.getAttribute('data-target-id'));
+      assert.equal(edge.classList.contains('is-outside-stage'), !inStage);
+    }
+    assert.equal(graph.setFilter({ stageId: stage.id, status: 'mastered' }), 0);
+  }
+  assert.equal(graph.setFilter({}), nodes.length, '全部阶段恢复完整节点集合');
+  assert.ok(renderedNodes.every((node) => !node.classList.contains('is-outside-stage')));
+
   const currentNodes = nodes.map((node) => ({
     ...node,
     progress: { status: node.id === 'attention.multi-head' ? 'current' : 'pending' }

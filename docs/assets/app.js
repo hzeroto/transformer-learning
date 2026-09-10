@@ -35,9 +35,9 @@
     curriculumSize: document.getElementById('curriculum-size'),
     updatedAt: document.getElementById('updated-at'),
     masteryCount: document.getElementById('mastery-count'),
+    mobileMastery: document.getElementById('mobile-mastery'),
     masteryPercentage: document.getElementById('mastery-percentage'),
     masteryCaption: document.getElementById('mastery-caption'),
-    masteryDial: document.getElementById('mastery-dial'),
     progressFill: document.getElementById('progress-fill'),
     progressTrack: document.querySelector('.progress-track'),
     currentNode: document.getElementById('current-node'),
@@ -59,6 +59,9 @@
     resetFilters: document.getElementById('reset-filters'),
     toggleStages: document.getElementById('toggle-stages'),
     mapPanel: document.getElementById('map-panel'),
+    mapHeading: document.getElementById('map-heading'),
+    mapDescription: document.getElementById('map-description'),
+    topologyHint: document.querySelector('.topology-hint'),
     mapViewSwitch: document.querySelector('.map-view-switch'),
     topologyPanel: document.getElementById('topology-panel'),
     stagesPanel: document.getElementById('stages-panel'),
@@ -69,17 +72,20 @@
     topologyZoomIn: document.getElementById('topology-zoom-in'),
     topologyZoomOut: document.getElementById('topology-zoom-out'),
     topologyScale: document.getElementById('topology-scale'),
+    graphContext: document.getElementById('graph-context'),
     topologyEmpty: document.getElementById('topology-empty'),
     map: document.getElementById('learning-map'),
     visibleCount: document.getElementById('visible-count'),
     filterEmpty: document.getElementById('filter-empty'),
     detailPosition: document.getElementById('detail-position'),
+    detailPanel: document.querySelector('.detail-panel'),
     detailTitle: document.getElementById('detail-title'),
     detailDot: document.getElementById('detail-dot'),
     detailStatus: document.getElementById('detail-status'),
     detailSummary: document.getElementById('detail-summary'),
     detailReadiness: document.getElementById('detail-readiness'),
     detailNote: document.getElementById('detail-note'),
+    detailNoteDisclosure: document.getElementById('detail-note-disclosure'),
     detailPrerequisites: document.getElementById('detail-prerequisites'),
     detailDependents: document.getElementById('detail-dependents'),
     prerequisiteCount: document.getElementById('prerequisite-count'),
@@ -96,12 +102,14 @@
     ? hashNodeId
     : data.progress.currentNodeId || allNodes[0]?.id;
   let activeStatus = 'all';
+  let activeStageId = nodeIndex.get(selectedNodeId)?.stageId ?? null;
   let activeMapView = 'topology';
   let showAllRecords = false;
   let topologyGraph = null;
   let pseudoFullscreen = false;
   const nodeButtons = new Map();
   const stageSections = new Map();
+  const lastNodeByStage = new Map();
   const expandedStages = new Set(
     data.stages
       .filter((stage) => stage.nodes.some((node) => node.progress.status !== 'pending'))
@@ -154,7 +162,18 @@
     const node = nodeIndex.get(nodeId);
     if (!node) return;
     selectedNodeId = nodeId;
+    lastNodeByStage.set(node.stageId, nodeId);
     setHash(nodeId);
+    // 从先修、学习轨迹或深链接进入另一个阶段时，同步整个浏览范围。
+    const scopeChanged = activeStageId !== null && activeStageId !== node.stageId;
+    if (scopeChanged) {
+      activeStageId = node.stageId;
+      expandedStages.add(node.stageId);
+    }
+    if (scopeChanged || nodeButtons.get(nodeId)?.classList.contains('is-hidden')) {
+      resetFilterInputs();
+      applyFilters({ selectMatch: false });
+    }
 
     for (const [id, button] of nodeButtons) {
       button.setAttribute('aria-pressed', String(id === nodeId));
@@ -162,6 +181,8 @@
       button.classList.toggle('is-dependent', (dependents.get(node.id) ?? []).includes(id));
     }
     topologyGraph?.selectNode(nodeId);
+    if (scopeChanged || activeMapView === 'stages') topologyGraph?.focusNode(nodeId, { moveFocus: false });
+    elements.graphContext.textContent = `正在查看：${node.title}`;
 
     const status = node.progress.status;
     const missing = getMissingPrerequisites(node);
@@ -185,6 +206,7 @@
     }
 
     const note = node.progress.note;
+    elements.detailNoteDisclosure.hidden = !note;
     elements.detailNote.hidden = !note;
     elements.detailNote.textContent = note ? `当前备注：${note}` : '';
 
@@ -278,10 +300,10 @@
     elements.updatedAt.textContent = `更新于 ${formatDate(data.progress.updatedAt || data.generatedAt)}`;
     elements.masteryCount.textContent = `${counts.mastered} / ${data.progress.totalNodes}`;
     elements.masteryPercentage.textContent = `${percentage}%`;
+    elements.mobileMastery.textContent = `已掌握 ${counts.mastered} 个 / ${percentage}%`;
     elements.masteryCaption.textContent = percentage === 0
       ? '从第一个可核验能力开始'
       : '知识点形成了可核验能力';
-    elements.masteryDial.style.setProperty('--progress', `${percentage * 3.6}deg`);
     elements.progressFill.style.width = `${percentage}%`;
     elements.progressTrack.setAttribute('aria-valuenow', String(percentage));
     elements.reviewCount.textContent = String(counts.verify + counts.relearn);
@@ -304,6 +326,7 @@
       elements.currentStageButton.disabled = true;
     } else {
       const missing = getMissingPrerequisites(current);
+      elements.currentReadiness.classList.toggle('is-blocked', missing.length > 0);
       elements.currentReadiness.textContent = missing.length === 0
         ? '✓ 直接先修已就绪'
         : `${missing.length} 个直接先修尚未掌握`;
@@ -330,6 +353,16 @@
 
   function renderStageOverview() {
     elements.stageOverview.replaceChildren();
+    const allButton = document.createElement('button');
+    allButton.type = 'button';
+    allButton.className = 'stage-summary-card';
+    allButton.dataset.stageTarget = 'all';
+    allButton.innerHTML = `<span class="stage-number" aria-hidden="true">◎</span><strong>全部阶段</strong><span class="stage-card-meta">完整课程 · ${allNodes.length} 个知识点</span>`;
+    allButton.addEventListener('click', () => {
+      showAllStages();
+      elements.mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    elements.stageOverview.appendChild(allButton);
     for (const [index, stage] of data.stages.entries()) {
       const counts = getStageCounts(stage);
       const percentage = Math.round((counts.mastered / stage.nodes.length) * 100);
@@ -340,30 +373,33 @@
       button.dataset.stageTarget = stage.id;
       button.setAttribute('aria-label', `查看阶段 ${index + 1}：${stage.title}，已掌握 ${counts.mastered}/${stage.nodes.length}`);
 
-      const top = document.createElement('span');
-      top.className = 'stage-card-top';
       const number = document.createElement('span');
       number.className = 'stage-number';
       number.textContent = String(index + 1).padStart(2, '0');
       const state = document.createElement('span');
       state.className = 'stage-state';
-      state.textContent = isCurrent ? '进行中' : percentage === 100 ? '完成' : `${percentage}%`;
-      top.append(number, state);
+      state.textContent = isCurrent ? '学习中' : percentage === 100 ? '完成' : `${percentage}%`;
 
       const title = document.createElement('strong');
       title.textContent = stage.title.split('：')[0];
-      const track = document.createElement('span');
-      track.className = 'mini-progress';
-      const fill = document.createElement('span');
-      fill.style.width = `${percentage}%`;
-      track.appendChild(fill);
+      button.title = stage.title;
       const count = document.createElement('span');
       count.className = 'stage-card-count';
       count.textContent = `${counts.mastered}/${stage.nodes.length} 掌握`;
-      button.append(top, title, track, count);
+      const meta = document.createElement('span');
+      meta.className = 'stage-card-meta';
+      meta.append(count, state);
+      button.append(number, title, meta);
       button.addEventListener('click', () => revealStage(stage.id));
       elements.stageOverview.appendChild(button);
     }
+    requestAnimationFrame(() => {
+      const current = elements.stageOverview.querySelector('.is-active');
+      if (current && elements.stageOverview.scrollWidth > elements.stageOverview.clientWidth) {
+        elements.stageOverview.scrollLeft = current.offsetLeft - elements.stageOverview.offsetLeft
+          - (elements.stageOverview.clientWidth - current.offsetWidth) / 2;
+      }
+    });
   }
 
   function renderMap() {
@@ -487,7 +523,7 @@
     const showTopology = view === 'topology';
     elements.topologyPanel.hidden = !showTopology;
     elements.stagesPanel.hidden = showTopology;
-    elements.toggleStages.hidden = showTopology;
+    elements.toggleStages.hidden = showTopology || activeStageId !== null;
     for (const button of elements.mapViewSwitch.querySelectorAll('[data-map-view]')) {
       const isActive = button.dataset.mapView === view;
       button.classList.toggle('is-active', isActive);
@@ -556,13 +592,53 @@
     elements.toggleStages.textContent = allExpanded ? '收起未来阶段' : '展开全部阶段';
   }
 
-  function revealStage(stageId) {
-    setMapView('stages');
+  function syncStageScope() {
+    const stage = data.stages.find((entry) => entry.id === activeStageId);
+    const scopedNodes = stage ? stage.nodes : allNodes;
+    elements.mapPanel.dataset.stageId = activeStageId ?? 'all';
+    elements.mapHeading.textContent = stage ? stage.title.split('：')[0] : '全部阶段';
+    elements.mapDescription.textContent = stage
+      ? `阶段 ${data.stages.indexOf(stage) + 1} · ${stage.description}`
+      : '完整课程的知识点与依赖路线';
+    elements.searchInput.placeholder = stage ? '搜索本阶段知识点' : '搜索全部知识点';
+    elements.topologyHint.textContent = stage
+      ? '展示本阶段依赖 · 跨阶段先修可从右侧详情进入 · 拖动浏览 / Ctrl、⌘ + 滚轮缩放'
+      : '拖动浏览 · Ctrl/⌘ + 滚轮缩放 · 点击节点查看掌握要求';
+    for (const button of elements.stageOverview.querySelectorAll('[data-stage-target]')) {
+      const active = button.dataset.stageTarget === (activeStageId ?? 'all');
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+    for (const button of elements.statusFilters.querySelectorAll('[data-status-filter]')) {
+      const status = button.dataset.statusFilter;
+      button.querySelector('span').textContent = String(status === 'all'
+        ? scopedNodes.length
+        : scopedNodes.filter((node) => node.progress.status === status).length);
+    }
+    elements.toggleStages.hidden = activeMapView === 'topology' || activeStageId !== null;
+    return scopedNodes;
+  }
+
+  function revealStage(stageId, { nodeId, scroll = true } = {}) {
+    const stage = data.stages.find((entry) => entry.id === stageId);
+    if (!stage) return;
+    activeStageId = stageId;
     expandedStages.add(stageId);
-    if (activeStatus !== 'all' || elements.searchInput.value) clearFilters();
-    syncStageExpansion();
-    const target = stageSections.get(stageId)?.section;
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    resetFilterInputs();
+    applyFilters({ selectMatch: false });
+    const targetId = nodeId ?? lastNodeByStage.get(stageId)
+      ?? stage.nodes.find((node) => node.progress.status === 'current')?.id
+      ?? stage.nodes[0]?.id;
+    showNode(targetId);
+    topologyGraph?.focusNode(targetId, { moveFocus: false });
+    if (scroll) elements.mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showAllStages() {
+    activeStageId = null;
+    resetFilterInputs();
+    applyFilters({ selectMatch: false });
+    if (activeMapView === 'topology') topologyGraph?.fit();
   }
 
   function locateSelectedNode() {
@@ -592,14 +668,16 @@
     applyFilters();
   }
 
-  function applyFilters() {
+  function applyFilters({ selectMatch = true } = {}) {
+    const scopedNodes = syncStageScope();
     const query = elements.searchInput.value.trim().toLocaleLowerCase('zh-CN');
     const filtersActive = Boolean(query) || activeStatus !== 'all';
     let visible = 0;
     for (const button of nodeButtons.values()) {
       const matchesQuery = !query || button.dataset.search.includes(query);
       const matchesStatus = activeStatus === 'all' || button.dataset.status === activeStatus;
-      const show = matchesQuery && matchesStatus;
+      const matchesStage = activeStageId === null || nodeIndex.get(button.dataset.nodeId).stageId === activeStageId;
+      const show = matchesStage && matchesQuery && matchesStatus;
       button.classList.toggle('is-hidden', !show);
       if (show) visible += 1;
     }
@@ -610,20 +688,34 @@
     }
     syncStageExpansion(filtersActive);
     elements.visibleCount.textContent = filtersActive
-      ? `筛选结果 ${visible} / ${allNodes.length}`
-      : `共 ${allNodes.length} 个知识点`;
+      ? `筛选结果 ${visible} / ${scopedNodes.length}`
+      : `共 ${scopedNodes.length} 个知识点`;
     elements.filterEmpty.hidden = visible !== 0;
+    elements.detailPanel.hidden = visible === 0;
     elements.topologyEmpty.hidden = visible !== 0;
-    topologyGraph?.setFilter({ query, status: activeStatus });
+    topologyGraph?.setFilter({ query, status: activeStatus, stageId: activeStageId });
+    if (selectMatch && filtersActive && visible > 0) {
+      const match = nodeButtons.get(selectedNodeId)?.classList.contains('is-hidden')
+        ? [...nodeButtons.values()].find((button) => !button.classList.contains('is-hidden'))
+        : nodeButtons.get(selectedNodeId);
+      if (match) {
+        showNode(match.dataset.nodeId);
+        topologyGraph?.focusNode(match.dataset.nodeId, { moveFocus: false });
+      }
+    }
     elements.resetFilters.hidden = !filtersActive;
   }
 
-  function clearFilters() {
+  function resetFilterInputs() {
     elements.searchInput.value = '';
     activeStatus = 'all';
     for (const button of elements.statusFilters.querySelectorAll('[data-status-filter]')) {
       button.setAttribute('aria-pressed', String(button.dataset.statusFilter === 'all'));
     }
+  }
+
+  function clearFilters() {
+    resetFilterInputs();
     applyFilters();
   }
 
@@ -693,6 +785,8 @@
   });
   for (const button of document.querySelectorAll('[data-quick-filter]')) {
     button.addEventListener('click', () => {
+      activeStageId = null;
+      resetFilterInputs();
       setStatusFilter(button.dataset.quickFilter);
       elements.mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -716,14 +810,12 @@
     setMapView(nextButton.dataset.mapView);
     nextButton.focus();
   });
-  elements.topologyFit.addEventListener('click', () => topologyGraph?.fit());
+  elements.topologyFit.addEventListener('click', showAllStages);
   elements.topologyCurrent.disabled = !nodeIndex.has(data.progress.currentNodeId);
   elements.topologyCurrent.addEventListener('click', () => {
     const currentId = data.progress.currentNodeId;
     if (!nodeIndex.has(currentId)) return;
-    clearFilters();
-    showNode(currentId);
-    topologyGraph?.focusNode(currentId, { moveFocus: false });
+    revealStage(nodeIndex.get(currentId).stageId, { nodeId: currentId, scroll: false });
   });
   elements.topologyZoomIn.addEventListener('click', () => topologyGraph?.zoomIn());
   elements.topologyZoomOut.addEventListener('click', () => topologyGraph?.zoomOut());
@@ -740,14 +832,21 @@
   });
   elements.currentDetailButton.addEventListener('click', () => {
     if (!data.progress.currentNodeId) return;
-    showNode(data.progress.currentNodeId);
-    document.querySelector('.detail-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setMapView('topology');
+    revealStage(nodeIndex.get(data.progress.currentNodeId).stageId, { nodeId: data.progress.currentNodeId });
   });
   elements.currentStageButton.addEventListener('click', () => {
     const current = nodeIndex.get(data.progress.currentNodeId);
-    if (current) revealStage(current.stageId);
+    if (current) revealStage(current.stageId, { nodeId: current.id });
   });
   elements.locateNode.addEventListener('click', locateSelectedNode);
+  for (const button of document.querySelectorAll('[data-jump-target]')) {
+    button.addEventListener('click', () => {
+      const target = document.getElementById(button.dataset.jumpTarget);
+      if (target instanceof HTMLDetailsElement) target.open = true;
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
   elements.recordsToggle.addEventListener('click', () => {
     showAllRecords = !showAllRecords;
     renderRecords();

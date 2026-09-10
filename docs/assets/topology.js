@@ -3,9 +3,9 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const geometry = {
-    nodeWidth: 154,
-    nodeHeight: 50,
-    rankGap: 186,
+    nodeWidth: 194,
+    nodeHeight: 62,
+    rankGap: 242,
     nodeGap: 10,
     laneGap: 12,
     laneHeaderHeight: 43,
@@ -149,7 +149,7 @@
     };
   }
 
-  function truncateLabel(value, maxUnits = 20) {
+  function truncateLabel(value, maxUnits = 23) {
     let units = 0;
     let output = '';
     for (const character of value) {
@@ -174,6 +174,7 @@
     const layout = createTopologyLayout(nodes, stages);
     const nodeById = new Map(nodes.map((node) => [node.id, node]));
     const nodeElements = new Map();
+    const laneElements = new Map();
     const edgeElements = [];
     let selectedNodeId = null;
     let transform = { x: 0, y: 0, scale: 1 };
@@ -251,6 +252,7 @@
       }, `${stageCounts.get(lane.id)}/${lane.nodeCount}`);
       laneGroup.append(background, number, title, count);
       lanesLayer.appendChild(laneGroup);
+      laneElements.set(lane.id, laneGroup);
     }
 
     for (let rank = 0; rank <= layout.maxRank; rank += 1) {
@@ -317,17 +319,17 @@
       const titleText = createSvgElement('text', {
         class: 'topology-node-title',
         x: 15,
-        y: 21
+        y: 25
       }, truncateLabel(node.title));
       const metaText = createSvgElement('text', {
         class: 'topology-node-meta',
         x: 15,
-        y: 38
+        y: 46
       }, `${node.stageIndex + 1}.${node.nodeIndexInStage + 1} · ${statusMeta[node.progress.status].shortLabel}`);
       const stateMark = createSvgElement('text', {
         class: 'topology-node-state-mark',
         x: geometry.nodeWidth - 12,
-        y: 20,
+        y: 25,
         'text-anchor': 'end'
       }, statusMark(node.progress.status));
       group.append(title, card, statusBar, titleText, metaText, stateMark);
@@ -487,16 +489,18 @@
       }
     }
 
-    function setFilter({ query = '', status = 'all' }) {
+    function setFilter({ query = '', status = 'all', stageId = null }) {
       const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
       let matches = 0;
       for (const node of nodes) {
         const searchText = [node.title, node.summary, node.stageTitle, ...node.masteryCriteria]
           .join(' ')
           .toLocaleLowerCase('zh-CN');
-        const isMatch = (!normalizedQuery || searchText.includes(normalizedQuery))
+        const inStage = stageId === null || node.stageId === stageId;
+        const isMatch = inStage && (!normalizedQuery || searchText.includes(normalizedQuery))
           && (status === 'all' || node.progress.status === status);
         const element = nodeElements.get(node.id);
+        element?.classList.toggle('is-outside-stage', !inStage);
         element?.classList.toggle('is-filtered-out', !isMatch);
         element?.setAttribute('tabindex', isMatch ? '0' : '-1');
         element?.setAttribute('aria-hidden', String(!isMatch));
@@ -506,6 +510,12 @@
         const sourceHidden = nodeElements.get(edge.sourceId)?.classList.contains('is-filtered-out');
         const targetHidden = nodeElements.get(edge.targetId)?.classList.contains('is-filtered-out');
         edge.element.classList.toggle('is-filtered-out', sourceHidden || targetHidden);
+        const outsideStage = nodeElements.get(edge.sourceId)?.classList.contains('is-outside-stage')
+          || nodeElements.get(edge.targetId)?.classList.contains('is-outside-stage');
+        edge.element.classList.toggle('is-outside-stage', outsideStage);
+      }
+      for (const [id, element] of laneElements) {
+        element.classList.toggle('is-outside-stage', stageId !== null && id !== stageId);
       }
       return matches;
     }

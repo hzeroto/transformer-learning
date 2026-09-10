@@ -3,107 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Transformer 学习路径、当前任务与掌握证据总览">
-  <title>Transformer 学习驾驶舱</title>
+  <meta name="description" content="从当前学习点出发，探索 Transformer 的知识依赖、掌握要求与能力证据。">
+  <meta name="theme-color" content="#f5f7fc">
+  <title>Transformer Lab · 学习工作台</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">跳到主要内容</a>
-
   <header class="site-header">
-    <div class="header-copy">
-      <div class="brand-line">
-        <span class="brand-mark" aria-hidden="true">T</span>
-        <h1>Transformer <span>学习驾驶舱</span></h1>
-      </div>
-      <p class="subtitle" id="goal-description"></p>
+    <div class="brand-line">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M6 7h20M16 7v18M8 25h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="26" cy="7" r="3" fill="currentColor"/></svg>
+      <span class="brand-name">Transformer <b>Lab</b></span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-caption">从原理到实现</span>
     </div>
-    <div class="header-meta">
-      <span id="curriculum-size">—</span>
-      <span id="updated-at">—</span>
-    </div>
+    <nav class="header-nav" aria-label="主导航">
+      <button type="button" data-jump-target="learning-workspace">学习地图</button>
+      <button type="button" data-jump-target="learning-history">学习轨迹</button>
+      <button type="button" data-jump-target="learning-goal">学习目标</button>
+    </nav>
+    <span class="header-meta" id="updated-at">—</span>
   </header>
 
-  <main id="main-content">
-    <section class="dashboard-grid" aria-label="学习概览">
-      <article class="dashboard-card focus-card">
-        <div class="card-heading-row">
-          <p class="section-kicker">现在只推进这一件事</p>
-          <span class="status-label current" id="current-status">当前学习</span>
-        </div>
-        <p class="focus-stage" id="current-stage">—</p>
-        <h2 id="current-node">—</h2>
-        <p class="focus-summary" id="current-summary"></p>
-        <div class="readiness-line" id="current-readiness"></div>
-        <div class="action-row">
-          <button class="primary-button" id="current-detail-button" type="button">查看掌握要求</button>
-          <button class="quiet-button" id="current-stage-button" type="button">查看所在阶段</button>
-        </div>
-      </article>
-
-      <article class="dashboard-card mastery-card">
-        <div>
-          <p class="section-kicker">全局掌握</p>
-          <div class="mastery-dial" id="mastery-dial" aria-hidden="true">
-            <div class="mastery-dial-inner">
-              <strong id="mastery-percentage">—</strong>
-              <span>已掌握</span>
-            </div>
-          </div>
-        </div>
-        <div class="mastery-copy">
-          <strong id="mastery-count">—</strong>
-          <span id="mastery-caption">知识点形成了可核验能力</span>
-          <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
-        </div>
-      </article>
-
-      <article class="dashboard-card review-card">
-        <div class="review-topline">
-          <p class="section-kicker">能力边界</p>
-          <strong id="review-count">—</strong>
-        </div>
-        <p>这些知识点接触过，但还没有充分证据证明已经掌握。</p>
-        <div class="review-actions">
-          <button type="button" data-quick-filter="verify">
-            <span class="status-dot verify" aria-hidden="true"></span>
-            待验证 <strong id="verify-count">—</strong>
-          </button>
-          <button type="button" data-quick-filter="relearn">
-            <span class="status-dot relearn" aria-hidden="true"></span>
-            待重学 <strong id="relearn-count">—</strong>
-          </button>
-        </div>
-        <div class="ready-count">
-          <span>先修已就绪</span>
-          <strong id="ready-count">—</strong>
-        </div>
-      </article>
-    </section>
-
-    <section class="roadmap-panel" aria-labelledby="roadmap-heading">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">一眼看全局</p>
-          <h2 id="roadmap-heading">九阶段路线</h2>
-        </div>
-        <span id="stage-summary">—</span>
+  <div class="app-shell">
+    <aside class="route-sidebar" aria-labelledby="roadmap-heading">
+      <div class="route-heading"><h2 id="roadmap-heading">学习路线</h2><span class="route-icon" aria-hidden="true">⌘</span></div>
+      <p id="stage-summary" class="route-summary"></p>
+      <nav class="stage-overview" id="stage-overview" aria-label="按阶段浏览"></nav>
+      <div class="sidebar-progress" id="mastery-dial">
+        <div class="sidebar-progress-heading"><span>已掌握</span><strong id="mastery-percentage">—</strong></div>
+        <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progress-fill"></div></div>
+        <span id="mastery-count">—</span><p id="mastery-caption"></p>
       </div>
-      <div class="stage-overview" id="stage-overview"></div>
-    </section>
+      <p class="sidebar-footnote">以能力为刻度<br>以证据记录成长</p>
+    </aside>
 
-    <details class="goal-panel">
-      <summary>
-        <span>
-          <span class="section-kicker">最终出口</span>
-          <strong id="goal-title">从基础到独立手搓 Transformer</strong>
-        </span>
-        <span class="summary-hint">查看毕业标准 <span aria-hidden="true">＋</span></span>
-      </summary>
-      <ol id="graduation-criteria" class="graduation-grid"></ol>
-    </details>
+    <main id="main-content">
+      <div class="page-heading"><div><p class="breadcrumb">我的学习 / Transformer</p><h1>学习工作台</h1></div><div class="page-stats"><span id="curriculum-size" class="curriculum-size">—</span><span id="mobile-mastery" class="mobile-mastery"></span></div></div>
+      <section class="learning-brief" aria-label="当前学习与能力概览">
+        <article class="focus-card">
+          <div class="focus-heading"><span class="status-label current" id="current-status">当前学习</span><span class="focus-stage" id="current-stage">—</span></div>
+          <h2 id="current-node">—</h2>
+          <p class="focus-summary" id="current-summary"></p>
+          <div class="focus-bottom"><span class="readiness-line" id="current-readiness"></span><div class="action-row"><button class="primary-button" id="current-detail-button" type="button">继续学习 <span aria-hidden="true">↗</span></button><button class="text-button" id="current-stage-button" type="button">所在阶段</button></div></div>
+        </article>
+        <div class="learning-pulse">
+          <div class="pulse-heading"><span>待巩固</span><strong id="review-count">—</strong><span>个知识点</span></div>
+          <div class="review-actions"><button type="button" data-quick-filter="verify"><span class="status-dot verify" aria-hidden="true"></span>待验证 <strong id="verify-count">—</strong></button><button type="button" data-quick-filter="relearn"><span class="status-dot relearn" aria-hidden="true"></span>待重学 <strong id="relearn-count">—</strong></button></div>
+          <div class="ready-count"><span>先修已就绪</span><strong id="ready-count">—</strong></div>
+        </div>
+      </section>
+
+      <div class="workspace" id="learning-workspace">
+      <section class="map-panel" id="map-panel" aria-labelledby="map-heading">
+        <div class="section-heading map-heading-row">
+          <div>
+            <h2 id="map-heading">知识地图</h2>
+            <p id="map-description" class="map-description"></p>
+          </div>
+          <div class="map-heading-tools">
+            <div class="map-view-switch" role="tablist" aria-label="知识地图视图">
+              <button class="is-active" id="topology-tab" type="button" role="tab" aria-selected="true" aria-controls="topology-panel" data-map-view="topology">依赖拓扑</button>
+              <button id="stages-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="stages-panel" data-map-view="stages">知识点列表</button>
+            </div>
+            <span id="visible-count" aria-live="polite"></span>
+          </div>
+        </div>
 
     <section class="toolbar" aria-label="知识地图筛选">
       <label class="search-field" for="search-input">
@@ -131,34 +96,8 @@
       </div>
     </section>
 
-    <div class="workspace">
-      <section class="map-panel" id="map-panel" aria-labelledby="map-heading">
-        <div class="section-heading map-heading-row">
-          <div>
-            <p class="section-kicker">完整依赖路线</p>
-            <h2 id="map-heading">知识地图</h2>
-          </div>
-          <div class="map-heading-tools">
-            <div class="map-view-switch" role="tablist" aria-label="知识地图视图">
-              <button class="is-active" id="topology-tab" type="button" role="tab" aria-selected="true" aria-controls="topology-panel" data-map-view="topology">拓扑总览</button>
-              <button id="stages-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="stages-panel" data-map-view="stages">阶段列表</button>
-            </div>
-            <span id="visible-count" aria-live="polite"></span>
-          </div>
-        </div>
-
         <div id="topology-panel" role="tabpanel" aria-labelledby="topology-tab">
-          <div class="topology-toolbar">
-            <div class="topology-legend" aria-label="拓扑图图例">
-              <span class="legend-edge"><span aria-hidden="true"></span>箭头由先修指向后续</span>
-              <span class="legend-path upstream"><span aria-hidden="true"></span>上游先修</span>
-              <span class="legend-path downstream"><span aria-hidden="true"></span>下游影响</span>
-              <span><span class="status-dot mastered" aria-hidden="true"></span>已掌握</span>
-              <span><span class="status-dot current" aria-hidden="true"></span>当前</span>
-              <span><span class="status-dot verify" aria-hidden="true"></span>待验证</span>
-              <span><span class="status-dot relearn" aria-hidden="true"></span>待重学</span>
-              <span><span class="status-dot pending" aria-hidden="true"></span>未开始</span>
-            </div>
+          <div class="topology-toolbar"><span class="graph-context" id="graph-context"></span>
             <div class="topology-controls" role="group" aria-label="拓扑图缩放">
               <button class="quiet-button compact topology-current-button" id="topology-current" type="button">回到当前</button>
               <button class="quiet-button compact topology-fullscreen-button" id="topology-fullscreen" type="button" aria-pressed="false">全屏查看</button>
@@ -175,7 +114,17 @@
               <button class="text-button" type="button">清除筛选</button>
             </div>
           </div>
-          <p class="topology-hint">默认聚焦当前学习点 · 拖动浏览附近依赖 · Ctrl/⌘ + 滚轮缩放 · 查看全图可浏览完整路线</p>
+            <div class="topology-legend" aria-label="拓扑图图例">
+              <span class="legend-edge"><span aria-hidden="true"></span>箭头由先修指向后续</span>
+              <span class="legend-path upstream"><span aria-hidden="true"></span>上游先修</span>
+              <span class="legend-path downstream"><span aria-hidden="true"></span>下游影响</span>
+              <span><span class="status-dot mastered" aria-hidden="true"></span>已掌握</span>
+              <span><span class="status-dot current" aria-hidden="true"></span>当前</span>
+              <span><span class="status-dot verify" aria-hidden="true"></span>待验证</span>
+              <span><span class="status-dot relearn" aria-hidden="true"></span>待重学</span>
+              <span><span class="status-dot pending" aria-hidden="true"></span>未开始</span>
+            </div>
+          <p class="topology-hint">拖动浏览 · Ctrl/⌘ + 滚轮缩放 · 点击节点查看掌握要求</p>
         </div>
 
         <div id="stages-panel" role="tabpanel" aria-labelledby="stages-tab" hidden>
@@ -190,6 +139,7 @@
 
       <aside class="detail-panel" aria-labelledby="detail-title">
         <div class="detail-sticky">
+          <div class="inspector-heading"><span>知识点详情</span><span class="inspector-mark" aria-hidden="true">↗</span></div>
           <div class="detail-overline">
             <span id="detail-position">选中知识点</span>
             <button class="text-button" id="locate-node" type="button">在地图中定位</button>
@@ -201,7 +151,7 @@
           <div id="detail-status" class="status-label"></div>
           <p id="detail-summary" class="detail-summary"></p>
           <div id="detail-readiness" class="detail-readiness"></div>
-          <div id="detail-note" class="detail-note" hidden></div>
+          <details class="detail-note-disclosure" id="detail-note-disclosure" hidden><summary>学习备注</summary><div id="detail-note" class="detail-note" hidden></div></details>
 
           <section class="detail-section">
             <div class="detail-section-heading">
@@ -230,25 +180,31 @@
           </section>
         </div>
       </aside>
-    </div>
-
-    <section class="records-panel" aria-labelledby="records-heading">
+      </div>
+    <section id="learning-history" class="records-panel" aria-labelledby="records-heading">
       <div class="section-heading">
         <div>
-          <p class="section-kicker">能力如何变化</p>
+          <p class="section-kicker">每一次进步，都有证据</p>
           <h2 id="records-heading">学习轨迹</h2>
         </div>
         <button class="quiet-button compact" id="records-toggle" type="button" hidden>展开全部</button>
       </div>
       <ol id="records-list" class="records-list"></ol>
     </section>
-  </main>
+    <details class="goal-panel" id="learning-goal">
+      <summary>
+        <span>
+          <span class="section-kicker">最终出口</span>
+          <strong id="goal-title">从基础到独立手搓 Transformer</strong>
+        </span>
+        <span class="summary-hint">查看毕业标准 <span aria-hidden="true">＋</span></span>
+      </summary>
+      <ol id="graduation-criteria" class="graduation-grid"></ol>
+    </details>
 
-  <footer class="site-footer">
-    <span>状态以可观察证据为准，不以“看过”代替“掌握”。</span>
-    <a href="#main-content">回到顶部</a>
-  </footer>
-
+      <footer class="site-footer"><p id="goal-description"></p><span>状态以可观察证据为准。</span></footer>
+    </main>
+  </div>
   <script src="assets/learning-data.generated.js"></script>
   <script src="assets/topology.js"></script>
   <script src="assets/app.js"></script>
