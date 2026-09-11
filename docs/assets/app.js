@@ -103,7 +103,7 @@
     : data.progress.currentNodeId || allNodes[0]?.id;
   let activeStatus = 'all';
   let activeStageId = nodeIndex.get(selectedNodeId)?.stageId ?? null;
-  let activeMapView = 'topology';
+  let activeMapView = 'stages';
   let showAllRecords = false;
   let topologyGraph = null;
   let pseudoFullscreen = false;

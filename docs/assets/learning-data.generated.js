@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-11T02:44:37.790Z",
+  "generatedAt": "2026-09-11T13:34:54.667Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -628,9 +628,9 @@ window.LEARNING_DATA = {
             "能说明参数何时改变，并区分eval模式与no_grad的作用"
           ],
           "progress": {
-            "status": "verify",
-            "updatedAt": "2026-09-08T13:44:03.247Z",
-            "note": "训练与生成的数据流、参数更新边界、no_grad 和已有梯度不变已通过实现验证，生成代码与基线上下文限制解释均已验收。保留待验证仅因 nn.Module/eval 尚未讲授，随模块组织时补齐；不以该 API 扩展阻塞数学先修已满足的单头 Attention 学习。",
+            "status": "mastered",
+            "updatedAt": "2026-09-11T12:34:21.261Z",
+            "note": "训练/生成数据流、参数更新边界及模式与求导开关区分已具备解释和既有实现证据。本题临时对象的精确时序经教师纠正，不把该补充当作独立推导；参数注册、完整 Block 和 Dropout 的实现仍在后续综合练习验收，不由本节点通关自动推定。",
             "evidence": [
               {
                 "at": "2026-09-08T13:30:22.853Z",
@@ -639,6 +639,10 @@ window.LEARNING_DATA = {
               {
                 "at": "2026-09-08T13:35:43.868Z",
                 "text": "学习者迭代生成实现通过全部 87 项练习测试和额外 1200-token 检查；训练后生成不接收标签、不计算损失、不反向或更新，保留原参数值、已有梯度对象及数值和 requires_grad 状态，前向处于 no_grad，函数返回后调用方求导开关恢复。"
+              },
+              {
+                "at": "2026-09-11T12:34:21.261Z",
+                "text": "结合已有 ex005 中训练更新与无标签逐步生成的独立实现、no_grad 不更新参数或已有梯度的验证，本次学习者在 forward 临时新建 Dropout 的排错题中正确判断 eval 加 no_grad 仍未关闭丢弃，选择修改对象创建位置，并明确 no_grad 与 Dropout 模式正交，补齐模式与求导开关区分。其关于参数构造时机的措辞不准确；Dropout 无可训练参数、临时对象在 eval 后创建且未登记为子模块的精确时序由教师补充。"
               }
             ]
           }
@@ -1018,7 +1022,23 @@ window.LEARNING_DATA = {
             "能实现并比较基础激活函数"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:32:13.682Z",
+            "note": "完成本阶段基础 ReLU 验收，零点梯度按题目约定取 0；API 与选择逻辑经过教师提示，不计为完全无提示推导。其他激活变体仍按后续课程验证，之前尚需手写与语法错误的备注已解决。",
+            "evidence": [
+              {
+                "at": "2026-09-11T09:42:20.935Z",
+                "text": "学习者在检查 C 中正确否定删除 FFN 中间 ReLU、只预合并 W1/W2 与偏置后仍对所有输入等价的建议，指出删去后会变成类似线性的计算。该答案支持对非线性不可随意删除的判断；严格的仿射表述、仅限此分支而非整个 Transformer 的范围为教师补充。"
+              },
+              {
+                "at": "2026-09-11T13:29:01.879Z",
+                "text": "学习者把 ReLU 放在 ex008 FFN 两次仿射变换之间，当前前向与梯度测试（含负值、零点、正值）通过；此前已正确否定删除激活后的普遍等价性。但当前直接调用 torch.nn.functional.relu，而题面要求用基础算子表达激活，尚未取得本次手写激活的实现证据。"
+              },
+              {
+                "at": "2026-09-11T13:32:13.682Z",
+                "text": "学习者按已讲过的基础算子提示，将 ex008/block.py 中现成 ReLU 改写为 torch.where(X0>0,X0,torch.zeros_like(X0))，自行修正此前 Python 条件表达的语法问题。当前版本通过负值、零点、正值及 FFN 输入/参数梯度对齐测试；结合此前正确比较有无非线性时两层仿射能否普遍合并的解释，补齐本阶段基础 ReLU 实现与非线性作用证据。"
+              }
+            ]
           }
         },
         {
@@ -1034,7 +1054,19 @@ window.LEARNING_DATA = {
             "能推导中间和输出shape"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:32:17.969Z",
+            "note": "此前唯一保留的 functional.relu 手写约束缺口已修复，无需重写两层仿射或再做同质小题。参数构造与初始化由教师提供，前向核心由学习者填写；不将这份练习当作独立参数初始化设计证据。",
+            "evidence": [
+              {
+                "at": "2026-09-11T13:29:06.635Z",
+                "text": "学习者在 ex008/block.py 手写 X@W1+b1 和激活后的 X1@W2+b2，正确标注 (B,T,C)->(B,T,F)->(B,T,C)，复用同一组参数且不混合 token。不同中间宽度、布局、dtype、逐位置独立性及输入和四个参数梯度全部通过教师测试；当前中间 ReLU 仍使用 functional 封装。"
+              },
+              {
+                "at": "2026-09-11T13:32:17.969Z",
+                "text": "学习者手写两次仿射变换及基础算子 ReLU，明确标注 (B,T,C)->(B,T,F)->(B,T,C)，在完整块中与已实现的跨 token MHA 分别承担逐位置特征变换和上下文读取。当前版本通过非方形中间宽度、float32/64、连续/转置/步长切片、逐位置独立性、输入及四个参数梯度对齐测试，完成与整块共用的 FFN 验收。"
+              }
+            ]
           }
         },
         {
@@ -1050,7 +1082,19 @@ window.LEARNING_DATA = {
             "能说明恒等路径对信息和梯度的作用"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:28:48.198Z",
+            "note": "本轮实际运行 ex008 24 项及全仓 164 项测试全部通过、无跳过；未修改学习者答案。只证明所测残差组合及边界，不宣称任意深度都不会梯度抵消或爆炸。FFN 的现成 ReLU 调用是另一项手写约束缺口，不影响本节点证据。",
+            "evidence": [
+              {
+                "at": "2026-09-11T09:42:12.103Z",
+                "text": "学习者阅读讲义及课堂补讲后，在检查 A 的 Wo 恒零、X 为 (1,3,4) 条件下正确选择 U=X+A，指出零更新时甲返回原 X、乙返回归一化后的 X，并说明直接相加路径不会因该零支路而阻断从 U 到 X 的梯度。这是对给定边界情形的正确应用，不记为未受提示的完整机制推导。"
+              },
+              {
+                "at": "2026-09-11T13:28:48.198Z",
+                "text": "学习者在 ex008/block.py 自行填写两次残差相加：U=X+drop1(A)、Y=U+drop2(FFN(norm2(U)))，并逐步标注 (B,T,C)。当前实现通过零支路时输出保留原 X（包含 PAD query）、输入梯度恒等及完整块输入/参数梯度对齐的教师测试。结合此前检查 A 中正确区分原输入与归一化输入作为残差源，完成恒等信息路径、shape 与直接梯度路径的综合验证。"
+              }
+            ]
           }
         },
         {
@@ -1067,7 +1111,19 @@ window.LEARNING_DATA = {
             "能手写计算并验证前向和梯度与参考实现对齐"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:28:52.096Z",
+            "note": "教师提供构造函数和测试，学习者填写前向数学；不计为独立测试设计或初始化能力。原备注中的尚未实现已解决。CPU float32/64 范围已验证，未扩张为低精度或 GPU 性能结论。",
+            "evidence": [
+              {
+                "at": "2026-09-11T09:42:16.821Z",
+                "text": "学习者在检查 B 中正确判断跨 T/C 统计会使改变最后一个 token 影响首 token 的归一化结果，指出后续因果 mask 无法修复这种泄漏，正确提出每个 token 独立沿最后一轴归一化。回答明确提及分母受到其他 token 影响；均值也被污染为教师补充。此前还主动指出整体相差 100 的两行标准化后相同，质疑信息损失及其合理性。"
+              },
+              {
+                "at": "2026-09-11T13:28:52.096Z",
+                "text": "学习者在 ex008/block.py 用基础 Tensor 自行实现最后一轴均值、平均平方偏差、sqrt(var+eps) 及 gamma/beta 广播，未切断计算图。float32/64、连续及非连续输入、常量向量、C=1、epsilon 位置与总体方差测试均通过；输入/gamma/beta 梯度与独立官方参照对齐。结合已有独立解释跨 token 统计会泄漏未来信息的证据，完成统计轴与数学实现验收。"
+              }
+            ]
           }
         },
         {
@@ -1082,7 +1138,23 @@ window.LEARNING_DATA = {
             "能正确切换模型模式"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:28:57.121Z",
+            "note": "实际 24 项本练习测试和 164 项全仓回归通过、无跳过。构造函数及子模块注册由教师提供，学习者完成计算与组合；不据此宣称独立实现了参数注册框架。本题范围 0<=p<1，未考 p=1。",
+            "evidence": [
+              {
+                "at": "2026-09-11T12:14:55.931Z",
+                "text": "在给定 s=2、p=0.5 和后续 f(y)=ReLU(y-3) 的检查中，学习者独立列出 Dropout 输出为 0 或 4、经 f 后为 0 或 1，而不做 Dropout 时 2 经 f 得到 0，并正确判断最终输出期望不同。支持理解倒置 Dropout 的期望保持不能直接穿过非线性；甲的期望具体为 0.5 是教师补充。"
+              },
+              {
+                "at": "2026-09-11T12:34:21.428Z",
+                "text": "学习者在模型 forward 每次执行 nn.Dropout(0.5)(X)、调用方已 eval 且处于 no_grad 的条件下，正确判断随机丢弃未关闭，选择调整对象创建位置，并拒绝用 no_grad 修复模式问题。Dropout 无训练参数以及 eval 只递归设置已登记对象的精确原因由教师补充。"
+              },
+              {
+                "at": "2026-09-11T13:28:57.121Z",
+                "text": "学习者在 ex008/block.py 自行实现 self.training 且 p>0 时逐元素采样、乘保留 mask 并除以 1-p，否则直接返回 X；完整 Block 仅对两条更新支路使用持久子模块。通过逐元素概率/缩放、前向 mask 对应的输入梯度、eval/p=0 不消耗随机数、no_grad 下训练模式仍抽样以及重复前向状态测试。结合已有非线性期望反例和 train/eval 与 no_grad 正交的解释完成验收。"
+              }
+            ]
           }
         },
         {
@@ -1101,7 +1173,19 @@ window.LEARNING_DATA = {
             "能追踪所有子层的数据流和shape；与手写块使用同一份实现验收"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:32:22.831Z",
+            "note": "综合实现已通过，原先 ReLU 封装及语法问题均解决；不再追加组件定义题。验收对象为 Pre-LN、因果 MHA、ReLU FFN Block，不据此宣称原版 Post-LN、完整 GPT、所有架构或 GPU 性能已掌握。",
+            "evidence": [
+              {
+                "at": "2026-09-11T13:29:12.336Z",
+                "text": "学习者在 ex008/block.py 自行组合 norm1->已有 MHA->drop1->原 X 残差，再 norm2->FFN->drop2->U 残差，逐层标注形状并正确传入 input_valid、选取 MHA output。通过独立逐头参照对齐、未来/PAD/前缀隔离、全屏蔽错误、两次支路 Dropout、恒等残差、模式切换及两块堆叠测试。24 项本练习与全仓 164 项均通过，无跳过。"
+              },
+              {
+                "at": "2026-09-11T13:32:22.831Z",
+                "text": "学习者当前 ex008 实现以两套 LayerNorm、复用的 MHA、手写 ReLU FFN、两次分支 Dropout 和原表示残差组成 Pre-LN 因果 Block，逐层保留正确的 (B,T,C) 数据流。新修订版实跑全部 24 项专项测试通过、无跳过，覆盖独立参照前向/梯度、未来及 PAD 隔离、零更新恒等、Dropout 放置、模式切换和两块堆叠；结合已验收的组件解释与实现，完成结构组合验收。"
+              }
+            ]
           }
         }
       ]
@@ -1296,7 +1380,23 @@ window.LEARNING_DATA = {
             "能验证前向、反向和参数注册，完整模型的过拟合在Mini-GPT关卡验收"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-11T13:32:27.089Z",
+            "note": "按本次约定的接口脚手架完成核心数学与前向组合验收，与 block.complete 共用一份作品。构造函数、参数初始化、注册骨架及测试由教师提供，不冒充从空文件闭卷重建、独立测试设计或初始化能力；这些边界仍在完整模型及闭卷关卡验证。CPU float32/64 正确性已覆盖，完整语言模型拟合与 GPU 性能不属于本次验收。",
+            "evidence": [
+              {
+                "at": "2026-09-11T13:29:16.465Z",
+                "text": "本轮直接审查学习者当前 ex008/block.py，四个 forward 均已填写，未代改代码。实际运行 unittest tests.exercises.test_transformer_block 得到 24 项通过，全仓 discover 得到 164 项通过，均无跳过；demo 输出 (2,4,4)，12 个参数 Tensor 全部有梯度，输入梯度有限，eval 输出一致且 no_grad 输出不建图。唯一发现的手写约束缺口为 FFN 的 functional.relu 调用。"
+              },
+              {
+                "at": "2026-09-11T13:30:16.474Z",
+                "text": "本轮首版（FFN 调用 functional.relu）已真实通过 ex008 24 项和全仓 164 项测试、无跳过。审查收尾时学习者正在修改激活，最新保存的第 64 行为 X1 = if X0 > 0 else 0；重新运行专项测试在导入阶段出现 SyntaxError，尚未运行行为测试。因此此前通过结果只对应首版，不能替代新修订版验证。教师未修改实现。"
+              },
+              {
+                "at": "2026-09-11T13:32:27.089Z",
+                "text": "学习者自行完成 ex008 四个 forward，并在基础算子提示后完成 ReLU 修订。针对当前文件 SHA256 前缀 37df93b14bfe，实际运行专项 unittest 24 项与全仓 discover 164 项全部通过、无跳过；demo 中输出 (2,4,4)，12 个参数 Tensor 全部有梯度、输入梯度有限、eval 输出一致、no_grad 输出不建图。测试前后实现和测试文件哈希一致，教师未修改答案或测试；此前保留的最后一处手写约束缺口已解决。"
+              }
+            ]
           }
         },
         {
@@ -1794,7 +1894,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-09-11T02:44:28.810Z",
+    "updatedAt": "2026-09-11T13:32:27.089Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -2200,9 +2300,9 @@ window.LEARNING_DATA = {
         ]
       },
       "learning-mechanics.train-infer": {
-        "status": "verify",
-        "updatedAt": "2026-09-08T13:44:03.247Z",
-        "note": "训练与生成的数据流、参数更新边界、no_grad 和已有梯度不变已通过实现验证，生成代码与基线上下文限制解释均已验收。保留待验证仅因 nn.Module/eval 尚未讲授，随模块组织时补齐；不以该 API 扩展阻塞数学先修已满足的单头 Attention 学习。",
+        "status": "mastered",
+        "updatedAt": "2026-09-11T12:34:21.261Z",
+        "note": "训练/生成数据流、参数更新边界及模式与求导开关区分已具备解释和既有实现证据。本题临时对象的精确时序经教师纠正，不把该补充当作独立推导；参数注册、完整 Block 和 Dropout 的实现仍在后续综合练习验收，不由本节点通关自动推定。",
         "evidence": [
           {
             "at": "2026-09-08T13:30:22.853Z",
@@ -2211,6 +2311,10 @@ window.LEARNING_DATA = {
           {
             "at": "2026-09-08T13:35:43.868Z",
             "text": "学习者迭代生成实现通过全部 87 项练习测试和额外 1200-token 检查；训练后生成不接收标签、不计算损失、不反向或更新，保留原参数值、已有梯度对象及数值和 requires_grad 状态，前向处于 no_grad，函数返回后调用方求导开关恢复。"
+          },
+          {
+            "at": "2026-09-11T12:34:21.261Z",
+            "text": "结合已有 ex005 中训练更新与无标签逐步生成的独立实现、no_grad 不更新参数或已有梯度的验证，本次学习者在 forward 临时新建 Dropout 的排错题中正确判断 eval 加 no_grad 仍未关闭丢弃，选择修改对象创建位置，并明确 no_grad 与 Dropout 模式正交，补齐模式与求导开关区分。其关于参数构造时机的措辞不准确；Dropout 无可训练参数、临时对象在 eval 后创建且未登记为子模块的精确时序由教师补充。"
           }
         ]
       },
@@ -2303,18 +2407,355 @@ window.LEARNING_DATA = {
             "text": "学习者完成 ex007/attention.py 的 multi_head_attention 和 multi_head_self_attention，经本轮 review 提示自行修正 C 校验顺序、allowed=None 分支及 masked_fill 广播。教师未修改答案，实跑 15 项 MHA 综合测试和 11 项拆合头测试全部通过、无跳过；覆盖 CPU float32/float64 前向、不同 Tq/Tk、非连续输入、拆合头精确索引、每头 sqrt(Dh)、独立读取分布、共享权限、Wo 内容投影、未来/PAD/前缀可见性、全屏蔽拒绝，以及两条接口输入和参数的梯度对齐。实现仅使用基础 Tensor 运算和既有函数。"
           }
         ]
+      },
+      "block.residual": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:28:48.198Z",
+        "note": "本轮实际运行 ex008 24 项及全仓 164 项测试全部通过、无跳过；未修改学习者答案。只证明所测残差组合及边界，不宣称任意深度都不会梯度抵消或爆炸。FFN 的现成 ReLU 调用是另一项手写约束缺口，不影响本节点证据。",
+        "evidence": [
+          {
+            "at": "2026-09-11T09:42:12.103Z",
+            "text": "学习者阅读讲义及课堂补讲后，在检查 A 的 Wo 恒零、X 为 (1,3,4) 条件下正确选择 U=X+A，指出零更新时甲返回原 X、乙返回归一化后的 X，并说明直接相加路径不会因该零支路而阻断从 U 到 X 的梯度。这是对给定边界情形的正确应用，不记为未受提示的完整机制推导。"
+          },
+          {
+            "at": "2026-09-11T13:28:48.198Z",
+            "text": "学习者在 ex008/block.py 自行填写两次残差相加：U=X+drop1(A)、Y=U+drop2(FFN(norm2(U)))，并逐步标注 (B,T,C)。当前实现通过零支路时输出保留原 X（包含 PAD query）、输入梯度恒等及完整块输入/参数梯度对齐的教师测试。结合此前检查 A 中正确区分原输入与归一化输入作为残差源，完成恒等信息路径、shape 与直接梯度路径的综合验证。"
+          }
+        ]
+      },
+      "block.layer-norm": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:28:52.096Z",
+        "note": "教师提供构造函数和测试，学习者填写前向数学；不计为独立测试设计或初始化能力。原备注中的尚未实现已解决。CPU float32/64 范围已验证，未扩张为低精度或 GPU 性能结论。",
+        "evidence": [
+          {
+            "at": "2026-09-11T09:42:16.821Z",
+            "text": "学习者在检查 B 中正确判断跨 T/C 统计会使改变最后一个 token 影响首 token 的归一化结果，指出后续因果 mask 无法修复这种泄漏，正确提出每个 token 独立沿最后一轴归一化。回答明确提及分母受到其他 token 影响；均值也被污染为教师补充。此前还主动指出整体相差 100 的两行标准化后相同，质疑信息损失及其合理性。"
+          },
+          {
+            "at": "2026-09-11T13:28:52.096Z",
+            "text": "学习者在 ex008/block.py 用基础 Tensor 自行实现最后一轴均值、平均平方偏差、sqrt(var+eps) 及 gamma/beta 广播，未切断计算图。float32/64、连续及非连续输入、常量向量、C=1、epsilon 位置与总体方差测试均通过；输入/gamma/beta 梯度与独立官方参照对齐。结合已有独立解释跨 token 统计会泄漏未来信息的证据，完成统计轴与数学实现验收。"
+          }
+        ]
+      },
+      "block.activation": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:32:13.682Z",
+        "note": "完成本阶段基础 ReLU 验收，零点梯度按题目约定取 0；API 与选择逻辑经过教师提示，不计为完全无提示推导。其他激活变体仍按后续课程验证，之前尚需手写与语法错误的备注已解决。",
+        "evidence": [
+          {
+            "at": "2026-09-11T09:42:20.935Z",
+            "text": "学习者在检查 C 中正确否定删除 FFN 中间 ReLU、只预合并 W1/W2 与偏置后仍对所有输入等价的建议，指出删去后会变成类似线性的计算。该答案支持对非线性不可随意删除的判断；严格的仿射表述、仅限此分支而非整个 Transformer 的范围为教师补充。"
+          },
+          {
+            "at": "2026-09-11T13:29:01.879Z",
+            "text": "学习者把 ReLU 放在 ex008 FFN 两次仿射变换之间，当前前向与梯度测试（含负值、零点、正值）通过；此前已正确否定删除激活后的普遍等价性。但当前直接调用 torch.nn.functional.relu，而题面要求用基础算子表达激活，尚未取得本次手写激活的实现证据。"
+          },
+          {
+            "at": "2026-09-11T13:32:13.682Z",
+            "text": "学习者按已讲过的基础算子提示，将 ex008/block.py 中现成 ReLU 改写为 torch.where(X0>0,X0,torch.zeros_like(X0))，自行修正此前 Python 条件表达的语法问题。当前版本通过负值、零点、正值及 FFN 输入/参数梯度对齐测试；结合此前正确比较有无非线性时两层仿射能否普遍合并的解释，补齐本阶段基础 ReLU 实现与非线性作用证据。"
+          }
+        ]
+      },
+      "block.dropout": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:28:57.121Z",
+        "note": "实际 24 项本练习测试和 164 项全仓回归通过、无跳过。构造函数及子模块注册由教师提供，学习者完成计算与组合；不据此宣称独立实现了参数注册框架。本题范围 0<=p<1，未考 p=1。",
+        "evidence": [
+          {
+            "at": "2026-09-11T12:14:55.931Z",
+            "text": "在给定 s=2、p=0.5 和后续 f(y)=ReLU(y-3) 的检查中，学习者独立列出 Dropout 输出为 0 或 4、经 f 后为 0 或 1，而不做 Dropout 时 2 经 f 得到 0，并正确判断最终输出期望不同。支持理解倒置 Dropout 的期望保持不能直接穿过非线性；甲的期望具体为 0.5 是教师补充。"
+          },
+          {
+            "at": "2026-09-11T12:34:21.428Z",
+            "text": "学习者在模型 forward 每次执行 nn.Dropout(0.5)(X)、调用方已 eval 且处于 no_grad 的条件下，正确判断随机丢弃未关闭，选择调整对象创建位置，并拒绝用 no_grad 修复模式问题。Dropout 无训练参数以及 eval 只递归设置已登记对象的精确原因由教师补充。"
+          },
+          {
+            "at": "2026-09-11T13:28:57.121Z",
+            "text": "学习者在 ex008/block.py 自行实现 self.training 且 p>0 时逐元素采样、乘保留 mask 并除以 1-p，否则直接返回 X；完整 Block 仅对两条更新支路使用持久子模块。通过逐元素概率/缩放、前向 mask 对应的输入梯度、eval/p=0 不消耗随机数、no_grad 下训练模式仍抽样以及重复前向状态测试。结合已有非线性期望反例和 train/eval 与 no_grad 正交的解释完成验收。"
+          }
+        ]
+      },
+      "block.ffn": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:32:17.969Z",
+        "note": "此前唯一保留的 functional.relu 手写约束缺口已修复，无需重写两层仿射或再做同质小题。参数构造与初始化由教师提供，前向核心由学习者填写；不将这份练习当作独立参数初始化设计证据。",
+        "evidence": [
+          {
+            "at": "2026-09-11T13:29:06.635Z",
+            "text": "学习者在 ex008/block.py 手写 X@W1+b1 和激活后的 X1@W2+b2，正确标注 (B,T,C)->(B,T,F)->(B,T,C)，复用同一组参数且不混合 token。不同中间宽度、布局、dtype、逐位置独立性及输入和四个参数梯度全部通过教师测试；当前中间 ReLU 仍使用 functional 封装。"
+          },
+          {
+            "at": "2026-09-11T13:32:17.969Z",
+            "text": "学习者手写两次仿射变换及基础算子 ReLU，明确标注 (B,T,C)->(B,T,F)->(B,T,C)，在完整块中与已实现的跨 token MHA 分别承担逐位置特征变换和上下文读取。当前版本通过非方形中间宽度、float32/64、连续/转置/步长切片、逐位置独立性、输入及四个参数梯度对齐测试，完成与整块共用的 FFN 验收。"
+          }
+        ]
+      },
+      "block.complete": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:32:22.831Z",
+        "note": "综合实现已通过，原先 ReLU 封装及语法问题均解决；不再追加组件定义题。验收对象为 Pre-LN、因果 MHA、ReLU FFN Block，不据此宣称原版 Post-LN、完整 GPT、所有架构或 GPU 性能已掌握。",
+        "evidence": [
+          {
+            "at": "2026-09-11T13:29:12.336Z",
+            "text": "学习者在 ex008/block.py 自行组合 norm1->已有 MHA->drop1->原 X 残差，再 norm2->FFN->drop2->U 残差，逐层标注形状并正确传入 input_valid、选取 MHA output。通过独立逐头参照对齐、未来/PAD/前缀隔离、全屏蔽错误、两次支路 Dropout、恒等残差、模式切换及两块堆叠测试。24 项本练习与全仓 164 项均通过，无跳过。"
+          },
+          {
+            "at": "2026-09-11T13:32:22.831Z",
+            "text": "学习者当前 ex008 实现以两套 LayerNorm、复用的 MHA、手写 ReLU FFN、两次分支 Dropout 和原表示残差组成 Pre-LN 因果 Block，逐层保留正确的 (B,T,C) 数据流。新修订版实跑全部 24 项专项测试通过、无跳过，覆盖独立参照前向/梯度、未来及 PAD 隔离、零更新恒等、Dropout 放置、模式切换和两块堆叠；结合已验收的组件解释与实现，完成结构组合验收。"
+          }
+        ]
+      },
+      "implementation.transformer-block": {
+        "status": "mastered",
+        "updatedAt": "2026-09-11T13:32:27.089Z",
+        "note": "按本次约定的接口脚手架完成核心数学与前向组合验收，与 block.complete 共用一份作品。构造函数、参数初始化、注册骨架及测试由教师提供，不冒充从空文件闭卷重建、独立测试设计或初始化能力；这些边界仍在完整模型及闭卷关卡验证。CPU float32/64 正确性已覆盖，完整语言模型拟合与 GPU 性能不属于本次验收。",
+        "evidence": [
+          {
+            "at": "2026-09-11T13:29:16.465Z",
+            "text": "本轮直接审查学习者当前 ex008/block.py，四个 forward 均已填写，未代改代码。实际运行 unittest tests.exercises.test_transformer_block 得到 24 项通过，全仓 discover 得到 164 项通过，均无跳过；demo 输出 (2,4,4)，12 个参数 Tensor 全部有梯度，输入梯度有限，eval 输出一致且 no_grad 输出不建图。唯一发现的手写约束缺口为 FFN 的 functional.relu 调用。"
+          },
+          {
+            "at": "2026-09-11T13:30:16.474Z",
+            "text": "本轮首版（FFN 调用 functional.relu）已真实通过 ex008 24 项和全仓 164 项测试、无跳过。审查收尾时学习者正在修改激活，最新保存的第 64 行为 X1 = if X0 > 0 else 0；重新运行专项测试在导入阶段出现 SyntaxError，尚未运行行为测试。因此此前通过结果只对应首版，不能替代新修订版验证。教师未修改实现。"
+          },
+          {
+            "at": "2026-09-11T13:32:27.089Z",
+            "text": "学习者自行完成 ex008 四个 forward，并在基础算子提示后完成 ReLU 修订。针对当前文件 SHA256 前缀 37df93b14bfe，实际运行专项 unittest 24 项与全仓 discover 164 项全部通过、无跳过；demo 中输出 (2,4,4)，12 个参数 Tensor 全部有梯度、输入梯度有限、eval 输出一致、no_grad 输出不建图。测试前后实现和测试文件哈希一致，教师未修改答案或测试；此前保留的最后一处手写约束缺口已解决。"
+          }
+        ]
       }
     },
     "statusCounts": {
-      "mastered": 31,
+      "mastered": 39,
       "current": 0,
-      "verify": 5,
+      "verify": 4,
       "relearn": 2,
-      "pending": 41
+      "pending": 34
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "657e68f7-0829-46b8-a390-a56bab5166d3",
+      "at": "2026-09-11T13:32:27.089Z",
+      "nodeId": "implementation.transformer-block",
+      "nodeTitle": "手写完整Transformer块",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者自行完成 ex008 四个 forward，并在基础算子提示后完成 ReLU 修订。针对当前文件 SHA256 前缀 37df93b14bfe，实际运行专项 unittest 24 项与全仓 discover 164 项全部通过、无跳过；demo 中输出 (2,4,4)，12 个参数 Tensor 全部有梯度、输入梯度有限、eval 输出一致、no_grad 输出不建图。测试前后实现和测试文件哈希一致，教师未修改答案或测试；此前保留的最后一处手写约束缺口已解决。",
+      "note": "按本次约定的接口脚手架完成核心数学与前向组合验收，与 block.complete 共用一份作品。构造函数、参数初始化、注册骨架及测试由教师提供，不冒充从空文件闭卷重建、独立测试设计或初始化能力；这些边界仍在完整模型及闭卷关卡验证。CPU float32/64 正确性已覆盖，完整语言模型拟合与 GPU 性能不属于本次验收。"
+    },
+    {
+      "id": "f48a3acd-4199-4258-8061-f2d112bc1da0",
+      "at": "2026-09-11T13:32:22.831Z",
+      "nodeId": "block.complete",
+      "nodeTitle": "完整Transformer块",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者当前 ex008 实现以两套 LayerNorm、复用的 MHA、手写 ReLU FFN、两次分支 Dropout 和原表示残差组成 Pre-LN 因果 Block，逐层保留正确的 (B,T,C) 数据流。新修订版实跑全部 24 项专项测试通过、无跳过，覆盖独立参照前向/梯度、未来及 PAD 隔离、零更新恒等、Dropout 放置、模式切换和两块堆叠；结合已验收的组件解释与实现，完成结构组合验收。",
+      "note": "综合实现已通过，原先 ReLU 封装及语法问题均解决；不再追加组件定义题。验收对象为 Pre-LN、因果 MHA、ReLU FFN Block，不据此宣称原版 Post-LN、完整 GPT、所有架构或 GPU 性能已掌握。"
+    },
+    {
+      "id": "0f22651d-177b-4f0e-b579-35e568e479a1",
+      "at": "2026-09-11T13:32:17.969Z",
+      "nodeId": "block.ffn",
+      "nodeTitle": "逐位置前馈网络",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者手写两次仿射变换及基础算子 ReLU，明确标注 (B,T,C)->(B,T,F)->(B,T,C)，在完整块中与已实现的跨 token MHA 分别承担逐位置特征变换和上下文读取。当前版本通过非方形中间宽度、float32/64、连续/转置/步长切片、逐位置独立性、输入及四个参数梯度对齐测试，完成与整块共用的 FFN 验收。",
+      "note": "此前唯一保留的 functional.relu 手写约束缺口已修复，无需重写两层仿射或再做同质小题。参数构造与初始化由教师提供，前向核心由学习者填写；不将这份练习当作独立参数初始化设计证据。"
+    },
+    {
+      "id": "bbb8b472-7de5-41d9-abb4-25f6edd9075b",
+      "at": "2026-09-11T13:32:13.682Z",
+      "nodeId": "block.activation",
+      "nodeTitle": "非线性激活",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者按已讲过的基础算子提示，将 ex008/block.py 中现成 ReLU 改写为 torch.where(X0>0,X0,torch.zeros_like(X0))，自行修正此前 Python 条件表达的语法问题。当前版本通过负值、零点、正值及 FFN 输入/参数梯度对齐测试；结合此前正确比较有无非线性时两层仿射能否普遍合并的解释，补齐本阶段基础 ReLU 实现与非线性作用证据。",
+      "note": "完成本阶段基础 ReLU 验收，零点梯度按题目约定取 0；API 与选择逻辑经过教师提示，不计为完全无提示推导。其他激活变体仍按后续课程验证，之前尚需手写与语法错误的备注已解决。"
+    },
+    {
+      "id": "446f78c2-29f2-4c72-8f38-1fd29920b0a2",
+      "at": "2026-09-11T13:30:16.474Z",
+      "nodeId": "implementation.transformer-block",
+      "nodeTitle": "手写完整Transformer块",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "本轮首版（FFN 调用 functional.relu）已真实通过 ex008 24 项和全仓 164 项测试、无跳过。审查收尾时学习者正在修改激活，最新保存的第 64 行为 X1 = if X0 > 0 else 0；重新运行专项测试在导入阶段出现 SyntaxError，尚未运行行为测试。因此此前通过结果只对应首版，不能替代新修订版验证。教师未修改实现。",
+      "note": "整体结构与残差、LayerNorm、Dropout 的已有验证证据保留。当前唯一收尾项是用基础 Tensor 逐元素条件选择表达 ReLU，并重新验证零点梯度为 0 及全套测试；Python if 不是张量逐元素选择。此处是 Python/PyTorch 表达问题，不据此判定非线性概念退步或要求重做其他组件。"
+    },
+    {
+      "id": "81914b88-62bd-4dbe-bc7d-12a2c8415093",
+      "at": "2026-09-11T13:29:16.465Z",
+      "nodeId": "implementation.transformer-block",
+      "nodeTitle": "手写完整Transformer块",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "本轮直接审查学习者当前 ex008/block.py，四个 forward 均已填写，未代改代码。实际运行 unittest tests.exercises.test_transformer_block 得到 24 项通过，全仓 discover 得到 164 项通过，均无跳过；demo 输出 (2,4,4)，12 个参数 Tensor 全部有梯度，输入梯度有限，eval 输出一致且 no_grad 输出不建图。唯一发现的手写约束缺口为 FFN 的 functional.relu 调用。",
+      "note": "本轮是教师接口、构造函数、初始化和测试框架下的核心实现证据，不是从空文件闭卷重建，也不是学习者独立设计测试或参数注册的证据。保留待验收直至补齐基础算子 ReLU；其余所测前向、反向、权限与状态行为已经通过，不要求重复实现。"
+    },
+    {
+      "id": "7eb01bf8-9717-449c-affe-30d5bd12518d",
+      "at": "2026-09-11T13:29:12.336Z",
+      "nodeId": "block.complete",
+      "nodeTitle": "完整Transformer块",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在 ex008/block.py 自行组合 norm1->已有 MHA->drop1->原 X 残差，再 norm2->FFN->drop2->U 残差，逐层标注形状并正确传入 input_valid、选取 MHA output。通过独立逐头参照对齐、未来/PAD/前缀隔离、全屏蔽错误、两次支路 Dropout、恒等残差、模式切换及两块堆叠测试。24 项本练习与全仓 164 项均通过，无跳过。",
+      "note": "Pre-LN 因果 ReLU Block 的结构组合已验证；整体手写验收只保留 FFN 中现成 ReLU 调用这一已发现的练习约束缺口，与同一份实现一起收尾，不重复多头、残差或模式口试。不是原版 Post-LN 或完整语言模型验收。"
+    },
+    {
+      "id": "5224bf6f-7b6d-4a3e-a595-329cb3199bf1",
+      "at": "2026-09-11T13:29:06.635Z",
+      "nodeId": "block.ffn",
+      "nodeTitle": "逐位置前馈网络",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在 ex008/block.py 手写 X@W1+b1 和激活后的 X1@W2+b2，正确标注 (B,T,C)->(B,T,F)->(B,T,C)，复用同一组参数且不混合 token。不同中间宽度、布局、dtype、逐位置独立性及输入和四个参数梯度全部通过教师测试；当前中间 ReLU 仍使用 functional 封装。",
+      "note": "FFN 数学与梯度验证已通过，手写要求剩余项与 block.activation 共用同一次局部修改，不要求重写两层仿射或另做同质练习。构造函数和参数初始化由教师提供。"
+    },
+    {
+      "id": "3a26a7d5-0086-434c-a582-3de62315d5dc",
+      "at": "2026-09-11T13:29:01.879Z",
+      "nodeId": "block.activation",
+      "nodeTitle": "非线性激活",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者把 ReLU 放在 ex008 FFN 两次仿射变换之间，当前前向与梯度测试（含负值、零点、正值）通过；此前已正确否定删除激活后的普遍等价性。但当前直接调用 torch.nn.functional.relu，而题面要求用基础算子表达激活，尚未取得本次手写激活的实现证据。",
+      "note": "数值计算没有发现错误；本轮仅需将 ex008/block.py 的现成 ReLU 调用改为基础条件选择，并保留零点梯度为 0 的约定。未代改答案，不把库实现通过测试当作学习者手写激活证据；不追加重复定义题。"
+    },
+    {
+      "id": "b4a965d7-50fd-473d-8eac-5db2a1f769bb",
+      "at": "2026-09-11T13:28:57.121Z",
+      "nodeId": "block.dropout",
+      "nodeTitle": "随机失活",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者在 ex008/block.py 自行实现 self.training 且 p>0 时逐元素采样、乘保留 mask 并除以 1-p，否则直接返回 X；完整 Block 仅对两条更新支路使用持久子模块。通过逐元素概率/缩放、前向 mask 对应的输入梯度、eval/p=0 不消耗随机数、no_grad 下训练模式仍抽样以及重复前向状态测试。结合已有非线性期望反例和 train/eval 与 no_grad 正交的解释完成验收。",
+      "note": "实际 24 项本练习测试和 164 项全仓回归通过、无跳过。构造函数及子模块注册由教师提供，学习者完成计算与组合；不据此宣称独立实现了参数注册框架。本题范围 0<=p<1，未考 p=1。"
+    },
+    {
+      "id": "eba7bb15-b7c3-4c96-8928-ffc37619f16e",
+      "at": "2026-09-11T13:28:52.096Z",
+      "nodeId": "block.layer-norm",
+      "nodeTitle": "层归一化",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者在 ex008/block.py 用基础 Tensor 自行实现最后一轴均值、平均平方偏差、sqrt(var+eps) 及 gamma/beta 广播，未切断计算图。float32/64、连续及非连续输入、常量向量、C=1、epsilon 位置与总体方差测试均通过；输入/gamma/beta 梯度与独立官方参照对齐。结合已有独立解释跨 token 统计会泄漏未来信息的证据，完成统计轴与数学实现验收。",
+      "note": "教师提供构造函数和测试，学习者填写前向数学；不计为独立测试设计或初始化能力。原备注中的尚未实现已解决。CPU float32/64 范围已验证，未扩张为低精度或 GPU 性能结论。"
+    },
+    {
+      "id": "154274d3-4978-4683-b498-c4eadbf90830",
+      "at": "2026-09-11T13:28:48.198Z",
+      "nodeId": "block.residual",
+      "nodeTitle": "残差连接",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者在 ex008/block.py 自行填写两次残差相加：U=X+drop1(A)、Y=U+drop2(FFN(norm2(U)))，并逐步标注 (B,T,C)。当前实现通过零支路时输出保留原 X（包含 PAD query）、输入梯度恒等及完整块输入/参数梯度对齐的教师测试。结合此前检查 A 中正确区分原输入与归一化输入作为残差源，完成恒等信息路径、shape 与直接梯度路径的综合验证。",
+      "note": "本轮实际运行 ex008 24 项及全仓 164 项测试全部通过、无跳过；未修改学习者答案。只证明所测残差组合及边界，不宣称任意深度都不会梯度抵消或爆炸。FFN 的现成 ReLU 调用是另一项手写约束缺口，不影响本节点证据。"
+    },
+    {
+      "id": "32056578-3ede-409f-a7a5-ef670694865e",
+      "at": "2026-09-11T12:34:21.428Z",
+      "nodeId": "block.dropout",
+      "nodeTitle": "随机失活",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者在模型 forward 每次执行 nn.Dropout(0.5)(X)、调用方已 eval 且处于 no_grad 的条件下，正确判断随机丢弃未关闭，选择调整对象创建位置，并拒绝用 no_grad 修复模式问题。Dropout 无训练参数以及 eval 只递归设置已登记对象的精确原因由教师补充。",
+      "note": "倒置缩放的非线性期望边界、给定模式错误的判断和修复方向已验证，不重考；临时对象精确时序已纠正。实际持久子模块的模式切换及支路实现留在完整 Block 综合练习验证。"
+    },
+    {
+      "id": "199719cf-3fb8-494f-950c-898a99de59c0",
+      "at": "2026-09-11T12:34:21.261Z",
+      "nodeId": "learning-mechanics.train-infer",
+      "nodeTitle": "训练与实际使用",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "结合已有 ex005 中训练更新与无标签逐步生成的独立实现、no_grad 不更新参数或已有梯度的验证，本次学习者在 forward 临时新建 Dropout 的排错题中正确判断 eval 加 no_grad 仍未关闭丢弃，选择修改对象创建位置，并明确 no_grad 与 Dropout 模式正交，补齐模式与求导开关区分。其关于参数构造时机的措辞不准确；Dropout 无可训练参数、临时对象在 eval 后创建且未登记为子模块的精确时序由教师补充。",
+      "note": "训练/生成数据流、参数更新边界及模式与求导开关区分已具备解释和既有实现证据。本题临时对象的精确时序经教师纠正，不把该补充当作独立推导；参数注册、完整 Block 和 Dropout 的实现仍在后续综合练习验收，不由本节点通关自动推定。"
+    },
+    {
+      "id": "d319512d-99b8-4a5b-b604-5842d992481a",
+      "at": "2026-09-11T12:14:56.106Z",
+      "nodeId": "learning-mechanics.train-infer",
+      "nodeTitle": "训练与实际使用",
+      "action": "current",
+      "fromStatus": "verify",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "已有训练、生成、参数更新边界与 no_grad 的实现证据保留。本次进入参数注册和模块组织，补齐 train/eval 与自动求导的区分；这是课堂推进，不是新增掌握。"
+    },
+    {
+      "id": "6da6b483-6d54-4d4f-86b6-be49b3154231",
+      "at": "2026-09-11T12:14:55.931Z",
+      "nodeId": "block.dropout",
+      "nodeTitle": "随机失活",
+      "action": "verify",
+      "fromStatus": "current",
+      "toStatus": "verify",
+      "evidence": "在给定 s=2、p=0.5 和后续 f(y)=ReLU(y-3) 的检查中，学习者独立列出 Dropout 输出为 0 或 4、经 f 后为 0 或 1，而不做 Dropout 时 2 经 f 得到 0，并正确判断最终输出期望不同。支持理解倒置 Dropout 的期望保持不能直接穿过非线性；甲的期望具体为 0.5 是教师补充。",
+      "note": "已验证给定反例中的倒置缩放及非线性期望边界，不重考此题；模型模式切换及完整支路实现仍待模块组织和综合练习验证，未标记掌握。"
+    },
+    {
+      "id": "785492c5-a593-4703-badb-e666b530a783",
+      "at": "2026-09-11T11:53:57.411Z",
+      "nodeId": "block.dropout",
+      "nodeTitle": "随机失活",
+      "action": "current",
+      "fromStatus": "pending",
+      "toStatus": "current",
+      "evidence": null,
+      "note": "开始补齐完整 Block 的随机失活机制：训练时逐元素丢弃与倒置缩放、推理恒等、支路放置及求导开关边界。训练/推理数据流已有实现证据，nn.Module 模式切换随后讲授；残差、LayerNorm 与激活的既有验证证据保留，读懂讲义不记为掌握。"
+    },
+    {
+      "id": "3f19aad9-f0c8-43ea-9895-6de905c97a6b",
+      "at": "2026-09-11T09:42:20.935Z",
+      "nodeId": "block.activation",
+      "nodeTitle": "非线性激活",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在检查 C 中正确否定删除 FFN 中间 ReLU、只预合并 W1/W2 与偏置后仍对所有输入等价的建议，指出删去后会变成类似线性的计算。该答案支持对非线性不可随意删除的判断；严格的仿射表述、仅限此分支而非整个 Transformer 的范围为教师补充。",
+      "note": "这是对给定一般等价性问题的简短正确判断，不推定已能独立构造反例、解释 FFN 的任务分工或实现激活与梯度。新增条件性特征组合例子为教师材料；后续以综合实现自然核验，不为状态追加重复口试。"
+    },
+    {
+      "id": "57af66e6-c332-443d-9183-5c8d745f4ee5",
+      "at": "2026-09-11T09:42:16.821Z",
+      "nodeId": "block.layer-norm",
+      "nodeTitle": "层归一化",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在检查 B 中正确判断跨 T/C 统计会使改变最后一个 token 影响首 token 的归一化结果，指出后续因果 mask 无法修复这种泄漏，正确提出每个 token 独立沿最后一轴归一化。回答明确提及分母受到其他 token 影响；均值也被污染为教师补充。此前还主动指出整体相差 100 的两行标准化后相同，质疑信息损失及其合理性。",
+      "note": "统计轴与未来可见性判断已通过，不重问此题。总体方差、epsilon、gamma/beta 的作用与信息取舍虽已补讲，尚未独立综合解释和实现验证；教师示例及数值自检不算学习者掌握，继续保留待验证。"
+    },
+    {
+      "id": "c2ccf240-6830-4372-a501-7b585f5f68d7",
+      "at": "2026-09-11T09:42:12.103Z",
+      "nodeId": "block.residual",
+      "nodeTitle": "残差连接",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者阅读讲义及课堂补讲后，在检查 A 的 Wo 恒零、X 为 (1,3,4) 条件下正确选择 U=X+A，指出零更新时甲返回原 X、乙返回归一化后的 X，并说明直接相加路径不会因该零支路而阻断从 U 到 X 的梯度。这是对给定边界情形的正确应用，不记为未受提示的完整机制推导。",
+      "note": "残差源、零更新恒等性与该题直接梯度路径已确认，不重复此题。学习者明确反馈整体设计动机尚不清晰；完整 shape 契约与前向/反向组合尚无本轮学习者实现证据，后续在综合实现核验。不把其保障梯度的口语概括扩大为任意残差都不会梯度抵消或爆炸；教师补充的本题 grad_X 全 1 不计为学习者独立计算。"
+    },
     {
       "id": "db444989-ca73-4036-8c9e-93d7953ea81f",
       "at": "2026-09-11T02:44:28.810Z",

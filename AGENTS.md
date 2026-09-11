@@ -49,7 +49,9 @@
 - For designing or redesigning actual teaching content, read `.agents/skills/transformer-lesson-design/SKILL.md`.
 - For learner-completed exercise scaffolds and tests, read `.agents/skills/transformer-exercise/SKILL.md`.
 - For submitted work review or explicit mastery assessment, read `.agents/skills/transformer-review/SKILL.md`.
-- Select only the matching workflow. Ordinary classroom continuation, confusion and follow-up questions remain natural dialogue; do not activate lesson design on every “继续” or “没懂”. The existing teaching and evidence-reporting rules still apply outside skills.
+- Select the workflow by the actual next action, not just the user's wording. When “继续推进”, “下一步”, or similar leads into a new coherent knowledge block and the next lesson must be organized, use the lesson-design skill before teaching. Explicit requests to use that skill, design a lesson, or redesign teaching content also require it.
+- Questions, local examples, and continuation of the unfinished part of the current lesson remain natural dialogue; do not restart lesson design for those alone. Existing teaching and evidence-reporting rules still apply outside skills.
+- Existing notes do not bypass lesson design when entering a new knowledge block: check their fit against current progress through the skill, then reuse or update as needed without duplicating suitable material or re-testing passed checks.
 - Skills use the repository's current learning state; they do not store their own progress snapshots. Preparing a lesson or exercise alone does not change mastery.
 
 ## Git safety

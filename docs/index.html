@@ -63,8 +63,8 @@
           </div>
           <div class="map-heading-tools">
             <div class="map-view-switch" role="tablist" aria-label="知识地图视图">
-              <button class="is-active" id="topology-tab" type="button" role="tab" aria-selected="true" aria-controls="topology-panel" data-map-view="topology">依赖拓扑</button>
-              <button id="stages-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="stages-panel" data-map-view="stages">知识点列表</button>
+              <button class="is-active" id="stages-tab" type="button" role="tab" aria-selected="true" aria-controls="stages-panel" data-map-view="stages">知识点列表</button>
+              <button id="topology-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="topology-panel" data-map-view="topology">依赖拓扑</button>
             </div>
             <span id="visible-count" aria-live="polite"></span>
           </div>
@@ -96,7 +96,7 @@
       </div>
     </section>
 
-        <div id="topology-panel" role="tabpanel" aria-labelledby="topology-tab">
+        <div id="topology-panel" role="tabpanel" aria-labelledby="topology-tab" hidden>
           <div class="topology-toolbar"><span class="graph-context" id="graph-context"></span>
             <div class="topology-controls" role="group" aria-label="拓扑图缩放">
               <button class="quiet-button compact topology-current-button" id="topology-current" type="button">回到当前</button>
@@ -127,7 +127,7 @@
           <p class="topology-hint">拖动浏览 · Ctrl/⌘ + 滚轮缩放 · 点击节点查看掌握要求</p>
         </div>
 
-        <div id="stages-panel" role="tabpanel" aria-labelledby="stages-tab" hidden>
+        <div id="stages-panel" role="tabpanel" aria-labelledby="stages-tab">
           <div id="learning-map" class="learning-map"></div>
           <div class="filter-empty" id="filter-empty" hidden>
             <strong>没有匹配的知识点</strong>

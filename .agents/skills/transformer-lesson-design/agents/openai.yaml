@@ -1,4 +1,4 @@
 interface:
   display_name: "Transformer 教学设计"
-  short_description: "依据全局进度和当前能力，设计可直接学习的讲解、图解与检查"
-  default_prompt: "使用 $transformer-lesson-design，结合仓库最新进度设计下一块教学内容，直接讲清关键机制并在必要处配图。"
+  short_description: "进入新知识块时自动设计讲义，用对照计算讲清机制、设计理由与边界"
+  default_prompt: "使用 $transformer-lesson-design，结合仓库最新进度，从已有计算的具体问题出发设计下一块讲义，用对照例子讲清每个关键机制的作用与取舍。"

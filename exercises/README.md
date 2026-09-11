@@ -23,6 +23,7 @@ exercises/
 - [005：最小训练闭环与逐步生成](ex005_training_loop/README.md)
 - [006：完整因果单头 Attention](ex006_single_head_attention/README.md)
 - [007：多头 Attention（原理与实现已验收）](ex007_multi_head_attention/README.md)
+- [008：Pre-LN Transformer Block（核心综合实现已验收）](ex008_transformer_block/README.md)
 
 ## 衔接讲义
 

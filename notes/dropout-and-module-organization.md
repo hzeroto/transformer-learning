@@ -4,12 +4,13 @@
 完整多头 Attention 的原理与实现均已验收。本节补齐 `block.complete` 还缺的最后一块
 （Dropout），以及把这些散装函数变成可训练、可保存模型所需的组织机制。
 
-这是一份可直接学习的讲义，不是已经通过的能力记录。
-以下 Dropout、`nn.Module`/`nn.Parameter` 参数注册、`train()`/`eval()` 与 `no_grad()`
-的区分都是新内容；残差、LayerNorm、FFN、MHA、手写 SGD 和 `no_grad` 的已有理解直接复用。
+当前接着读第 3、4 节：把散装参数和函数组织成一个可更新、可保存、可切换模式的对象。
+第 1、2 节保留作 Dropout 计算的参考，不需要重新逐段学习。
+`nn.Module`/`nn.Parameter`、参数的递归收集和 `train()`/`eval()` 是本次新内容；
+已有的 Tensor 计算、手写 SGD 和 `no_grad` 直接复用。
 
-讲义中所有数值、输出和「会/不会报错」的断言，均已在本仓库 CPU 环境
-（torch 2.14.0+cpu）实跑核对，不是推算。
+第 3、4 节的参数注册、统一更新、恢复遗漏、容器及模式对照已在本仓库
+PyTorch 2.14.0、CPU float64 环境核对；教师演示不代表学习者实现已经通过。
 
 ## 1. 为什么块里还要放一个「随机丢弃」
 
@@ -45,19 +46,21 @@ p 是人为设定的配置，不是训练参数，没有梯度。
 输出 = 输入          逐元素完全相等，不采样、不置零、也不缩放
 ```
 
-![同一个 Dropout 模块在训练态与推理态的对照：训练态按位置独立采样并对保留项乘 1/(1-p)，推理态是恒等映射。](assets/dropout-module/dropout-two-modes.png)
+固定 S 的 shape 为 `(1,1,4)`、值为 `[2,4,6,8]`、p=0.5，下面仅显示 `S[0,0,:]`：
 
-图中固定 S 的 shape 为 (1,1,4)、值为 `[2,4,6,8]`、p=0.5，只画这 4 个特征分量。
-左右两侧输入完全相同，唯一区别是模块处于哪个模式。
-被丢位置显示为 0；保留的 4 显示为 8，因为 `4 / (1-0.5) = 8`。
-可编辑图源：[dropout-two-modes.svg](assets/dropout-module/dropout-two-modes.svg)。
+| 同一输入的处理 | 训练态 | 推理态 |
+|---|---|---|
+| 本次保留位置示例 | [否,是,否,否] | 不采样 |
+| 本次输出 | [0,8,0,0] | [2,4,6,8] |
+| 保留项的处理 | 除以 0.5 | 原值返回 |
+| 重复前向 | 重新采样，可能相同也可能不同 | 本操作始终原值返回 |
 
 ### 那个 1/(1-p) 到底在补什么
 
 这是本节最容易含糊的一点，用实测数字说清。
 
-仍取 `S = [2,4,6,8]`、p=0.5。训练态每次采样不同，所以单次输出没有意义，
-要看**多次的平均**。实跑 200000 次求平均：
+仍取 `S = [2,4,6,8]`、p=0.5。训练态每次重新采样，但两次也可能抽到相同结果；
+单次输出不能代表期望。原讲义的 200000 次采样对照如下，用来观察多次平均：
 
 ```text
 原始 S            : [2, 4, 6, 8]
@@ -77,12 +80,16 @@ p 是人为设定的配置，不是训练参数，没有梯度。
 
 | 说法 | 是否成立 |
 |---|---|
-| 训练态输出的**期望**等于输入 | 成立，上面 200000 次平均已验证 |
+| 训练态输出的**期望**等于输入 | 成立，由上述概率加权推导；有限次平均只作观察 |
 | 训练态**每一次**输出等于输入 | 不成立，单次是 `[0,8,0,0]` 这样的稀疏结果 |
 | 推理态输出等于输入 | 成立，且是逐元素严格相等 |
 
 第二行是常见误解。期望相等不代表任何一次前向的数值相等，
 也不代表方差不变 —— 训练态引入了额外的波动，这正是它起作用的方式。
+
+这个保证不能直接穿过非线性。取 s=2、p=0.5，后接 `f(y)=ReLU(y-3)`：
+Dropout 产生等概率的 0 或 4，经过 f 后成为 0 或 1，最终期望是 0.5；
+不做 Dropout 时 `f(2)=0`。本例已经在课堂验证，不再重复出题。
 
 ### 两个边界
 
@@ -144,127 +151,189 @@ Y  = U + Dropout(D)          ← 同理
 到目前为止你的所有参数都是手动管理的：`ex005` 里把 `E`、`W` 作为函数外部的变量传进去，
 自己写 `E.grad = None`，自己在 `no_grad()` 里更新。
 
-一个完整模型有多少参数？光是一个块就有
+对于本课的无偏置 MHA、带偏置 FFN、两套 LayerNorm，一个块就有
 `Wq/Wk/Wv/Wo` 四个投影、`LN1/LN2` 各一组 `gamma/beta`、FFN 的 `W1/b1/W2/b2`，
-共 12 个张量。堆叠 6 层就是 72 个，再加上 `E`、`P` 和词表投影。
-手动维护这样一份名单，每加一层就要改四处代码，很快就会出错。
+共 12 个参数张量。若 6 层各用独立参数，就是 72 个，再加上输入和词表投影的参数。
 
-`nn.Module` 解决的就是这件事。它是 PyTorch 提供的容器基类，
-职责是**自动收集**属于这个模型的可训练张量，并递归地包含所有子模块的张量。
+问题不是 Python 传不进这么多参数，而是**计算、更新、保存必须指向同一批对象**。
+如果前向用了某份 W，更新清单却漏掉它，模型仍可能靠其他参数降低 loss；
+如果保存清单又漏掉它，恢复后的模型就和保存前不同。能运行、loss 下降，都抓不住这类遗漏。
 
-### nn.Parameter 决定「算不算这个模型的参数」
+我们需要一份由模型结构维护的参数名册，而不是训练代码再手写一份。
+`nn.Module` 是 PyTorch 的模块基类：保存已登记的参数和子模块，并提供统一的访问方式。
+它不会自动实现 Attention，也不会替你写 LayerNorm 的数学。
 
-规则很简单：赋值给模块属性的张量，只有用 `nn.Parameter` 包装过的，
-才会被登记进模块的参数名册。
+### 用一个已经会算的小操作，理解新的组织方式
+
+先不实现整个 LayerNorm，只包装它最后的缩放平移：
+
+```text
+输入 X：(B,T,C)，CPU float64
+gamma、beta：(C,)，在 B/T 轴共享
+输出 Y = X * gamma + beta：(B,T,C)
+```
+
+下面的 `FeatureAffine` 只做这一步，不求均值或方差，也不是完整 Block。
 
 ```python
 import torch
 import torch.nn as nn
 
-class Bad(nn.Module):
+class FeatureAffine(nn.Module):
     def __init__(self, C):
         super().__init__()
-        self.gamma = torch.ones(C)              # 普通 Tensor，不会被登记
-        self.beta  = nn.Parameter(torch.zeros(C))
+        self.gamma = nn.Parameter(torch.ones(C, dtype=torch.float64))
+        self.beta = nn.Parameter(torch.zeros(C, dtype=torch.float64))
 
-class Good(nn.Module):
-    def __init__(self, C):
-        super().__init__()
-        self.gamma = nn.Parameter(torch.ones(C))
-        self.beta  = nn.Parameter(torch.zeros(C))
+    def forward(self, X):
+        return X * self.gamma + self.beta
 ```
 
-`super().__init__()` 是调用父类 `nn.Module` 的初始化，
-它会建立那份内部名册；忘记这一行会直接报错，不是静默问题。
+第一次出现的 Python 写法，在这里解释：
 
-实跑两个类，名册内容如下：
+- `import torch.nn as nn` 给导入的模块起别名，后面可以写 `nn.Module`。
+- `class FeatureAffine(nn.Module)` 定义一个继承 Module 的类；`class` 不是创建实例。
+- `__init__` 是实例初始化方法，`FeatureAffine(2)` 创建对象时会调用它。
+- `self` 是当前实例，可类比 Go 方法的接收者；`self.gamma` 是此对象持有的属性。
+- `super().__init__()` 先初始化父类的参数/子模块管理机制，再登记自己的参数。
+- `forward` 是我们实现的前向方法。通常调用 `model(X)`，由框架入口再调用它，不直接调用 `model.forward(X)`。
 
-```text
-Bad :  named_parameters() = ['beta']            个数 1
-       state_dict keys    = ['beta']
-Good:  named_parameters() = ['gamma', 'beta']   个数 2
-       state_dict keys    = ['gamma', 'beta']
-```
+`nn.Parameter` 是一种特殊的 Tensor。把它赋给 Module 属性时，会自动登记成这个模块的参数；
+普通 Tensor 属性不会自动加入参数名册。Parameter 默认开启 `requires_grad`，但**参数登记和自动求导仍是两套机制**。
+[Parameter 的规则](https://docs.pytorch.org/docs/2.14/generated/torch.nn.parameter.Parameter.html)
 
-![nn.Parameter 包装与不包装的三条后果对照：未注册的张量不进优化器、无梯度、不在 state_dict。](assets/dropout-module/parameter-registration.png)
-
-图中两侧都能算出正确的前向结果，差别只在是否登记进名册。
-虚线表示这条路径实际上断开了。
-可编辑图源：[parameter-registration.svg](assets/dropout-module/parameter-registration.svg)。
-
-### 未注册会带来三个静默故障
-
-这里的每一条都用 `Bad` 类实跑验证过。「静默」是关键 —— 前向计算完全正常，不报错。
-
-**① 优化器拿不到它，永不更新。**
-`torch.optim.SGD(model.parameters(), lr=0.1)` 接收的正是名册里的张量：
-
-```text
-优化器管理的张量元素数: 4          （只有 beta 的 4 个）
-gamma 是否在其中: False
-```
-
-模型会训练，损失会下降，但 `gamma` 从头到尾是初始值。
-
-**② 它没有梯度。**
-`nn.Parameter` 默认 `requires_grad=True`；普通 `torch.ones(C)` 默认是 `False`：
-
-```text
-gamma.requires_grad = False
-backward() 之后 gamma.grad = None      而 beta.grad 存在
-```
-
-注意这条和上一条是**两个独立的原因**。即使你手动设 `gamma.requires_grad_(True)`
-让它有了梯度，它仍然不在 `model.parameters()` 里，优化器依然不会更新它。
-反过来，注册解决了两件事。
-
-**③ 保存和恢复会静默丢失它。**
-`state_dict()` 返回模型的参数字典，用于保存到磁盘和之后恢复。实跑一次完整的存取：
-
-```text
-训练中 gamma 被改成 3，beta 被改成 0.5
-保存下来的键: ['beta']                       ← gamma 根本没进去
-
-新建模型后 load_state_dict(sd, strict=True)：
-  返回 <All keys matched successfully>       ← 没有任何报错
-  恢复后 beta  = [0.5, 0.5, 0.5, 0.5]        正确
-  恢复后 gamma = [1.0, 1.0, 1.0, 1.0]        回到初始 1，不是 3
-```
-
-即使用了 `strict=True`，也不会报错：从 `state_dict` 的角度看，
-所有键都匹配上了，它不知道你还有一个张量没登记。
-这是最危险的一条 —— 训练日志看起来正常，模型存下来、加载回来，行为却变了。
-
-### 模块树是递归的
-
-`nn.Module` 的收集是递归的：把子模块赋值给属性，父模块自动包含它的全部参数。
-实跑一个两层结构：
+使用这个对象：
 
 ```python
-class Block(nn.Module):
-    def __init__(self, C=4):
-        super().__init__()
-        self.Wq = nn.Parameter(torch.randn(C, C))
-        self.drop1 = nn.Dropout(0.5)
-        self.drop2 = nn.Dropout(0.1)
+model = FeatureAffine(2)
+X = torch.tensor([[[2.0, 4.0]]], dtype=torch.float64)  # (1,1,2)
+Y = model(X)                                        # (1,1,2)
 
-class Model(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.b0 = Block()
-        self.b1 = Block()
+for name, parameter in model.named_parameters():
+    print(name, parameter.shape)
 ```
+
+`named_parameters()` 可依次遍历名字与参数对象；`for name, parameter` 把每一对结果拆开。
+这里列出 `gamma` 和 `beta`，各自 shape 为 `(2,)`。只要不重新创建 model，这两份参数就持续存在；
+每次 `model(X)` 重新计算的是 Y，不是重新初始化参数。
+
+### 你的手写 SGD 不用换，只把清单来源换掉
+
+`model.parameters()` 每次返回可遍历的参数对象，不包含名字，也不是参数数值的副本。
+沿用上面的 model 和 X，学习率取 0.01，做一次把 Y 推向零的玩具更新：
+
+```python
+for parameter in model.parameters():
+    parameter.grad = None
+
+Y = model(X)
+loss = (Y ** 2).sum()
+loss.backward()
+
+with torch.no_grad():
+    for parameter in model.parameters():
+        if parameter.grad is not None:
+            parameter -= 0.01 * parameter.grad
+```
+
+这里 `** 2` 是逐元素平方，`sum()` 把所有元素相加成标量损失，不是语言模型交叉熵。
+`is not None` 是检查这次有没有梯度对象，不是判断梯度是否非零。
+`-=` 沿用你已有的原地更新方式，改变的是模型持有的同一份参数。
+
+本例初始 Y 为 `[2,4]`，loss 为 20。更新后 gamma 约为 `[0.92,0.68]`、beta 为 `[-0.04,-0.08]`，
+再次前向得到 `[1.8,2.64]`，loss 约为 10.2096。**Module 负责收集；backward 负责求导；更新仍由这段代码执行。**
+
+### 为什么有梯度，仍可能完全没更新？
+
+现在只改构造方法中的一行，其余前向和更新代码保持相同：
+
+```python
+self.gamma = torch.ones(C, dtype=torch.float64, requires_grad=True)
+```
+
+这份普通 Tensor 明确开启求导，因此不能把问题归因于“没有 requires_grad”。
+两种模型都从相同初值出发，使用相同 X、loss 和上面的手写更新：
+
+| 观察量 | gamma 使用 Parameter | gamma 是开启求导的普通 Tensor |
+|---|---|---|
+| 参数名册 | gamma、beta | 只有 beta |
+| 第一次 backward 后 gamma.grad | [8,32] | [8,32] |
+| 更新后 gamma | [0.92,0.68] | [1,1] |
+| 更新后 loss，初始均为 20 | 10.2096 | 19.208 |
+
+两个 loss 都下降了，但右侧只更新了 beta。自动求导按计算图找到 gamma；更新循环按名册遍历，却没找到它。
+这个循环甚至也不会替右侧 gamma 清梯度。可以手动管理普通 Tensor，就像你的 ex005；
+但不能一边依赖自动收集，一边漏登记模型实际使用的参数。
+
+反过来，参数已登记也不保证一定有非零梯度：它可能没参与本次 loss，或者局部导数为零。
+`nn.Parameter(..., requires_grad=False)` 也仍是已登记参数，只是关闭了自身求导。
+
+### 保存为什么也依赖同一份登记？
+
+`state_dict()` 返回按名称组织的模型状态字典；Python 的字典可类比 Go 的 map。
+本例里就是已登记的 gamma/beta。它还可包含登记为持久状态、但不作为参数训练的 Tensor，
+这类状态叫 buffer；本例尚未使用，不要求现在实现。
+
+假设手动把漏登记版本的 gamma 改成 `[3,3]`，再把状态加载到一个同类新对象中：
 
 ```text
-named_parameters(): ['b0.Wq', 'b1.Wq']
-state_dict keys   : ['b0.Wq', 'b1.Wq']
+原对象 gamma：[3,3]
+state_dict 中的键：只有 beta
+同类新对象加载后 gamma：[1,1]，仍是它构造时的初值
+strict=True：不报错
 ```
 
-名字自动带上了路径前缀 `b0.` / `b1.`，两个块的参数互不混淆。
-这正是你堆叠多层时需要的：不必手写参数清单，容器按属性结构生成。
+`new_model.load_state_dict(saved, strict=True)` 把 saved 中的状态装入新对象；
+`strict=True` 检查的是状态名称是否匹配，不知道“你本来还想保存 gamma”。
+漏登记的版本在保存端和接收端都没有这个键，所以检查照样通过。
+[Module 的状态接口](https://docs.pytorch.org/docs/2.14/generated/torch.nn.Module.html#torch.nn.Module.state_dict)
 
-`nn.Dropout` 本身没有可训练参数，所以名册里没有它 ——
-但它仍然是模块树的一部分，下一节的模式切换靠的就是这层结构。
+边界先记两条：`state_dict()` 不是整个 Python 对象的自动快照，不自动保存本例的模式开关或 Dropout 概率配置；
+它返回的状态 Tensor 还可能共享原存储，要在继续训练前冻结一份内存快照需另做复制。
+完整磁盘保存、模型配置和恢复训练流程留到 mini-GPT，当前先理解为什么会漏状态。
+
+### 多层怎样一起被找到？
+
+把子模块赋给 Module 属性时，它会成为父模块登记的子模块。
+父模块的 `parameters()` 会继续访问这些子模块，不用你展开每一层。
+多个子模块可以放入 **ModuleList**：它像列表一样可索引、可遍历，同时登记里面的模块。
+
+沿用 FeatureAffine，做两个顺序相接的小层；X 与输出仍是 `(B,T,2)`。
+此处 `nn.Dropout` 是模式行为参照，完整 Block 练习的核心计算仍由你实现。
+
+```python
+class AffineStack(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleList([FeatureAffine(2), FeatureAffine(2)])
+        self.drop = nn.Dropout(0.5)
+
+    def forward(self, X):
+        for layer in self.layers:
+            X = layer(X)
+        return self.drop(X)
+```
+
+`[a,b]` 是 Python 列表；这里两次 `FeatureAffine(2)` 创建两个独立对象，不共享参数。
+`nn.Dropout(0.5)` 创建按丢弃概率 0.5 工作的模块；`self.drop(X)` 调用它的前向。
+ModuleList 本身只负责容纳，**顺序执行是我们在 forward 里写的循环**。
+
+现在名册中的名称带上了所属路径：
+
+```text
+layers.0.gamma    (2,)
+layers.0.beta     (2,)
+layers.1.gamma    (2,)
+layers.1.beta     (2,)
+```
+
+如果仅改成普通列表 `self.layers = [FeatureAffine(2), FeatureAffine(2)]`，
+前向循环仍能运行，但父模块不会自动沿普通列表登记这些对象；本例父模块的参数名册就变成空的。
+“Python 对象能访问到”不等于“PyTorch 管理机制登记到了”。
+[ModuleList 的登记规则](https://docs.pytorch.org/docs/2.14/generated/torch.nn.ModuleList.html)
+
+Dropout 没有可训练参数，所以它不贡献参数名册条目，
+但它是已登记的子模块，下面的模式切换仍会访问它。
 
 ## 4. train() / eval() 与 no_grad()：两个正交的开关
 
@@ -278,132 +347,104 @@ state_dict keys   : ['b0.Wq', 'b1.Wq']
 | `model.train()` / `model.eval()` | 模块处于训练态还是推理态 | 是 | 否 |
 | `with torch.no_grad():` | 这段计算是否记录到求导图 | 否 | 是 |
 
-实跑验证它们互不代替：
+沿用 AffineStack，输入为 CPU float64 的 `(1,1,2)` Tensor，参数默认需要求导；
+分别组合两种模式与是否启用求导，实跑核对：
 
 ```text
-train() 态 + no_grad()   : 有随机丢弃 = True    requires_grad = False
-eval()  态 + 求导开启     : 有随机丢弃 = False   requires_grad = True
+train() + 求导开启：Dropout 重新采样，输出需要求导
+train() + no_grad()：Dropout 仍重新采样，输出不需要求导
+eval()  + 求导开启：Dropout 直接返回输入，整体输出仍需要求导
+eval()  + no_grad()：Dropout 直接返回输入，整体输出不需要求导
 ```
 
-第一行说明：`no_grad()` 关掉了梯度，但**没有**关掉随机性 ——
+`no_grad()` 不记录这段新计算的求导图，但**没有**关掉 Dropout 的随机性 ——
 如果你在生成时只写了 `no_grad()` 而忘了 `eval()`，Dropout 照样在随机丢弃，
-每次生成结果都不同。这是一个真实且难查的 bug。
+logits 可能波动，不能保证两次生成一样；但也不保证每次都不同，argmax 仍可能没变。
 
-第二行说明：`eval()` 关掉了随机性，但**没有**关掉梯度。
-所以在验证集上算损失时，若只写 `eval()` 不写 `no_grad()`，
-计算图仍会被构建，白白占用内存（虽然结果数值是对的）。
+`eval()` 则调整模块模式，不关闭求导，也不把参数永久冻结。
+本例里，如果只切 eval，参数仍参与需要梯度的计算，因此仍会构建求导图。
+这并不矛盾：有时就是需要在推理模式下分析梯度。
+[PyTorch 对两类开关的区分](https://docs.pytorch.org/docs/2.14/notes/autograd.html#evaluation-mode-nn-module-eval)
 
-正确的推理写法是**两个都要**：
+普通的不求梯度推理，可以这样写；这里 model 是上一节的 AffineStack，X 为 `(B,T,2)`：
 
 ```python
 model.eval()
 with torch.no_grad():
-    logits = model(input_ids, input_valid)
+    Y = model(X)
 ```
+
+这只是明确关闭本例 Dropout 和求导记录，不是所有硬件与所有算子上的确定性保证。
+恢复训练用 `model.train()`，并在 `no_grad` 代码块之外正常前向、求导、更新。
+`train()` 这个名字只表示切模式；不传数据，不计算 loss，也不会自动做一次 SGD。
 
 ### 模式切换递归作用于整棵树
 
-沿用上一节的 `Model`（含 4 个 Dropout，分布在两个 Block 里）：
+沿用上一节的 AffineStack，令 `m = AffineStack()`：
 
 ```text
 构造后默认 training = True          nn.Module 默认处于训练态
 
-m.eval()  之后:  {b0.drop1: False, b0.drop2: False, b1.drop1: False, b1.drop2: False}
-m.train() 之后:  {b0.drop1: True,  b0.drop2: True,  b1.drop1: True,  b1.drop2: True}
+m.eval() 后：m、layers、两个 FeatureAffine、drop 的 training 均为 False
+m.train() 后：上述已登记模块的 training 均为 True
 ```
 
-一次调用递归设置所有子模块，不需要逐个 Dropout 手动切换。
-也可以只切一个子模块：
+FeatureAffine 的 forward 没有读取 training，所以切模式不改变它的计算；
+Dropout 的 forward 根据 training 选择是否丢弃，所以计算会变。
+`eval()` 不会分析并改写任意 Python 代码，只会设置已登记模块的模式。
+
+前面如果把 layers 换成普通列表，这两个 FeatureAffine 就不会被父模块的 `eval()` 递归设置；
+它们本身没有模式相关计算，所以目前数值上可能看不出问题。换成含 Dropout 的子层，后果就出现了。
+
+因此登记结构同时服务三件事：找参数做更新、找状态做保存、找子模块切模式。
+这才是为什么我们在写完整 Block 之前补模块组织，而不只是换一种类语法。
+
+### 回到你将要实现的 Transformer Block
+
+构造阶段保存每个块自己的参数和子模块；前向阶段复用它们处理本次输入：
 
 ```text
-m.train() 后再 m.b0.drop1.eval():
-  {b0.drop1: False, b0.drop2: True, b1.drop1: True, b1.drop2: True}
+构造时：登记 MHA 的 Wq/Wk/Wv/Wo、两个 Norm、FFN、两个 Dropout
+前向时：X → LN1 → MHA → Dropout → 加回 X
+                  U → LN2 → FFN → Dropout → 加回 U
 ```
 
-这说明 `training` 是**每个模块自己的一个布尔状态**，
-`train()`/`eval()` 只是批量设置它的便捷方法。默认是训练态这一点值得记住：
-新建模型后如果不显式调用 `eval()`，它就在训练态。
+这是顺序摘要，不是精确的分支图；X、U 和块输出均为 `(B,T,C)`，完整分支图见主干讲义。
+实际 MHA 前向复用你已有的 `multi_head_self_attention`，只是从 self 取参数传给它。
+这些组织机制不代替你实现 LayerNorm、FFN 或 Attention 的数学。
 
-### 一个可直接观察的后果
+参数在构造阶段创建并保存，forward 复用这些对象，避免每次请求都重新初始化正在学习的数值。
+下面把对象的创建时机与模式切换放到一起检查。
 
-同一份输入、同一组参数，训练态下重复前向，损失会变：
+## 5. 一个综合排错检查
 
-```text
-train() 态同一输入 5 次 loss: [10.0, 10.0, 8.0, 8.0, 12.0]
-eval()  态同一输入 5 次 loss: [8.0,  8.0,  8.0, 8.0, 8.0]
-```
+不用再做 Dropout 的期望手算；下一份综合练习会验证参数注册、数值、梯度及模式切换。
+先检查一个关系：**参数更新、模式切换、求导，是否真的走同一条机制？**
 
-训练态的抖动来自每次不同的丢弃采样，不是参数变了（这几次前向之间没有做任何更新）。
-以后调试时看到「同一 batch 两次前向 loss 不同」，
-第一个要排查的就是模块处于哪个模式，而不是怀疑数据或参数出了问题。
-
-这也给你一条实用的验证手段：**要做确定性对比时先切 `eval()`**。
-后续 KV Cache 关卡要求「逐位置比较全量与增量 logits」，
-前提就是关闭随机失活 —— 否则两次前向本来就不同，对齐无从谈起。
-
-## 5. 三个理解检查
-
-这三题随讲义准备好，尚未作答。可以看完整节后一起回答，
-或在后续的块实现作业中用等价测试验收。题目条件自包含，不依赖上面某段的临时命名。
-
-### 检查 A：残差路上的 Dropout 位置
-
-已知 X 是 CPU float32 张量，shape (1,1,4)，值为 `[1,1,1,1]`，该位置有效。
-A 是某条支路算出的张量，shape 同为 (1,1,4)，值为 `[9,9,9,9]`。
-`drop` 是一个 `nn.Dropout(p=1.0)` 模块，处于**训练态**，因此对所有输入必然全部丢弃。
-
-两种写法都能运行：
-
-```text
-写法甲：U = X + drop(A)
-写法乙：U = drop(X + A)
-```
-
-分别给出 U 的具体数值。哪一种保留了本课要求的残差语义？
-请用「支路无贡献时块应该退回什么」来说明，不需要推导 Dropout 的反向公式。
-
-### 检查 B：一个不报错的参数注册错误
-
-已知下面这个模块，C=4，它要实现你已经学过的 LayerNorm 的缩放平移部分：
+某个正常构造的 AffineStack 持有两个 FeatureAffine（各有独立 gamma/beta，均已登记），
+但程序员删除了构造方法中的 `self.drop = nn.Dropout(0.5)`，把 forward 改成：
 
 ```python
-class MyNorm(nn.Module):
-    def __init__(self, C):
-        super().__init__()
-        self.gamma = torch.ones(C)
-        self.beta  = nn.Parameter(torch.zeros(C))
+def forward(self, X):
+    for layer in self.layers:
+        X = layer(X)
+    return nn.Dropout(0.5)(X)
 ```
 
-用它组成模型并正常训练若干步，训练损失确实下降了，过程中没有任何报错。
+最后一行先创建一个 Dropout 实例，再立刻调用它；不是在调用原有的子模块。
+X 为 CPU float64 的 `(1,8,2)` 全 1 Tensor，gamma 初始全 1、beta 全 0。
+对模型先调用 `eval()`，再在 `no_grad()` 下前向；过程中没有更新参数。
 
-请回答三问：训练结束时 `gamma` 的数值是否可能已被优化器更新？
-`torch.save(model.state_dict(), ...)` 保存再用 `strict=True` 加载到一个新建的
-`MyNorm` 上，`gamma` 会得到什么值，`load_state_dict` 会不会报错？
-最小修改是什么？
-
-### 检查 C：只关了一个开关
-
-某段生成代码这样写（`model` 刚构造完，之后没有调用过 `train()` 或 `eval()`）：
-
-```python
-with torch.no_grad():
-    for _ in range(max_new_tokens):
-        logits = model(prefix, prefix_valid)
-        next_id = logits[:, -1, :].argmax(dim=-1, keepdim=True)
-        prefix = torch.cat([prefix, next_id], dim=1)
-```
-
-模型内部含有 `p=0.1` 的 Dropout 模块。
-用同一个前缀连续调用这段代码两次，两次生成的 token 序列是否一定相同？
-`no_grad()` 是否已经足够保证确定性？如果不够，缺的是哪一步，为什么这两个开关不能互相代替？
+这是否已经关闭了 Dropout？如果重复前向时观察到输出变化，应修改的是参数注册、
+对象创建的位置，还是再加一次 no_grad？说明原因即可，不要求某两次随机输出必定不同。
 
 ## 工程边界与后续衔接
 
-- 本文是**新准备的讲义**，覆盖 Dropout 的两阶段计算、块内位置、
+- 本文覆盖 Dropout 的两阶段计算、块内位置、
   `nn.Module`/`nn.Parameter` 参数注册与 `train()`/`eval()` 对 `no_grad()` 的区分。
   已有的残差、LayerNorm、FFN、MHA、链式法则和手写 SGD 直接复用，不在此重考。
-- 讲义中的全部数值、输出与报错行为均在本仓库 CPU 环境实跑核对；
-  期望还原一项用 200000 次采样平均验证。这不代表学习者已获得任何掌握证据。
+- 第 3、4 节新增示例的参数、梯度、统一更新、状态键、恢复遗漏与模式行为已实跑核对。
+  第 1 节有限采样仅是观察，期望恒等由公式推导；这些教师演示不算学习者独立实现。
 - 仓库中**尚不存在**完整 Transformer 块的实现代码。本文给出的块结构
   （含 Dropout 位置）是可理解的组合方案，不冒充已完成的工程。
 - 尚未展开的内容：`torch.optim` 的更复杂优化器（Adam/AdamW）及其状态、
@@ -413,4 +454,4 @@ with torch.no_grad():
   `implementation.transformer-block` 的掌握证据。
   按项目约定，掌握需要独立解释、实现、测试或排错的可观察表现；
   实际状态以 `learning/progress.json` 为准。
-- 本次只准备材料：不修改知识地图依赖，不切换 `currentNodeId`，不新增已掌握记录。
+- 课程准备不自动改变能力状态；课堂已有回答和后续实现，按学习协议分别记录真实证据。
