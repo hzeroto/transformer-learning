@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="660" viewBox="0 0 880 660" role="img" aria-labelledby="title desc">
+  <title id="title">Dropout 的训练态与推理态对照</title>
+  <desc id="desc">同一个输入向量 S 等于 2,4,6,8，p 等于 0.5。左侧训练态先按位置独立采样保留掩码，被丢位置置零，保留位置除以 1 减 p 即乘 2，一次实际输出为 0,8,0,0。右侧推理态不采样、不缩放，输出与输入完全相同为 2,4,6,8。两侧输入相同，仅模块所处模式不同。</desc>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#334155"/>
+    </marker>
+    <style>
+      text { font-family: "PingFang SC","Noto Sans CJK SC",sans-serif; fill:#172b3a; font-size:19px; text-anchor:middle; }
+      .title { font-size:26px; font-weight:600; }
+      .sub { font-size:17px; fill:#4a5b6a; }
+      .hdr { font-size:21px; font-weight:600; }
+      .cell { stroke:#9cabb8; stroke-width:1.5; fill:#ffffff; }
+      .kept { fill:#e3f0e6; stroke:#5d9c6d; stroke-width:2; }
+      .drop { fill:#f2e6e6; stroke:#b57b7b; stroke-width:2; }
+      .flow { fill:none; stroke:#334155; stroke-width:2.2; marker-end:url(#ar); }
+      .note { font-size:16px; fill:#4a5b6a; }
+      .step { font-size:16px; fill:#215a88; text-anchor:start; }
+      .mono { font-family:"DejaVu Sans Mono",monospace; font-size:18px; }
+      .divider { stroke:#c9d3dc; stroke-width:1.5; stroke-dasharray:6 5; }
+    </style>
+  </defs>
+  <rect width="880" height="660" fill="#ffffff"/>
+
+  <text x="440" y="38" class="title">同一个 Dropout 模块，两种模式</text>
+  <text x="440" y="66" class="sub">输入 S 的 shape 是 (1,1,4)，值为 [2,4,6,8]　p=0.5　图中画出这 4 个特征分量</text>
+
+  <line class="divider" x1="440" y1="92" x2="440" y2="616"/>
+
+  <!-- ============ 左：训练态 ============ -->
+  <text x="200" y="124" class="hdr">训练态　model.train()</text>
+
+  <text x="200" y="162" class="note">输入 S</text>
+  <rect class="cell" x="60"  y="174" width="70" height="46"/><text x="95"  y="204" class="mono">2</text>
+  <rect class="cell" x="130" y="174" width="70" height="46"/><text x="165" y="204" class="mono">4</text>
+  <rect class="cell" x="200" y="174" width="70" height="46"/><text x="235" y="204" class="mono">6</text>
+  <rect class="cell" x="270" y="174" width="70" height="46"/><text x="305" y="204" class="mono">8</text>
+
+  <path class="flow" d="M200 222 V266"/>
+  <text x="215" y="250" class="step">① 每个位置独立采样</text>
+
+  <text x="200" y="292" class="note">本次采样到的保留掩码</text>
+  <rect class="drop" x="60"  y="304" width="70" height="46"/><text x="95"  y="334" class="mono">丢</text>
+  <rect class="kept" x="130" y="304" width="70" height="46"/><text x="165" y="334" class="mono">留</text>
+  <rect class="drop" x="200" y="304" width="70" height="46"/><text x="235" y="334" class="mono">丢</text>
+  <rect class="drop" x="270" y="304" width="70" height="46"/><text x="305" y="334" class="mono">丢</text>
+
+  <path class="flow" d="M200 352 V396"/>
+  <text x="215" y="380" class="step">② 保留项 ÷ (1−p)，即 ×2</text>
+
+  <text x="200" y="422" class="note">本次实际输出</text>
+  <rect class="drop" x="60"  y="434" width="70" height="46"/><text x="95"  y="464" class="mono">0</text>
+  <rect class="kept" x="130" y="434" width="70" height="46"/><text x="165" y="464" class="mono">8</text>
+  <rect class="drop" x="200" y="434" width="70" height="46"/><text x="235" y="464" class="mono">0</text>
+  <rect class="drop" x="270" y="434" width="70" height="46"/><text x="305" y="464" class="mono">0</text>
+
+  <text x="200" y="520" class="note">保留下来的 4 变成 4×2 = 8</text>
+  <text x="200" y="548" class="note">换一次采样，输出就不同</text>
+  <text x="200" y="576" class="note">多次平均才回到 [2,4,6,8]</text>
+  <text x="200" y="604" class="note">单次输出并不等于输入</text>
+
+  <!-- ============ 右：推理态 ============ -->
+  <text x="680" y="124" class="hdr">推理态　model.eval()</text>
+
+  <text x="680" y="162" class="note">输入 S</text>
+  <rect class="cell" x="540" y="174" width="70" height="46"/><text x="575" y="204" class="mono">2</text>
+  <rect class="cell" x="610" y="174" width="70" height="46"/><text x="645" y="204" class="mono">4</text>
+  <rect class="cell" x="680" y="174" width="70" height="46"/><text x="715" y="204" class="mono">6</text>
+  <rect class="cell" x="750" y="174" width="70" height="46"/><text x="785" y="204" class="mono">8</text>
+
+  <path class="flow" d="M680 222 V424"/>
+  <text x="695" y="286" class="step">不采样任何掩码</text>
+  <text x="695" y="318" class="step">不置零、不缩放</text>
+  <text x="695" y="350" class="step">整个模块是恒等映射</text>
+
+  <text x="680" y="422" class="note" />
+  <rect class="kept" x="540" y="434" width="70" height="46"/><text x="575" y="464" class="mono">2</text>
+  <rect class="kept" x="610" y="434" width="70" height="46"/><text x="645" y="464" class="mono">4</text>
+  <rect class="kept" x="680" y="434" width="70" height="46"/><text x="715" y="464" class="mono">6</text>
+  <rect class="kept" x="750" y="434" width="70" height="46"/><text x="785" y="464" class="mono">8</text>
+  <text x="680" y="500" class="note">输出</text>
+
+  <text x="680" y="548" class="note">与输入逐元素完全相等</text>
+  <text x="680" y="576" class="note">重复多少次都是同一结果</text>
+  <text x="680" y="604" class="note">这里没有“乘 0.5”这一步</text>
+</svg>

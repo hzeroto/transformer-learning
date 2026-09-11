@@ -29,3 +29,5 @@ exercises/
 - [全局复习：从 token 到预测，从错误到上下文读取](../notes/global-review.md)：将输入、训练、生成与单头 Attention 串成完整数据流，明确已完成与待组合的边界。
 - [拆头与合头：逻辑形状和实际存储](../notes/tensor-layout.md)：进入多头 Attention 前的布局知识。
 - [完整多头 Attention：逐头读取、mask 与输出投影](../notes/multi-head-attention.md)：用一份综合实现贯通完整模块。
+- [Transformer Block 主干：残差、LayerNorm 与 FFN](../notes/transformer-block.md)：Pre-LN 主干的三个新组件与组合顺序。
+- [Dropout 与模块组织：随机失活、参数注册与两种开关](../notes/dropout-and-module-organization.md)：块的最后一个组件，以及把散装函数变成可训练模型所需的 `nn.Module` 机制。
