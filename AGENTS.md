@@ -44,6 +44,14 @@
 - Keep repository updates focused on durable capability evidence and overall progress. Do not record ordinary conversational details.
 - One learner implementation may provide distinct evidence for several related nodes. Teach each new concept first, then use integrated tests and debugging to verify it; do not repeat definition questions solely to fill status fields.
 
+## Project skills
+
+- For designing or redesigning actual teaching content, read `.agents/skills/transformer-lesson-design/SKILL.md`.
+- For learner-completed exercise scaffolds and tests, read `.agents/skills/transformer-exercise/SKILL.md`.
+- For submitted work review or explicit mastery assessment, read `.agents/skills/transformer-review/SKILL.md`.
+- Select only the matching workflow. Ordinary classroom continuation, confusion and follow-up questions remain natural dialogue; do not activate lesson design on every “继续” or “没懂”. The existing teaching and evidence-reporting rules still apply outside skills.
+- Skills use the repository's current learning state; they do not store their own progress snapshots. Preparing a lesson or exercise alone does not change mastery.
+
 ## Git safety
 
 - Before any remote change or push, detect the operating environment and verify that the repository root exactly matches its mapped canonical path above, the effective Git identity is expected, and the destination owner is exactly `hzeroto`.

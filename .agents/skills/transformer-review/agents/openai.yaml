@@ -1,0 +1,4 @@
+interface:
+  display_name: "Transformer 审查验收"
+  short_description: "审查真实实现与解释，核验能力证据并同步进度，不擅自代改答案"
+  default_prompt: "使用 $transformer-review，审查我提交的实现或回答，按实际证据验收并同步进度，不修改我的核心答案。"

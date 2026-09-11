@@ -70,3 +70,24 @@ The ChatGPT project keeps the teaching conversation continuous. The repository o
 - `learning/map.json` provides the overall path and prerequisite relationships.
 
 Ordinary lesson details stay in the project conversation rather than being duplicated in the repository.
+
+## Project skills
+
+三个仓库级 skill 位于 `.agents/skills/`，共用现有学习地图、画像和进度协议：
+
+| Skill | 职责 | 示例请求 |
+|---|---|---|
+| [transformer-lesson-design](.agents/skills/transformer-lesson-design/SKILL.md) | 设计可直接学习的讲解、必要图解与理解检查 | `使用 $transformer-lesson-design 设计下一块教学内容` |
+| [transformer-exercise](.agents/skills/transformer-exercise/SKILL.md) | 提供接口、TODO、教师测试与运行入口，核心实现留给学习者 | `使用 $transformer-exercise 准备这块的练习框架` |
+| [transformer-review](.agents/skills/transformer-review/SKILL.md) | 审查真实代码/回答，按证据验收并同步进度 | `使用 $transformer-review 看看我写的，不改答案` |
+
+普通的“继续推进”“没懂”留在自然课堂对话中，不启动一次新的课程设计。
+教学设计不设固定的“为什么学”环节；map 和进度服务于实际教学内容，不替代讲解。
+创建课案或练习本身不构成掌握证据。
+
+这些 skill 依赖本仓库的协议与材料，不是脱离仓库的独立教材包。
+仓库级自动发现与启动目录有关：从本仓库或其子目录启动时可使用 `.agents/skills/`；
+从仓库外的项目镜像聊天时，不能仅凭文件已存在就断言已自动加载。可明确引用上述
+`SKILL.md` 路径并要求使用，或另外配置用户级入口；本仓库不自动安装全局副本或软链接。
+跨设备同步源文件仍使用仓库，不在 skill 中写死最新进度。
+加载规则参见 [OpenAI 官方文档](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Transformer 练习设计"
+  short_description: "创建接口明确、可测试的综合练习，保留核心计算供学习者实现"
+  default_prompt: "使用 $transformer-exercise，为已讲清的知识块准备练习框架和测试，核心实现由我完成。"

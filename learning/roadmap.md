@@ -85,6 +85,10 @@ SGD的更新先自己写，使用更复杂优化器前解释其状态和作用�
 
 ### G3：先完成一个 Transformer
 
+已准备可直接阅读的[Pre-LN 块主干讲义](../notes/transformer-block.md)，
+贯通残差、逐 token LayerNorm 与 ReLU FFN；暂不包含 Dropout、参数注册和完整模型训练。
+材料已准备不表示这些能力已经开始验收或掌握，实际状态仍以 progress.json 为准。
+
 逐步补非线性激活、FFN、残差、LayerNorm和Dropout，说明Pre-LN与Post-LN排列。
 mini-GPT使用明确的Pre-LN配置，原版分支再实现Post-LN对照。
 概念块 `block.complete` 与代码块 `implementation.transformer-block` 合并验收，
