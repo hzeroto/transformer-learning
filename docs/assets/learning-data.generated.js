@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-11T13:34:54.667Z",
+  "generatedAt": "2026-09-15T14:02:17.841Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",

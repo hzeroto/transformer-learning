@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="500" viewBox="0 0 640 500" role="img" aria-labelledby="t d">
+  <title id="t">Pre-LN 堆栈中表示尺度随层数增长</title>
+  <desc id="d">横轴是已经过的块数，从 0 到 12；纵轴是该层输出的均方根值。曲线由实际前向计算得到：输入约 1.12，第一层后 1.57，到第十二层升至约 4.47。末尾再加一个 LayerNorm 后回到 1.00。说明 Pre-LN 堆栈的最终输出从未被归一化，需要在词表投影前补一个 final LayerNorm。</desc>
+  <defs><style>
+    text { font-family:"PingFang SC","Noto Sans CJK SC",sans-serif; fill:#172b3a; font-size:16px; text-anchor:middle; }
+    .title { font-size:22px; font-weight:600; }
+    .sub { font-size:14px; fill:#4a5b6a; }
+    .grid { stroke:#e3e9ee; stroke-width:1; }
+    .ax { stroke:#8a99a8; stroke-width:1.4; }
+    .curve { fill:none; stroke:#215a88; stroke-width:2.6; }
+    .ref { stroke:#a4534f; stroke-width:1.6; stroke-dasharray:6 4; }
+    .ref2 { stroke:#3f8f5f; stroke-width:1.6; stroke-dasharray:6 4; }
+    .tick { font-size:13px; fill:#5b6b7a; }
+    .anno { font-size:13.5px; fill:#a4534f; text-anchor:end; }
+    .anno2 { font-size:13.5px; fill:#3f8f5f; text-anchor:end; }
+  </style></defs>
+  <rect width="640" height="500" fill="#ffffff"/>
+  <text x="320" y="34" class="title">残差堆叠让表示尺度逐层累积</text>
+  <text x="320" y="58" class="sub">12 个 Pre-LN 块，C=16、H=4、F=64</text>
+  <text x="320" y="78" class="sub">权重按 1/sqrt(输入宽度) 初始化，非 ex008 的固定 0.05</text>
+  <line class="grid" x1="100" y1="340.0" x2="520" y2="340.0"/><text class="tick" x="86" y="345.0">0</text><line class="grid" x1="100" y1="294.5" x2="520" y2="294.5"/><text class="tick" x="86" y="299.5">1</text><line class="grid" x1="100" y1="249.1" x2="520" y2="249.1"/><text class="tick" x="86" y="254.1">2</text><line class="grid" x1="100" y1="203.6" x2="520" y2="203.6"/><text class="tick" x="86" y="208.6">3</text><line class="grid" x1="100" y1="158.2" x2="520" y2="158.2"/><text class="tick" x="86" y="163.2">4</text><line class="grid" x1="100" y1="112.7" x2="520" y2="112.7"/><text class="tick" x="86" y="117.7">5</text><text class="tick" x="100.0" y="362">0</text><text class="tick" x="170.0" y="362">2</text><text class="tick" x="240.0" y="362">4</text><text class="tick" x="310.0" y="362">6</text><text class="tick" x="380.0" y="362">8</text><text class="tick" x="450.0" y="362">10</text><text class="tick" x="520.0" y="362">12</text>
+  <line class="ref" x1="100" y1="136.8" x2="520" y2="136.8"/>
+  <line class="ref2" x1="100" y1="294.5" x2="520" y2="294.5"/>
+  <line class="ax" x1="100" y1="90" x2="100" y2="340"/>
+  <line class="ax" x1="100" y1="340" x2="520" y2="340"/>
+  <polyline class="curve" points="100.0,289.2 135.0,268.8 170.0,244.1 205.0,235.7 240.0,234.7 275.0,223.8 310.0,211.5 345.0,193.8 380.0,194.3 415.0,146.7 450.0,132.3 485.0,128.6 520.0,136.8"/>
+  <circle cx="100.0" cy="289.2" r="3.5" fill="#215a88"/><circle cx="135.0" cy="268.8" r="3.5" fill="#215a88"/><circle cx="170.0" cy="244.1" r="3.5" fill="#215a88"/><circle cx="205.0" cy="235.7" r="3.5" fill="#215a88"/><circle cx="240.0" cy="234.7" r="3.5" fill="#215a88"/><circle cx="275.0" cy="223.8" r="3.5" fill="#215a88"/><circle cx="310.0" cy="211.5" r="3.5" fill="#215a88"/><circle cx="345.0" cy="193.8" r="3.5" fill="#215a88"/><circle cx="380.0" cy="194.3" r="3.5" fill="#215a88"/><circle cx="415.0" cy="146.7" r="3.5" fill="#215a88"/><circle cx="450.0" cy="132.3" r="3.5" fill="#215a88"/><circle cx="485.0" cy="128.6" r="3.5" fill="#215a88"/><circle cx="520.0" cy="136.8" r="3.5" fill="#215a88"/>
+  <text x="310.0" y="388" class="sub">已经过的块数</text>
+  <text x="34" y="215.0" class="sub" transform="rotate(-90 34 215.0)">输出 RMS</text>
+  <text x="520" y="102" class="anno">末层 RMS ≈ 4.47，块输出未做 LN</text>
+  <text x="520" y="285" class="anno2">末尾补一个 LayerNorm 后 → RMS = 1.00</text>
+  <text x="320" y="464" class="sub">块内两个 LN 只作用于支路入口，直接残差路不经过它们</text>
+  <text x="320" y="486" class="sub">单次随机初始化的观察，不是所有配置都按此倍率增长</text>
+</svg>
