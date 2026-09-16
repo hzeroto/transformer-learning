@@ -25,6 +25,7 @@ exercises/
 - [007：多头 Attention（原理与实现已验收）](ex007_multi_head_attention/README.md)
 - [008：Pre-LN Transformer Block（核心综合实现已验收）](ex008_transformer_block/README.md)
 - [009：mini-GPT 的输入管线与模型组装](ex009_mini_gpt/README.md)
+- [010：训练 mini-GPT 并验证它真的学会了](ex010_train_mini_gpt/README.md)
 
 ## 衔接讲义
 
@@ -34,3 +35,4 @@ exercises/
 - [Transformer Block 主干：残差、LayerNorm 与 FFN](../notes/transformer-block.md)：Pre-LN 主干的三个新组件与组合顺序。
 - [Dropout 与模块组织：随机失活、参数注册与两种开关](../notes/dropout-and-module-organization.md)：块的最后一个组件，以及把散装函数变成可训练模型所需的 `nn.Module` 机制。
 - [从 Block 到 mini-GPT：把上下文表示变成下一 token 的预测](../notes/block-to-mini-gpt.md)：堆叠、输入管线、final LayerNorm 与词表投影，把块接成完整模型。
+- [训练 mini-GPT：从能跑到真的学会](../notes/training-mini-gpt.md)：Adam、训练/验证划分与记忆-泛化对照、四类不报错的训练故障、存档恢复与生成。

@@ -235,8 +235,8 @@ def build_two_styles(
         可按 named_parameters() 的同名参数检查数值对齐与存储独立性。
     """
     torch.manual_seed(seed)
-    preLNGPT = MiniGPT(vocab_size, C, num_heads, ffn_hidden, n_layer, max_positions, "pre")
+    preLNGPT = MiniGPT(vocab_size, C, num_heads, ffn_hidden, n_layer, max_positions, "pre", dtype=dtype)
 
     torch.manual_seed(seed)
-    postLNGPT = MiniGPT(vocab_size, C, num_heads, ffn_hidden, n_layer, max_positions, "post")
+    postLNGPT = MiniGPT(vocab_size, C, num_heads, ffn_hidden, n_layer, max_positions, "post", dtype=dtype)
     return preLNGPT, postLNGPT

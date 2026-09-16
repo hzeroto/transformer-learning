@@ -87,6 +87,8 @@ SGD的更新先自己写，使用更复杂优化器前解释其状态和作用�
 
 已准备可直接阅读的[Pre-LN 块主干讲义](../notes/transformer-block.md)，
 贯通残差、逐 token LayerNorm 与 ReLU FFN；暂不包含 Dropout、参数注册和完整模型训练。
+训练阶段的材料见[训练 mini-GPT 讲义](../notes/training-mini-gpt.md)：Adam 及其状态、
+训练/验证划分与记忆-泛化对照、四类不报错的训练故障、存档恢复与生成。
 材料已准备不表示这些能力已经开始验收或掌握，实际状态仍以 progress.json 为准。
 
 逐步补非线性激活、FFN、残差、LayerNorm和Dropout，说明Pre-LN与Post-LN排列。
