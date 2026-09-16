@@ -81,6 +81,7 @@ def evaluate(model: MiniGPT, ids: torch.Tensor) -> tuple[float, float]:
         为 False 的位置视为不影响结果，最后沿位置轴取 all。
         `.item()` 把标量 Tensor 变成 Python float。
     """
+    is_training = model.training
     model.eval()
     with torch.no_grad():
         input_ids, targets, input_valid, target_valid = make_supervised_batch(ids)
@@ -91,7 +92,8 @@ def evaluate(model: MiniGPT, ids: torch.Tensor) -> tuple[float, float]:
         correct = check.all(dim=-1) # (B, T-1)
         acc = correct.float().mean().item()
 
-    model.train()
+    if is_training:
+        model.train()
     return loss, acc
 
 
@@ -135,6 +137,8 @@ def train_model(
         它会就地修改 .grad 并返回裁剪前的总范数，必须在 backward 之后、
         step 之前调用。
     """
+    is_training = model.training
+    model.train()
     opt = torch.optim.Adam(model.parameters(), lr=lr)
     g = torch.Generator().manual_seed(seed)
 
@@ -154,6 +158,8 @@ def train_model(
 
         opt.step()
 
+    if not is_training:
+        model.eval()
     return opt
 
 def save_checkpoint(
@@ -244,6 +250,7 @@ def greedy_generate(
         每步的 input_valid 是与当前序列同形状的全 True bool 张量。
         torch.cat([ids, next_id], dim=1) 追加；next_id 的 shape 需为 (1,1)。
     """
+    is_training = model.training
     model.eval()
     with torch.no_grad():
         T = prefix_ids.shape[1]
@@ -253,5 +260,6 @@ def greedy_generate(
             logits = model(generated,input_valid) # (1, T', vocab_size)
             next_id = logits[:,-1,:].argmax(dim=-1, keepdim=True) # (1, 1)
             generated = torch.cat([generated, next_id], dim=1) # (1, T'+1)
-    model.train()
+    if is_training:
+        model.train()
     return generated

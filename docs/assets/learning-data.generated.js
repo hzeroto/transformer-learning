@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-16T12:18:32.580Z",
+  "generatedAt": "2026-09-16T12:42:54.658Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -1437,9 +1437,9 @@ window.LEARNING_DATA = {
             "能生成学习到的模式，保存并恢复参数、配置和训练状态，解释初始化、参数注册、优化器与模式切换"
           ],
           "progress": {
-            "status": "current",
-            "updatedAt": "2026-09-16T12:18:26.747Z",
-            "note": "检查点恢复缺口已解决，Mini-GPT 仍为当前学习点，未整课验收。evaluate/greedy_generate 恢复调用前模式、train_model 显式切训练模式的契约问题按用户要求暂缓；两项课后观察尚未验收。",
+            "status": "mastered",
+            "updatedAt": "2026-09-16T12:42:48.199Z",
+            "note": "ex009模型组装与ex010训练、验证、生成、保存恢复在本阶段CPU float32玩具任务范围内完成，原先模式恢复及训练模式缺口均已解决，不再追加同质问题。核心实现由学习者填写，期间有API与排错提示，实验采集由教师协助、解释由学习者提交并有针对性纠正，不冒充无提示独立实验设计。评估和生成按本题正常返回契约恢复模式；未把异常恢复扩张为通关要求。不据此宣称真实语料语言能力、跨设备数值一致性或GPU性能已掌握。",
             "evidence": [
               {
                 "at": "2026-09-15T15:59:31.044Z",
@@ -1456,6 +1456,22 @@ window.LEARNING_DATA = {
               {
                 "at": "2026-09-16T12:18:26.747Z",
                 "text": "学习者显式用 float32 重建模型，原先 logits 精度差异已解决；随后在 load_checkpoint 返回前调用 model.eval()。对最新实现实跑 TestCheckpoint 四项全部通过、无跳过，覆盖参数装载、Adam 历史状态、存档结构、恢复后 logits 逐位相同及 eval 状态。教师未修改实现。"
+              },
+              {
+                "at": "2026-09-16T12:28:40.334Z",
+                "text": "ex010 第一项观察理解验收通过。教师使用学习者实现，在 CPU float32、seed=0、2层宽64、Adam lr=0.003、batch64 下测量规则与随机标签数据各1200步，每25步记录完整训练/验证集指标。学习者针对两组训练准确率均100%、验证分别100%与0%的实测结果，解释未见三元组的验证集能区分记忆训练答案与规则泛化；并指出随机标签训练使模型更确定地拟合训练答案，在验证集上正确标签的相对分数和概率下降，导致交叉熵上升。实验测量为教师协助，因果解释由学习者提交。"
+              },
+              {
+                "at": "2026-09-16T12:33:53.163Z",
+                "text": "ex010 第二项观察讨论收尾：针对 p=0.3 的60/400步实测，学习者解释较早检查点候选分数差距较小、扰动可能改变预测，较晚检查点 logits 波动仍可保持 argmax，并判断不能据此省略 eval。教师纠正比较对象为同一位置的不同候选、固定参数观察不涉及进一步学习，以及忘记 eval 的直接问题是 Dropout 随机性而非新增过拟合；学习者随后明确将原因归于 Dropout。实验为教师协助，修正经过提示，不记为独立推导。结合既有 Dropout 原理与当前实现证据，不再追加同质理解题。"
+              },
+              {
+                "at": "2026-09-16T12:38:15.473Z",
+                "text": "ex010 状态管理收尾题通过：学习者从当前 evaluate 末尾无条件 train 推出后续 no_grad 前向仍受随机 Dropout 影响；提出记录进入函数时的模式并恢复，避免强制固定模式；正确区分 eval 状态下仍可反向更新参数、Dropout 则关闭，提出在训练循环显式调用 model.train。拼写 triain 作为 API 笔误纠正，不判为概念缺口。结合已完成的两项实验解释，理解检查到此结束。"
+              },
+              {
+                "at": "2026-09-16T12:42:48.199Z",
+                "text": "ex010 最终验收通过。学习者自行保存进入时的 training 状态，在 evaluate 与 greedy_generate 正常结束时按原状态恢复；train_model 在循环前启用 train，结束时恢复入口模式。对 training.py SHA256 前缀 dbe88b6d592a、未改的教师测试实跑 .venv/bin/python -B -m unittest discover -s tests -t .，229项全部通过、无跳过，含ex010全部32项，运行前后实现及测试哈希不变。临时行为检查从train/eval两种入口分别调用评估和生成，均验证所有前向处于eval/no_grad且返回恢复原模式；从两种入口训练3步，每步前向均为train且启用求导。结合此前通过的检查点参数/Adam状态/逐位一致性、未见三元组生成、两项实测观察解释及模式管理应用题，完成Mini-GPT训练闭环验收；教师本轮未修改实现或测试。"
               }
             ]
           }
@@ -1950,8 +1966,8 @@ window.LEARNING_DATA = {
   ],
   "progress": {
     "schemaVersion": 1,
-    "currentNodeId": "implementation.mini-gpt",
-    "updatedAt": "2026-09-16T12:18:26.747Z",
+    "currentNodeId": null,
+    "updatedAt": "2026-09-16T12:42:48.199Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -2629,9 +2645,9 @@ window.LEARNING_DATA = {
         ]
       },
       "implementation.mini-gpt": {
-        "status": "current",
-        "updatedAt": "2026-09-16T12:18:26.747Z",
-        "note": "检查点恢复缺口已解决，Mini-GPT 仍为当前学习点，未整课验收。evaluate/greedy_generate 恢复调用前模式、train_model 显式切训练模式的契约问题按用户要求暂缓；两项课后观察尚未验收。",
+        "status": "mastered",
+        "updatedAt": "2026-09-16T12:42:48.199Z",
+        "note": "ex009模型组装与ex010训练、验证、生成、保存恢复在本阶段CPU float32玩具任务范围内完成，原先模式恢复及训练模式缺口均已解决，不再追加同质问题。核心实现由学习者填写，期间有API与排错提示，实验采集由教师协助、解释由学习者提交并有针对性纠正，不冒充无提示独立实验设计。评估和生成按本题正常返回契约恢复模式；未把异常恢复扩张为通关要求。不据此宣称真实语料语言能力、跨设备数值一致性或GPU性能已掌握。",
         "evidence": [
           {
             "at": "2026-09-15T15:59:31.044Z",
@@ -2648,13 +2664,29 @@ window.LEARNING_DATA = {
           {
             "at": "2026-09-16T12:18:26.747Z",
             "text": "学习者显式用 float32 重建模型，原先 logits 精度差异已解决；随后在 load_checkpoint 返回前调用 model.eval()。对最新实现实跑 TestCheckpoint 四项全部通过、无跳过，覆盖参数装载、Adam 历史状态、存档结构、恢复后 logits 逐位相同及 eval 状态。教师未修改实现。"
+          },
+          {
+            "at": "2026-09-16T12:28:40.334Z",
+            "text": "ex010 第一项观察理解验收通过。教师使用学习者实现，在 CPU float32、seed=0、2层宽64、Adam lr=0.003、batch64 下测量规则与随机标签数据各1200步，每25步记录完整训练/验证集指标。学习者针对两组训练准确率均100%、验证分别100%与0%的实测结果，解释未见三元组的验证集能区分记忆训练答案与规则泛化；并指出随机标签训练使模型更确定地拟合训练答案，在验证集上正确标签的相对分数和概率下降，导致交叉熵上升。实验测量为教师协助，因果解释由学习者提交。"
+          },
+          {
+            "at": "2026-09-16T12:33:53.163Z",
+            "text": "ex010 第二项观察讨论收尾：针对 p=0.3 的60/400步实测，学习者解释较早检查点候选分数差距较小、扰动可能改变预测，较晚检查点 logits 波动仍可保持 argmax，并判断不能据此省略 eval。教师纠正比较对象为同一位置的不同候选、固定参数观察不涉及进一步学习，以及忘记 eval 的直接问题是 Dropout 随机性而非新增过拟合；学习者随后明确将原因归于 Dropout。实验为教师协助，修正经过提示，不记为独立推导。结合既有 Dropout 原理与当前实现证据，不再追加同质理解题。"
+          },
+          {
+            "at": "2026-09-16T12:38:15.473Z",
+            "text": "ex010 状态管理收尾题通过：学习者从当前 evaluate 末尾无条件 train 推出后续 no_grad 前向仍受随机 Dropout 影响；提出记录进入函数时的模式并恢复，避免强制固定模式；正确区分 eval 状态下仍可反向更新参数、Dropout 则关闭，提出在训练循环显式调用 model.train。拼写 triain 作为 API 笔误纠正，不判为概念缺口。结合已完成的两项实验解释，理解检查到此结束。"
+          },
+          {
+            "at": "2026-09-16T12:42:48.199Z",
+            "text": "ex010 最终验收通过。学习者自行保存进入时的 training 状态，在 evaluate 与 greedy_generate 正常结束时按原状态恢复；train_model 在循环前启用 train，结束时恢复入口模式。对 training.py SHA256 前缀 dbe88b6d592a、未改的教师测试实跑 .venv/bin/python -B -m unittest discover -s tests -t .，229项全部通过、无跳过，含ex010全部32项，运行前后实现及测试哈希不变。临时行为检查从train/eval两种入口分别调用评估和生成，均验证所有前向处于eval/no_grad且返回恢复原模式；从两种入口训练3步，每步前向均为train且启用求导。结合此前通过的检查点参数/Adam状态/逐位一致性、未见三元组生成、两项实测观察解释及模式管理应用题，完成Mini-GPT训练闭环验收；教师本轮未修改实现或测试。"
           }
         ]
       }
     },
     "statusCounts": {
-      "mastered": 43,
-      "current": 1,
+      "mastered": 44,
+      "current": 0,
       "verify": 4,
       "relearn": 1,
       "pending": 30
@@ -2662,6 +2694,50 @@ window.LEARNING_DATA = {
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "1a035c09-9fa1-45ec-980a-5c149f6625ce",
+      "at": "2026-09-16T12:42:48.199Z",
+      "nodeId": "implementation.mini-gpt",
+      "nodeTitle": "Mini-GPT",
+      "action": "master",
+      "fromStatus": "current",
+      "toStatus": "mastered",
+      "evidence": "ex010 最终验收通过。学习者自行保存进入时的 training 状态，在 evaluate 与 greedy_generate 正常结束时按原状态恢复；train_model 在循环前启用 train，结束时恢复入口模式。对 training.py SHA256 前缀 dbe88b6d592a、未改的教师测试实跑 .venv/bin/python -B -m unittest discover -s tests -t .，229项全部通过、无跳过，含ex010全部32项，运行前后实现及测试哈希不变。临时行为检查从train/eval两种入口分别调用评估和生成，均验证所有前向处于eval/no_grad且返回恢复原模式；从两种入口训练3步，每步前向均为train且启用求导。结合此前通过的检查点参数/Adam状态/逐位一致性、未见三元组生成、两项实测观察解释及模式管理应用题，完成Mini-GPT训练闭环验收；教师本轮未修改实现或测试。",
+      "note": "ex009模型组装与ex010训练、验证、生成、保存恢复在本阶段CPU float32玩具任务范围内完成，原先模式恢复及训练模式缺口均已解决，不再追加同质问题。核心实现由学习者填写，期间有API与排错提示，实验采集由教师协助、解释由学习者提交并有针对性纠正，不冒充无提示独立实验设计。评估和生成按本题正常返回契约恢复模式；未把异常恢复扩张为通关要求。不据此宣称真实语料语言能力、跨设备数值一致性或GPU性能已掌握。"
+    },
+    {
+      "id": "54c61168-a6fe-4dec-a1ca-4dfe226ad9a2",
+      "at": "2026-09-16T12:38:15.473Z",
+      "nodeId": "implementation.mini-gpt",
+      "nodeTitle": "Mini-GPT",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "ex010 状态管理收尾题通过：学习者从当前 evaluate 末尾无条件 train 推出后续 no_grad 前向仍受随机 Dropout 影响；提出记录进入函数时的模式并恢复，避免强制固定模式；正确区分 eval 状态下仍可反向更新参数、Dropout 则关闭，提出在训练循环显式调用 model.train。拼写 triain 作为 API 笔误纠正，不判为概念缺口。结合已完成的两项实验解释，理解检查到此结束。",
+      "note": "理解部分已通过，不再追加问题。最终只剩实现与已解释契约对齐：evaluate/greedy_generate 保存并恢复调用前模式，train_model 每步切到训练模式；当前文件尚未修改这三处。修改后验证两种调用前状态和训练模式，再跑必要回归，即可完成 ex010 收尾；不重做已有观察实验。"
+    },
+    {
+      "id": "50967216-155f-4db8-bb36-a8b8e5581269",
+      "at": "2026-09-16T12:33:53.163Z",
+      "nodeId": "implementation.mini-gpt",
+      "nodeTitle": "Mini-GPT",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "ex010 第二项观察讨论收尾：针对 p=0.3 的60/400步实测，学习者解释较早检查点候选分数差距较小、扰动可能改变预测，较晚检查点 logits 波动仍可保持 argmax，并判断不能据此省略 eval。教师纠正比较对象为同一位置的不同候选、固定参数观察不涉及进一步学习，以及忘记 eval 的直接问题是 Dropout 随机性而非新增过拟合；学习者随后明确将原因归于 Dropout。实验为教师协助，修正经过提示，不记为独立推导。结合既有 Dropout 原理与当前实现证据，不再追加同质理解题。",
+      "note": "两项课后观察讨论已收尾：记忆与泛化由学习者解释通过，模式对照在教师纠正因果后完成。229项Python回归、前端与学习数据校验已通过，但整课工程契约仍有此前明确暂缓的 evaluate/greedy_generate 原模式恢复及 train_model 切训练模式问题；未改实现，不把测试通过或本轮确认记录为这些问题已解决。Mini-GPT继续作为当前学习点。"
+    },
+    {
+      "id": "fd44bb2e-d49a-4fca-b5c2-c0a42bc5da25",
+      "at": "2026-09-16T12:28:40.334Z",
+      "nodeId": "implementation.mini-gpt",
+      "nodeTitle": "Mini-GPT",
+      "action": "current",
+      "fromStatus": "current",
+      "toStatus": "current",
+      "evidence": "ex010 第一项观察理解验收通过。教师使用学习者实现，在 CPU float32、seed=0、2层宽64、Adam lr=0.003、batch64 下测量规则与随机标签数据各1200步，每25步记录完整训练/验证集指标。学习者针对两组训练准确率均100%、验证分别100%与0%的实测结果，解释未见三元组的验证集能区分记忆训练答案与规则泛化；并指出随机标签训练使模型更确定地拟合训练答案，在验证集上正确标签的相对分数和概率下降，导致交叉熵上升。实验测量为教师协助，因果解释由学习者提交。",
+      "note": "记忆与泛化观察已验收；验证结果仅支持当前任务与数据划分上的泛化，不作普遍证明。下一项为60/400步、p=0.3时train/eval对准确率及argmax的影响。此前229项Python回归、前端及学习数据校验已实跑通过；检查点缺口已解决。evaluate/greedy_generate恢复原模式与train_model切训练模式的契约问题按用户要求暂缓，仍未记为解决，Mini-GPT继续作为当前学习点。"
+    },
     {
       "id": "9075cacf-9b28-4373-8b7d-f702986589a3",
       "at": "2026-09-16T12:18:26.747Z",
