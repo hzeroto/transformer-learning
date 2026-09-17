@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Noto Serif CJK SC, AR PL UMing CN, DejaVu Sans, sans-serif">
+<style>
+.ph{font-size:14.5px;font-weight:700;fill:#111}
+.rl{font-size:11.5px;fill:#333}
+.cell{font-size:11px;fill:#fff;text-anchor:middle;font-weight:600}
+.old{fill:#2f6fd0;stroke:#1a4c94;stroke-width:1}
+.new{fill:#e07b28;stroke:#a85510;stroke-width:1.4}
+.note{font-size:11px;fill:#555}
+.pfill{font-size:11px;fill:#1a4c94;font-weight:700}
+.pdec{font-size:11px;fill:#a85510;font-weight:700}
+.brace{fill:none;stroke:#a85510;stroke-width:1.2}
+.codebox{fill:#f7f9fc;stroke:#c8d4e4;stroke-width:1}
+.code{font-size:12.5px;fill:#222;font-family:monospace}
+.codesub{font-size:11px;fill:#666}
+.hl{fill:#c2410c;font-weight:700}
+.hr{stroke:#ccc;stroke-width:1} .hr2{stroke:#999;stroke-width:1}
+.th{font-size:12px;font-weight:700;fill:#111}
+.td{font-size:12px;fill:#333} .tdk{font-size:12px;fill:#555}
+.tdb{font-size:12px;fill:#1a4c94;font-weight:600}
+.lg{font-size:11.5px;fill:#333}
+</style>
+<rect width="960" height="560" fill="#fff"/>
+<text x="480.0" y="30" style="font-size:16px;font-weight:700;fill:#111" text-anchor="middle">prefill 和 decode 不是两套机制，是同一段代码的两种情形</text>
+<text x="480.0" y="50" style="font-size:11.5px;fill:#555" text-anchor="middle">格子里的数字是位置下标 · 蓝=缓存中已有，本步复用 · 橙=本步新算并追加</text>
+<rect x="60" y="66" width="840" height="52" rx="5" class="codebox"/>
+<text x="76" y="86" class="code">cache.append(k_new, v_new)  →  Q:(B,<tspan class="hl">n</tspan>,C) · K/V:(B,<tspan class="hl">L</tspan>,C) · allowed:(B,<tspan class="hl">n</tspan>,<tspan class="hl">L</tspan>) = ( j ≤ L−n+i )</text>
+<text x="76" y="106" class="codesub">同一段代码，四次调用。下面每一行只有 n 和 L 不同 —— 没有第二套逻辑。</text>
+<text x="256" y="164.0" class="rl" text-anchor="end">第 1 次   n=5</text>
+<rect x="268" y="146" width="28" height="28" class="new"/>
+<text x="282.0" y="164.0" class="cell">0</text>
+<rect x="300" y="146" width="28" height="28" class="new"/>
+<text x="314.0" y="164.0" class="cell">1</text>
+<rect x="332" y="146" width="28" height="28" class="new"/>
+<text x="346.0" y="164.0" class="cell">2</text>
+<rect x="364" y="146" width="28" height="28" class="new"/>
+<text x="378.0" y="164.0" class="cell">3</text>
+<rect x="396" y="146" width="28" height="28" class="new"/>
+<text x="410.0" y="164.0" class="cell">4</text>
+<text x="442" y="164.0" class="note">allowed (1,5,5)  下三角</text>
+<text x="118" y="164.0" class="pfill" text-anchor="end">prefill</text>
+<text x="256" y="204.0" class="rl" text-anchor="end">第 2 次   n=1</text>
+<rect x="268" y="186" width="28" height="28" class="old"/>
+<text x="282.0" y="204.0" class="cell">0</text>
+<rect x="300" y="186" width="28" height="28" class="old"/>
+<text x="314.0" y="204.0" class="cell">1</text>
+<rect x="332" y="186" width="28" height="28" class="old"/>
+<text x="346.0" y="204.0" class="cell">2</text>
+<rect x="364" y="186" width="28" height="28" class="old"/>
+<text x="378.0" y="204.0" class="cell">3</text>
+<rect x="396" y="186" width="28" height="28" class="old"/>
+<text x="410.0" y="204.0" class="cell">4</text>
+<rect x="428" y="186" width="28" height="28" class="new"/>
+<text x="442.0" y="204.0" class="cell">5</text>
+<text x="474" y="204.0" class="note">allowed (1,1,6)  全 True</text>
+<text x="118" y="204.0" class="pdec" text-anchor="end">decode</text>
+<text x="256" y="244.0" class="rl" text-anchor="end">第 3 次   n=1</text>
+<rect x="268" y="226" width="28" height="28" class="old"/>
+<text x="282.0" y="244.0" class="cell">0</text>
+<rect x="300" y="226" width="28" height="28" class="old"/>
+<text x="314.0" y="244.0" class="cell">1</text>
+<rect x="332" y="226" width="28" height="28" class="old"/>
+<text x="346.0" y="244.0" class="cell">2</text>
+<rect x="364" y="226" width="28" height="28" class="old"/>
+<text x="378.0" y="244.0" class="cell">3</text>
+<rect x="396" y="226" width="28" height="28" class="old"/>
+<text x="410.0" y="244.0" class="cell">4</text>
+<rect x="428" y="226" width="28" height="28" class="old"/>
+<text x="442.0" y="244.0" class="cell">5</text>
+<rect x="460" y="226" width="28" height="28" class="new"/>
+<text x="474.0" y="244.0" class="cell">6</text>
+<text x="506" y="244.0" class="note">allowed (1,1,7)  全 True</text>
+<text x="118" y="244.0" class="pdec" text-anchor="end">decode</text>
+<text x="256" y="284.0" class="rl" text-anchor="end">第 4 次   n=1</text>
+<rect x="268" y="266" width="28" height="28" class="old"/>
+<text x="282.0" y="284.0" class="cell">0</text>
+<rect x="300" y="266" width="28" height="28" class="old"/>
+<text x="314.0" y="284.0" class="cell">1</text>
+<rect x="332" y="266" width="28" height="28" class="old"/>
+<text x="346.0" y="284.0" class="cell">2</text>
+<rect x="364" y="266" width="28" height="28" class="old"/>
+<text x="378.0" y="284.0" class="cell">3</text>
+<rect x="396" y="266" width="28" height="28" class="old"/>
+<text x="410.0" y="284.0" class="cell">4</text>
+<rect x="428" y="266" width="28" height="28" class="old"/>
+<text x="442.0" y="284.0" class="cell">5</text>
+<rect x="460" y="266" width="28" height="28" class="old"/>
+<text x="474.0" y="284.0" class="cell">6</text>
+<rect x="492" y="266" width="28" height="28" class="new"/>
+<text x="506.0" y="284.0" class="cell">7</text>
+<text x="538" y="284.0" class="note">allowed (1,1,8)  全 True</text>
+<text x="118" y="284.0" class="pdec" text-anchor="end">decode</text>
+<path d="M 132 186 L 124 186 L 124 294 L 132 294" class="brace"/>
+<line x1="55" y1="320" x2="905" y2="320" class="hr"/>
+<text x="60" y="346" class="ph">这一处改动带来什么</text>
+<text x="60" y="372" class="th"></text>
+<text x="260" y="372" class="th">ex010 的写法</text>
+<text x="510" y="372" class="th">带缓存</text>
+<line x1="55" y1="379" x2="905" y2="379" class="hr2"/>
+<text x="60" y="400" class="tdk">每次前向的 token 数</text>
+<text x="260" y="400" class="td">整个前缀，逐步变长</text>
+<text x="510" y="400" class="tdb">prefill 1 次，之后固定 1</text>
+<text x="60" y="428" class="tdk">每次新算的 K/V 行数</text>
+<text x="260" y="428" class="td">全部重算</text>
+<text x="510" y="428" class="tdb">只算 n 行</text>
+<text x="60" y="456" class="tdk">前缀 5、生成 6 步累计</text>
+<text x="260" y="456" class="td">45 行（39 行重复）</text>
+<text x="510" y="456" class="tdb">11 行</text>
+<text x="60" y="484" class="tdk">额外内存</text>
+<text x="260" y="484" class="td">无</text>
+<text x="510" y="484" class="tdb">2 × 层 × B × L × H_kv × Dh × 字节</text>
+<rect x="60" y="530" width="13" height="13" class="old"/><text x="79" y="541" class="lg">缓存中已有</text>
+<rect x="190" y="530" width="13" height="13" class="new"/><text x="209" y="541" class="lg">本步新算的 n 行</text>
+<text x="360" y="541" class="lg">前提：K[t]=X[t]@Wk 只依赖位置 t，追加新 token 不改变已有行（实测差 0.0）</text>
+</svg>
