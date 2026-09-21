@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="760" viewBox="0 0 1140 760">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker></defs>
+<rect width="1140" height="760" fill="#f8fafc"/>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#172b4d} .title{font-weight:700}.small{font-size:16px}.body{font-size:19px}</style>
+<text x="28" y="42" font-size="28" text-anchor="start" font-weight="700">查询头仍有 8 个，K/V 可以按组共享</text>
+<text x="28" y="75" font-size="18" text-anchor="start">固定一层：箭头从 K/V 指向使用它的 Q；每个 Q 都独立计算注意力权重。</text>
+<rect x="16" y="102" width="360" height="545" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="196" y="137" font-size="23" text-anchor="middle" font-weight="700">MHA  ·  Hkv = 8</text>
+<text x="196" y="165" font-size="17" text-anchor="middle">每个 Q 配一份独有的 K/V</text>
+<path d="M 242 203 L 132 203" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="186" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="87" y="210" font-size="18" text-anchor="middle" font-weight="600">Q0</text>
+<path d="M 242 253 L 132 253" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="236" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="87" y="260" font-size="18" text-anchor="middle" font-weight="600">Q1</text>
+<path d="M 242 303 L 132 303" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="286" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="87" y="310" font-size="18" text-anchor="middle" font-weight="600">Q2</text>
+<path d="M 242 353 L 132 353" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="336" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="87" y="360" font-size="18" text-anchor="middle" font-weight="600">Q3</text>
+<path d="M 242 403 L 132 403" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="386" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="87" y="410" font-size="18" text-anchor="middle" font-weight="600">Q4</text>
+<path d="M 242 453 L 132 453" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="436" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="87" y="460" font-size="18" text-anchor="middle" font-weight="600">Q5</text>
+<path d="M 242 503 L 132 503" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="486" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="87" y="510" font-size="18" text-anchor="middle" font-weight="600">Q6</text>
+<path d="M 242 553 L 132 553" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="46" y="536" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="87" y="560" font-size="18" text-anchor="middle" font-weight="600">Q7</text>
+<rect x="242" y="186" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="294" y="210" font-size="17" text-anchor="middle" font-weight="600">K0 / V0</text>
+<rect x="242" y="236" width="104" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="294" y="260" font-size="17" text-anchor="middle" font-weight="600">K1 / V1</text>
+<rect x="242" y="286" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="294" y="310" font-size="17" text-anchor="middle" font-weight="600">K2 / V2</text>
+<rect x="242" y="336" width="104" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="294" y="360" font-size="17" text-anchor="middle" font-weight="600">K3 / V3</text>
+<rect x="242" y="386" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="294" y="410" font-size="17" text-anchor="middle" font-weight="600">K4 / V4</text>
+<rect x="242" y="436" width="104" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="294" y="460" font-size="17" text-anchor="middle" font-weight="600">K5 / V5</text>
+<rect x="242" y="486" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="294" y="510" font-size="17" text-anchor="middle" font-weight="600">K6 / V6</text>
+<rect x="242" y="536" width="104" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="294" y="560" font-size="17" text-anchor="middle" font-weight="600">K7 / V7</text>
+<text x="196" y="599" font-size="18" text-anchor="middle">权重：(B, 8, n, S)</text>
+<text x="196" y="630" font-size="18" text-anchor="middle" font-weight="600">KV 有效数据：原大小</text>
+<rect x="390" y="102" width="360" height="545" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="570" y="137" font-size="23" text-anchor="middle" font-weight="700">GQA  ·  Hkv = 2</text>
+<text x="570" y="165" font-size="17" text-anchor="middle">每 4 个 Q 共享一份 K/V</text>
+<path d="M 616 278 L 506 203" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="186" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="461" y="210" font-size="18" text-anchor="middle" font-weight="600">Q0</text>
+<path d="M 616 278 L 506 253" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="236" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="461" y="260" font-size="18" text-anchor="middle" font-weight="600">Q1</text>
+<path d="M 616 278 L 506 303" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="286" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="461" y="310" font-size="18" text-anchor="middle" font-weight="600">Q2</text>
+<path d="M 616 278 L 506 353" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="336" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="461" y="360" font-size="18" text-anchor="middle" font-weight="600">Q3</text>
+<path d="M 616 478 L 506 403" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="386" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="461" y="410" font-size="18" text-anchor="middle" font-weight="600">Q4</text>
+<path d="M 616 478 L 506 453" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="436" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="461" y="460" font-size="18" text-anchor="middle" font-weight="600">Q5</text>
+<path d="M 616 478 L 506 503" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="486" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="461" y="510" font-size="18" text-anchor="middle" font-weight="600">Q6</text>
+<path d="M 616 478 L 506 553" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="420" y="536" width="82" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="461" y="560" font-size="18" text-anchor="middle" font-weight="600">Q7</text>
+<rect x="616" y="261" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="668" y="285" font-size="17" text-anchor="middle" font-weight="600">K0 / V0</text>
+<rect x="616" y="461" width="104" height="34" rx="9" fill="#e5f5ec" stroke="#cbd5e1"/>
+<text x="668" y="485" font-size="17" text-anchor="middle" font-weight="600">K1 / V1</text>
+<text x="570" y="599" font-size="18" text-anchor="middle">权重：(B, 8, n, S)</text>
+<text x="570" y="630" font-size="18" text-anchor="middle" font-weight="600">KV 有效数据：原来的 1/4</text>
+<rect x="764" y="102" width="360" height="545" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="944" y="137" font-size="23" text-anchor="middle" font-weight="700">MQA  ·  Hkv = 1</text>
+<text x="944" y="165" font-size="17" text-anchor="middle">所有 Q 共享一份 K/V</text>
+<path d="M 990 378 L 880 203" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="186" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="210" font-size="18" text-anchor="middle" font-weight="600">Q0</text>
+<path d="M 990 378 L 880 253" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="236" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="260" font-size="18" text-anchor="middle" font-weight="600">Q1</text>
+<path d="M 990 378 L 880 303" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="286" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="310" font-size="18" text-anchor="middle" font-weight="600">Q2</text>
+<path d="M 990 378 L 880 353" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="336" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="360" font-size="18" text-anchor="middle" font-weight="600">Q3</text>
+<path d="M 990 378 L 880 403" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="386" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="410" font-size="18" text-anchor="middle" font-weight="600">Q4</text>
+<path d="M 990 378 L 880 453" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="436" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="460" font-size="18" text-anchor="middle" font-weight="600">Q5</text>
+<path d="M 990 378 L 880 503" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="486" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="510" font-size="18" text-anchor="middle" font-weight="600">Q6</text>
+<path d="M 990 378 L 880 553" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="794" y="536" width="82" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="835" y="560" font-size="18" text-anchor="middle" font-weight="600">Q7</text>
+<rect x="990" y="361" width="104" height="34" rx="9" fill="#e0ecff" stroke="#cbd5e1"/>
+<text x="1042" y="385" font-size="17" text-anchor="middle" font-weight="600">K0 / V0</text>
+<text x="944" y="599" font-size="18" text-anchor="middle">权重：(B, 8, n, S)</text>
+<text x="944" y="630" font-size="18" text-anchor="middle" font-weight="600">KV 有效数据：原来的 1/8</text>
+<text x="28" y="684" font-size="18" text-anchor="start">每个 Q 框：(B, n, D)；每个 K/V 框：两份 (B, S, D)。</text>
+<text x="28" y="716" font-size="18" text-anchor="start">n = 本次新 token 数，S = 追加后的缓存长度；组内共享 K/V，K 与 V 仍分别保存。</text>
+<text x="28" y="747" font-size="16" text-anchor="start">缓存比例限定相同层数、B、S、D 与 dtype；不表示推理延迟也按相同比例减少。</text>
+</svg>
