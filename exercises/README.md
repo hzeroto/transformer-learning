@@ -27,6 +27,7 @@ exercises/
 - [009：mini-GPT 的输入管线与模型组装](ex009_mini_gpt/README.md)
 - [010：训练 mini-GPT 并验证它真的学会了](ex010_train_mini_gpt/README.md)
 - [011：KV Cache 与两阶段生成](ex011_kv_cache/README.md)
+- [012：MQA / GQA 与紧凑 KV 缓存](ex012_grouped_query_attention/README.md)
 
 ## 衔接讲义
 

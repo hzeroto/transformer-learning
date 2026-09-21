@@ -326,6 +326,9 @@ Wq/Wo 和 FFN 仍按模型宽度工作。Wk/Wv 改变 shape 后，应在模型�
 以及持久缓存确实只有 Hkv 头。组内共享参数的梯度应累加来自该组所有查询头的贡献；
 不能 detach 共享 K/V，也不能只保留某一个查询头的梯度。
 
+配套实现练习见 [012：MQA / GQA 与紧凑 KV 缓存](../exercises/ex012_grouped_query_attention/README.md)。
+四处核心实现由学习者填写；教师构造、独立测试与运行入口已提供。
+
 ## 复现与本课边界
 
 配套 [小例子脚本](../examples/gqa_mechanism_probe.py) 复现第 2、4、5、6 节的数字，
