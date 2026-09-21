@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-16T12:42:54.658Z",
+  "generatedAt": "2026-09-21T13:56:04.661Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -1711,7 +1711,19 @@ window.LEARNING_DATA = {
             "能区分整段预填充与逐token解码，并分析计算和存储变化"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-21T13:56:00.935Z",
+            "note": "KV Cache在本课CPU float32/float64、Pre-LN、p=0范围内通过验收。学习者完成实现并经过API、状态与位置排错提示；教师修正了最后生成token不应强制缓存的错误测试断言，并补充续用逐层K/V检查。两项观察为教师采集、学习者解释并经提示澄清新投影与历史读取及非KV内存开销；不冒充独立测试设计或无提示分析。专项26项、Python全仓255项及临时16组完整logits对齐均通过、无跳过；原verify中的测试未实跑缺口已解决。不据此宣称GPU正确性、墙钟加速或生产推理性能；无需重复已有口头检查。",
+            "evidence": [
+              {
+                "at": "2026-09-21T13:52:15.835Z",
+                "text": "ex011 两项观察：教师使用提交 1270a36 的实现，在 CPU float32、B=1、2层、4头、每头8维、p=0 下采集前缀5/50/200各生成10个token的调用形状；为避免EOS提前结束，实验模型词表投影置零。每层每头prefill分数个数为25/2500/40000，均为9次decode，分数总数90/495/1845。学习者指出prefill分数计算为平方级，并解释缓存越长新Q需读取的历史K/V越多、Attention分数个数线性增长；新K/V投影每步仍各一行由教师明确区分。内存观察中，学习者在12层、12个KV头、每头64维、float32、KV专用预算144MiB且B=4时算出长度上限512，并指出生成使缓存继续增长；总预算还需扣除参数和临时张量由教师补充。教师用12层各两份(1,512,768)真实张量核对有效字节数37748736，与kv_cache_bytes一致；未计时，未修改实现或运行测试套件。"
+              },
+              {
+                "at": "2026-09-21T13:56:00.935Z",
+                "text": "ex011最终验收：用户授权执行测试后，对提交1270a36的学习者实现实跑 .venv/bin/python -B -m unittest tests.exercises.test_kv_cache -v，26项全部通过；随后运行 .venv/bin/python -B -m unittest discover -s tests -t .，255项全部通过，两组均无跳过。覆盖缓存追加/重置/容量、块级全量与增量对齐、前缀长度变化、续用位置与逐层K/V、生成序列、请求隔离、模式及梯度保持、有效字节账本。发现教师prefill logits测试未使用其数值参照后，另以临时final_norm hook采集缓存路径实际logits，与全量MiniGPT逐位置对照：CPU、seed=0、3层宽32、4头、p=0，float64/float32各覆盖旧缓存长度0/3与新增输入长度1/2/5/9，共16组；每组生成4个token，使用未被参照贪心选中的合法EOS ID确保执行3次decode，不改变模型权重。每种dtype比较58个位置，最大绝对误差分别4.440892098500626e-16和2.682209014892578e-7，均满足既定atol=1e-12/1e-5、rtol=0。实现与测试运行前后SHA256前缀分别为d8395f4f0f32、e9a56f2e801a，未修改学习者答案。结合已记录的计算量和内存观察，完成本课验收。"
+              }
+            ]
           }
         },
         {
@@ -1967,7 +1979,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-09-16T12:42:48.199Z",
+    "updatedAt": "2026-09-21T13:56:00.935Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -2682,18 +2694,55 @@ window.LEARNING_DATA = {
             "text": "ex010 最终验收通过。学习者自行保存进入时的 training 状态，在 evaluate 与 greedy_generate 正常结束时按原状态恢复；train_model 在循环前启用 train，结束时恢复入口模式。对 training.py SHA256 前缀 dbe88b6d592a、未改的教师测试实跑 .venv/bin/python -B -m unittest discover -s tests -t .，229项全部通过、无跳过，含ex010全部32项，运行前后实现及测试哈希不变。临时行为检查从train/eval两种入口分别调用评估和生成，均验证所有前向处于eval/no_grad且返回恢复原模式；从两种入口训练3步，每步前向均为train且启用求导。结合此前通过的检查点参数/Adam状态/逐位一致性、未见三元组生成、两项实测观察解释及模式管理应用题，完成Mini-GPT训练闭环验收；教师本轮未修改实现或测试。"
           }
         ]
+      },
+      "modern.kv-cache": {
+        "status": "mastered",
+        "updatedAt": "2026-09-21T13:56:00.935Z",
+        "note": "KV Cache在本课CPU float32/float64、Pre-LN、p=0范围内通过验收。学习者完成实现并经过API、状态与位置排错提示；教师修正了最后生成token不应强制缓存的错误测试断言，并补充续用逐层K/V检查。两项观察为教师采集、学习者解释并经提示澄清新投影与历史读取及非KV内存开销；不冒充独立测试设计或无提示分析。专项26项、Python全仓255项及临时16组完整logits对齐均通过、无跳过；原verify中的测试未实跑缺口已解决。不据此宣称GPU正确性、墙钟加速或生产推理性能；无需重复已有口头检查。",
+        "evidence": [
+          {
+            "at": "2026-09-21T13:52:15.835Z",
+            "text": "ex011 两项观察：教师使用提交 1270a36 的实现，在 CPU float32、B=1、2层、4头、每头8维、p=0 下采集前缀5/50/200各生成10个token的调用形状；为避免EOS提前结束，实验模型词表投影置零。每层每头prefill分数个数为25/2500/40000，均为9次decode，分数总数90/495/1845。学习者指出prefill分数计算为平方级，并解释缓存越长新Q需读取的历史K/V越多、Attention分数个数线性增长；新K/V投影每步仍各一行由教师明确区分。内存观察中，学习者在12层、12个KV头、每头64维、float32、KV专用预算144MiB且B=4时算出长度上限512，并指出生成使缓存继续增长；总预算还需扣除参数和临时张量由教师补充。教师用12层各两份(1,512,768)真实张量核对有效字节数37748736，与kv_cache_bytes一致；未计时，未修改实现或运行测试套件。"
+          },
+          {
+            "at": "2026-09-21T13:56:00.935Z",
+            "text": "ex011最终验收：用户授权执行测试后，对提交1270a36的学习者实现实跑 .venv/bin/python -B -m unittest tests.exercises.test_kv_cache -v，26项全部通过；随后运行 .venv/bin/python -B -m unittest discover -s tests -t .，255项全部通过，两组均无跳过。覆盖缓存追加/重置/容量、块级全量与增量对齐、前缀长度变化、续用位置与逐层K/V、生成序列、请求隔离、模式及梯度保持、有效字节账本。发现教师prefill logits测试未使用其数值参照后，另以临时final_norm hook采集缓存路径实际logits，与全量MiniGPT逐位置对照：CPU、seed=0、3层宽32、4头、p=0，float64/float32各覆盖旧缓存长度0/3与新增输入长度1/2/5/9，共16组；每组生成4个token，使用未被参照贪心选中的合法EOS ID确保执行3次decode，不改变模型权重。每种dtype比较58个位置，最大绝对误差分别4.440892098500626e-16和2.682209014892578e-7，均满足既定atol=1e-12/1e-5、rtol=0。实现与测试运行前后SHA256前缀分别为d8395f4f0f32、e9a56f2e801a，未修改学习者答案。结合已记录的计算量和内存观察，完成本课验收。"
+          }
+        ]
       }
     },
     "statusCounts": {
-      "mastered": 44,
+      "mastered": 45,
       "current": 0,
       "verify": 4,
       "relearn": 1,
-      "pending": 30
+      "pending": 29
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "80e15f80-9464-4266-a3c6-94c17af76f90",
+      "at": "2026-09-21T13:56:00.935Z",
+      "nodeId": "modern.kv-cache",
+      "nodeTitle": "KV Cache",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "ex011最终验收：用户授权执行测试后，对提交1270a36的学习者实现实跑 .venv/bin/python -B -m unittest tests.exercises.test_kv_cache -v，26项全部通过；随后运行 .venv/bin/python -B -m unittest discover -s tests -t .，255项全部通过，两组均无跳过。覆盖缓存追加/重置/容量、块级全量与增量对齐、前缀长度变化、续用位置与逐层K/V、生成序列、请求隔离、模式及梯度保持、有效字节账本。发现教师prefill logits测试未使用其数值参照后，另以临时final_norm hook采集缓存路径实际logits，与全量MiniGPT逐位置对照：CPU、seed=0、3层宽32、4头、p=0，float64/float32各覆盖旧缓存长度0/3与新增输入长度1/2/5/9，共16组；每组生成4个token，使用未被参照贪心选中的合法EOS ID确保执行3次decode，不改变模型权重。每种dtype比较58个位置，最大绝对误差分别4.440892098500626e-16和2.682209014892578e-7，均满足既定atol=1e-12/1e-5、rtol=0。实现与测试运行前后SHA256前缀分别为d8395f4f0f32、e9a56f2e801a，未修改学习者答案。结合已记录的计算量和内存观察，完成本课验收。",
+      "note": "KV Cache在本课CPU float32/float64、Pre-LN、p=0范围内通过验收。学习者完成实现并经过API、状态与位置排错提示；教师修正了最后生成token不应强制缓存的错误测试断言，并补充续用逐层K/V检查。两项观察为教师采集、学习者解释并经提示澄清新投影与历史读取及非KV内存开销；不冒充独立测试设计或无提示分析。专项26项、Python全仓255项及临时16组完整logits对齐均通过、无跳过；原verify中的测试未实跑缺口已解决。不据此宣称GPU正确性、墙钟加速或生产推理性能；无需重复已有口头检查。"
+    },
+    {
+      "id": "4893bbeb-f605-4d3c-86b0-d1c0db54f542",
+      "at": "2026-09-21T13:52:15.835Z",
+      "nodeId": "modern.kv-cache",
+      "nodeTitle": "KV Cache",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "ex011 两项观察：教师使用提交 1270a36 的实现，在 CPU float32、B=1、2层、4头、每头8维、p=0 下采集前缀5/50/200各生成10个token的调用形状；为避免EOS提前结束，实验模型词表投影置零。每层每头prefill分数个数为25/2500/40000，均为9次decode，分数总数90/495/1845。学习者指出prefill分数计算为平方级，并解释缓存越长新Q需读取的历史K/V越多、Attention分数个数线性增长；新K/V投影每步仍各一行由教师明确区分。内存观察中，学习者在12层、12个KV头、每头64维、float32、KV专用预算144MiB且B=4时算出长度上限512，并指出生成使缓存继续增长；总预算还需扣除参数和临时张量由教师补充。教师用12层各两份(1,512,768)真实张量核对有效字节数37748736，与kv_cache_bytes一致；未计时，未修改实现或运行测试套件。",
+      "note": "实现与修正后的教师测试已提交1270a36。两项观察已有有提示的解释证据；新增K/V投影行数与历史读取量的区分、非KV内存开销经过教师澄清，不冒充完全独立分析。修正后的ex011测试及全仓回归尚未由教师实跑，整节点保留verify，不以观察计数代替前向对齐、边界与状态隔离的完整验收，也不据此声称GPU或墙钟性能收益。"
+    },
     {
       "id": "1a035c09-9fa1-45ec-980a-5c149f6625ce",
       "at": "2026-09-16T12:42:48.199Z",
