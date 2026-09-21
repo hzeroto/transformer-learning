@@ -40,7 +40,10 @@ class LayerKVCache:
             这个值同时也是「下一个 token 应当使用的位置下标」——
             讲义第 4 节说明了为什么要从缓存自身读取，而不是从参数推算。
         """
-        raise NotImplementedError("TODO 1：返回当前缓存长度")
+        if self.k is None:
+            return 0
+        else:
+            return self.k.shape[1]
 
     def append(self, k_new: torch.Tensor, v_new: torch.Tensor) -> None:
         """把新算出的 K/V 追加到缓存末尾。
@@ -60,15 +63,27 @@ class LayerKVCache:
         提示：
             torch.cat([a, b], dim=1) 沿位置轴拼接。
         """
-        raise NotImplementedError("TODO 2：实现追加与容量检查")
+                
+        n = k_new.shape[1]
+        if self.max_length is not None and len(self) + n > self.max_length:
+            raise ValueError("exceed max length")
+        
+        if self.k is None:
+            self.k = k_new
+            self.v = v_new
+            return
 
+        self.k = torch.cat([self.k, k_new], dim=1)
+        self.v = torch.cat([self.v, v_new], dim=1)
+        
     def reset(self) -> None:
         """清空缓存，使其回到刚构造的状态。
 
         reset 之后 len(cache) 必须为 0，且后续 append 的行为与新建缓存一致。
         max_length 不被清除。
         """
-        raise NotImplementedError("TODO 3：清空缓存")
+        self.k = None
+        self.v = None
 
 
 def block_step_with_cache(
@@ -112,7 +127,21 @@ def block_step_with_cache(
     提示：
         torch.arange(L) 与广播比较可以一次构造出整个 allowed，无需 Python 循环。
     """
-    raise NotImplementedError("TODO 4：实现带缓存的块前向")
+    n1 = block.norm1(x)
+    q, k_new, v_new = project_qkv(n1, block.Wq, block.Wk, block.Wv)
+    cache.append(k_new, v_new)
+    L = len(cache)
+    n = x.shape[1]
+    # old_cache_len = L - n; len = n; new_cache_len = L
+    # j <= L - n + i
+    B = x.shape[0]
+    allowed = torch.arange(L).view(1, 1, L) <= torch.arange(L - n, L).view(1, n, 1)
+    allowed = allowed.expand(B, n, L)
+    multi_head_out, _ = multi_head_attention(q, cache.k, cache.v, block.Wo, block.num_heads, allowed)
+
+    u = x + block.drop1(multi_head_out)
+    y = u + block.drop2(block.ffn(block.norm2(u)))
+    return y
 
 
 def generate_with_cache(
@@ -161,7 +190,51 @@ def generate_with_cache(
         多个连续位置可以用 model.position_table[pos:pos+n] 一次取出。
         末尾按 model.norm_style 决定是否过 model.final_norm，再乘 model.vocab_proj。
     """
-    raise NotImplementedError("TODO 5：实现 prefill + decode 两阶段生成")
+
+    try:
+        state_was_training = model.training
+        model.eval()
+
+        with torch.no_grad():
+            # 1. build cache
+            if caches is None:
+                caches = [LayerKVCache(max_length=model.L) for _ in range(model.n_layer)]
+            else:
+                assert len(caches) == model.n_layer
+
+            # 2. prefill
+            prelen = len(caches[0])
+            prefix_len = prefix_ids.shape[1] + prelen
+            x = model.token_table[prefix_ids] + model.position_table[prelen:prefix_len] # (1, T, C)
+            for layer, cache in zip(model.blocks, caches):
+                x = block_step_with_cache(layer, x, cache) # (1, T, C)
+            y = model.final_norm(x) # (1, T, C)
+            logits = y @ model.vocab_proj # (1, T, V)
+            next_id = torch.argmax(logits[:,-1,:], dim=-1, keepdim=True) # (1, 1)
+
+            prefix_ids_copy = torch.cat([prefix_ids, next_id], dim=1) # (1, T+1)
+            if max_new_tokens == 0 or prefix_ids[0, -1].item() == eos_id:
+                return prefix_ids, caches
+            if next_id.item() == eos_id or max_new_tokens == 1:
+                return prefix_ids_copy, caches
+            
+            # 3. decode
+            while prelen + prefix_ids_copy.shape[1] < prefix_len + max_new_tokens and prefix_ids_copy[0, -1] != eos_id:
+                pos = len(caches[0]) # next token's position
+                x = model.token_table[next_id] + model.position_table[pos:pos+1] # (1, 1, C)
+                for layer, cache in zip(model.blocks, caches):
+                    x = block_step_with_cache(layer, x, cache) # (1, 1, C)
+                y = model.final_norm(x) # (1, 1, C)
+                logits = y @ model.vocab_proj # (1, 1, V)
+                next_id = torch.argmax(logits[:,-1,:], dim=-1, keepdim=True) # (1, 1)
+                prefix_ids_copy = torch.cat([prefix_ids_copy, next_id], dim=1) # (1, T+K)
+            return prefix_ids_copy, caches
+
+    finally:
+        if state_was_training:
+            model.train()
+
+    
 
 
 def kv_cache_bytes(
@@ -185,4 +258,4 @@ def kv_cache_bytes(
 
     所有参数均为非负整数，不要求额外校验。返回 Python int。
     """
-    raise NotImplementedError("TODO 6：实现字节账本")
+    return 2 * n_layer * batch_size * cache_length * num_kv_heads * head_dim * bytes_per_element

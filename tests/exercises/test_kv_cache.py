@@ -3,6 +3,8 @@
 约定：CPU；对齐检查在 float64 下用 ATOL64、float32 下用 ATOL32，
 均为**事先声明的容差**而非逐位相等 —— 全量与增量的矩阵乘分块方式不同，
 浮点结果可能差最后几位（讲义第 6 节有实测数据）。
+返回缓存只包含已经送入模型的位置：生成了新 token 时，最后一个输出尚未缓存；
+没有生成新 token 时，传入前缀仍需全部缓存。续用时只传尚未缓存的 token。
 本文件由教师提供，不属于学习者独立设计的测试。
 """
 
@@ -218,14 +220,23 @@ class TestGenerationAlignment(unittest.TestCase):
     def test_various_prefix_lengths(self):
         model = make_model()
         for T in (1, 2, 5, 9):
-            with self.subTest(prefix_len=T):
-                ids = torch.tensor([[1] + [3 + (i % 5) for i in range(T - 1)]])
-                self.assertEqual(ids.shape[1], T)
-                out, caches = generate_with_cache(model, ids, 3, EOS_ID)
-                self.assertGreaterEqual(out.shape[1], T)
-                self.assertTrue(torch.equal(out[:, :T], ids))
-                for c in caches:
-                    self.assertEqual(len(c), out.shape[1])
+            for max_new_tokens in (0, 1, 3):
+                with self.subTest(prefix_len=T, max_new_tokens=max_new_tokens):
+                    ids = torch.tensor([[1] + [3 + (i % 5) for i in range(T - 1)]])
+                    self.assertEqual(ids.shape[1], T)
+                    out, caches = generate_with_cache(model, ids, max_new_tokens, EOS_ID)
+                    generated = out.shape[1] - T
+                    # 输入不含 EOS；允许生成时至少应产出一个 token。
+                    self.assertGreaterEqual(generated, min(1, max_new_tokens))
+                    self.assertLessEqual(generated, max_new_tokens)
+                    self.assertTrue(torch.equal(out[:, :T], ids))
+                    # 最后选出的 ID 尚未进入模型；K=0 时则完整缓存前缀。
+                    expected_length = T + max(generated - 1, 0)
+                    for i, c in enumerate(caches):
+                        self.assertEqual(
+                            len(c), expected_length,
+                            f"第 {i} 层应只缓存实际处理过的位置，不补算最后一个新 token",
+                        )
 
     def test_positions_come_from_cache_not_arguments(self):
         """分两次调用、续用同一份缓存：位置必须接着数，不能从头。
@@ -262,19 +273,37 @@ class TestGenerationAlignment(unittest.TestCase):
         )
 
     def test_generate_continues_on_existing_cache(self):
-        """传入已有缓存时，应在其后继续，而不是重新 prefill。"""
+        """将上次尚未缓存的最后一个输出送入，续用后逐层缓存应与整段处理一致。"""
         model = make_model()
+        # 同分时选择 ID 0，保证不会提前产生 EOS，确实执行两次生成。
+        with torch.no_grad():
+            model.vocab_proj.zero_()
         ids = torch.tensor([[1, 3, 5]])
         first, caches = generate_with_cache(model, ids, 2, EOS_ID)
+        self.assertEqual(first.shape[1], ids.shape[1] + 2)
         len_after_first = len(caches[0])
-        self.assertEqual(len_after_first, first.shape[1])
+        for c in caches:
+            self.assertEqual(len(c), first.shape[1] - 1)
+        # 最后一个输出还没有 K/V，作为本次唯一的新输入，不重复传已缓存的前缀。
         cont, caches2 = generate_with_cache(
             model, first[:, -1:], 2, EOS_ID, caches=caches
         )
-        self.assertIs(caches2[0], caches[0], "应复用传入的缓存对象")
-        self.assertGreater(
-            len(caches[0]), len_after_first, "续用后缓存长度应继续增长"
+        self.assertEqual(cont.shape[1], 3)
+        self.assertTrue(torch.equal(cont[:, :1], first[:, -1:]))
+        whole = torch.cat([first[:, :-1], cont], dim=1)
+        # 一次处理所有已消费的 token；最终新输出仍不应出现在缓存里。
+        _, ref_caches = generate_with_cache(
+            model, whole[:, :-1], 0, EOS_ID
         )
+        self.assertEqual(len(caches2), model.n_layer)
+        for i, (got, want) in enumerate(zip(caches2, ref_caches)):
+            self.assertIs(got, caches[i], "应复用每一层传入的缓存对象")
+            self.assertEqual(len(got), len_after_first + cont.shape[1] - 1)
+            torch.testing.assert_close(
+                got.k, want.k, atol=ATOL64, rtol=0,
+                msg=f"第 {i} 层续用后的 K 与整段处理不一致：检查重复追加或位置偏移",
+            )
+            torch.testing.assert_close(got.v, want.v, atol=ATOL64, rtol=0)
 
     def test_continued_generation_uses_cache_length_as_position(self):
         """走 generate_with_cache 的续用路径，逐层核对缓存内容而非 token。
