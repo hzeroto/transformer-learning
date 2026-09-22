@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1375" viewBox="0 0 900 1375">
+  <title>LLaMA 风格 Block：两条残差不变，分支内部改变</title>
+  <desc>全序列前向示意：RMSNorm 后投影 Q K V，仅 Q K 做 RoPE，再经 GQA、合头和输出投影后与 X 相加。第二分支采用 RMSNorm 和 SwiGLU，再与 U 相加。所有张量标明完整形状。图不包含 KV Cache。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker>
+    <marker id="res-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/></marker>
+  </defs>
+  <style>
+    text{font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#172b4d;text-anchor:middle}
+    .title{font-size:27px;font-weight:650;text-anchor:start}
+    .subtitle{font-size:17px;fill:#475569;text-anchor:start}
+    .label{font-size:20px;font-weight:600}
+    .shape{font-size:17px;fill:#475569}
+    .small{font-size:16px;fill:#475569}
+    .edge{fill:none;stroke:#64748b;stroke-width:2;marker-end:url(#arrow)}
+    .wire{fill:none;stroke:#64748b;stroke-width:2}
+    .residual{fill:none;stroke:#0f766e;stroke-width:2.5;marker-end:url(#res-arrow)}
+    .box{fill:#fff;stroke:#cbd5e1;stroke-width:1.3}
+    .norm{fill:#f0fdfa;stroke:#5eafa1;stroke-width:1.3}
+    .rope{fill:#fff7ed;stroke:#e9a15a;stroke-width:1.3}
+    .op{fill:#eef2ff;stroke:#a5b4fc;stroke-width:1.3}
+  </style>
+  <rect width="900" height="1375" fill="#f8fafc"/>
+  <text x="28" y="43" class="title">LLaMA 风格 Block：改分支，不改残差主干</text>
+  <text x="28" y="75" class="subtitle">全序列前向；图中不展开 KV Cache。加号是逐元素相加，不是拼接。</text>
+  <rect x="27" y="99" width="846" height="660" rx="15" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="47" y="131" class="small" style="text-anchor:start">注意力子层</text>
+  <rect x="360" y="115" width="220" height="47" rx="8" class="box"/>
+  <text x="470" y="146" class="label">X  (B, T, C)</text>
+  <path d="M470 162 V200" class="edge"/>
+  <path d="M470 176 H95 V707 H451" class="residual"/>
+  <text x="71" y="454" transform="rotate(-90 71 454)" class="small" style="fill:#0f766e">X 原样直达加法；不经过 Norm</text>
+  <circle cx="470" cy="176" r="4" fill="#0f766e"/>
+  <rect x="345" y="200" width="250" height="62" rx="9" class="norm"/>
+  <text x="470" y="225" class="label">RMSNorm 1</text>
+  <text x="470" y="249" class="shape">S  (B, T, C)</text>
+  <path d="M470 262 V280 H250 V310" class="edge"/>
+  <path d="M470 280 V310" class="edge"/>
+  <path d="M470 280 H690 V310" class="edge"/>
+  <rect x="150" y="310" width="200" height="67" rx="9" class="box"/>
+  <rect x="370" y="310" width="200" height="67" rx="9" class="box"/>
+  <rect x="590" y="310" width="200" height="67" rx="9" class="box"/>
+  <text x="250" y="337" class="label">Wq 投影 + 拆头</text>
+  <text x="250" y="363" class="shape">Q  (B, Hq, T, D)</text>
+  <text x="470" y="337" class="label">Wk 投影 + 拆头</text>
+  <text x="470" y="363" class="shape">K  (B, Hkv, T, D)</text>
+  <text x="690" y="337" class="label">Wv 投影 + 拆头</text>
+  <text x="690" y="363" class="shape">V  (B, Hkv, T, D)</text>
+  <path d="M250 377 V411" class="edge"/>
+  <path d="M470 377 V411" class="edge"/>
+  <rect x="150" y="411" width="200" height="66" rx="9" class="rope"/>
+  <rect x="370" y="411" width="200" height="66" rx="9" class="rope"/>
+  <text x="250" y="438" class="label">RoPE → Qrot</text>
+  <text x="250" y="463" class="shape">(B, Hq, T, D)</text>
+  <text x="470" y="438" class="label">RoPE → Krot</text>
+  <text x="470" y="463" class="shape">(B, Hkv, T, D)</text>
+  <text x="770" y="434" class="small">V 不旋转</text>
+  <text x="770" y="457" class="small">shape 不变</text>
+  <path d="M250 477 V502 H350 V530" class="edge"/>
+  <path d="M470 477 V530" class="edge"/>
+  <path d="M690 377 V502 H590 V530" class="edge"/>
+  <rect x="290" y="530" width="360" height="62" rx="9" class="op"/>
+  <text x="470" y="556" class="label">GQA（含因果权限）</text>
+  <text x="470" y="579" class="shape">每个 Q 头独立读取 → (B, Hq, T, D)</text>
+  <path d="M470 592 V614" class="edge"/>
+  <rect x="345" y="614" width="250" height="59" rx="9" class="box"/>
+  <text x="470" y="639" class="label">合头 → Wo 投影</text>
+  <text x="470" y="662" class="shape">注意力更新量 (B, T, C)</text>
+  <path d="M470 673 V688" class="edge"/>
+  <circle cx="470" cy="707" r="18" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.8"/>
+  <text x="470" y="715" style="font-size:29px;fill:#0f766e">+</text>
+  <path d="M470 725 V731" class="wire"/>
+  <text x="470" y="751" class="label">U  (B, T, C)</text>
+  <rect x="27" y="776" width="846" height="523" rx="15" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="124" y="807" class="small" style="text-anchor:start">SwiGLU 子层</text>
+  <path d="M470 758 V794" class="edge"/>
+  <path d="M470 765 H95 V1240 H451" class="residual"/>
+  <circle cx="470" cy="765" r="4" fill="#0f766e"/>
+  <text x="71" y="1030" transform="rotate(-90 71 1030)" class="small" style="fill:#0f766e">U 原样直达加法；不经过 Norm</text>
+  <rect x="345" y="794" width="250" height="61" rx="9" class="norm"/>
+  <text x="470" y="820" class="label">RMSNorm 2</text>
+  <text x="470" y="844" class="shape">Z  (B, T, C)</text>
+  <path d="M470 855 V872 H280 V899" class="edge"/>
+  <path d="M470 872 H660 V899" class="edge"/>
+  <rect x="165" y="899" width="230" height="63" rx="9" class="box"/>
+  <rect x="545" y="899" width="230" height="63" rx="9" class="box"/>
+  <text x="280" y="926" class="label">Z @ Wgate</text>
+  <text x="280" y="949" class="shape">(B, T, G)</text>
+  <text x="660" y="926" class="label">Z @ Wup</text>
+  <text x="660" y="949" class="shape">(B, T, G)</text>
+  <path d="M280 962 V985" class="edge"/>
+  <rect x="165" y="985" width="230" height="52" rx="9" class="rope"/>
+  <text x="280" y="1018" class="label">SiLU · shape 不变</text>
+  <path d="M280 1037 V1090 H451" class="edge"/>
+  <path d="M660 962 V1090 H489" class="edge"/>
+  <circle cx="470" cy="1090" r="18" fill="#eef2ff" stroke="#818cf8" stroke-width="1.8"/>
+  <text x="470" y="1098" style="font-size:28px">×</text>
+  <text x="470" y="1053" class="small">同一 token、同一特征逐元素相乘</text>
+  <path d="M470 1108 V1151" class="edge"/>
+  <text x="590" y="1137" class="shape">门控结果 (B, T, G)</text>
+  <rect x="345" y="1151" width="250" height="59" rx="9" class="box"/>
+  <text x="470" y="1176" class="label">@ Wdown</text>
+  <text x="470" y="1199" class="shape">特征更新量 (B, T, C)</text>
+  <path d="M470 1210 V1221" class="edge"/>
+  <circle cx="470" cy="1240" r="18" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.8"/>
+  <text x="470" y="1248" style="font-size:29px;fill:#0f766e">+</text>
+  <path d="M470 1258 V1269" class="wire"/>
+  <text x="470" y="1290" class="label">Y  (B, T, C)</text>
+  <text x="28" y="1333" class="subtitle">本课配置：C = 24，Hq = 6，Hkv = 2，D = 4，G = 64。</text>
+  <text x="28" y="1359" class="subtitle">每 3 个 Q 头共享一组 K/V；RoPE 作用在 Q/K 的特征对上。</text>
+</svg>

@@ -5,10 +5,10 @@
 ## 当前状态
 
 - 当前知识点：尚未指定
-- 已掌握：45 / 79
-- 待验证：5
+- 已掌握：46 / 79
+- 待验证：4
 - 待系统重学：1
-- 最近更新：2026-09-21T18:28:02.499Z
+- 最近更新：2026-09-22T11:51:30.767Z
 
 ## 知识点状态
 
@@ -115,7 +115,7 @@
 | SwiGLU | 未开始 | — |
 | 旋转位置编码RoPE | 未开始 | — |
 | ALiBi与RoPE对照 | 未开始 | — |
-| MQA与GQA | 待验证 | A题收尾：学习者明确指出，若训练按连续分组[0,0,0,0,1,1,1,1]而推理改成交错分组[0,1,0,1,0,1,0,1]，计算约定不一致；若训练与推理始终采用同一交错分组，则是合法GQA设计。该解释确认能区分分组方式的选择与固定模型的映射一致性。此前教师已提示交错分组可合法，本次不记为无提示独立推导；原A题表述易使约定差异看起来像结构必然性，不能据此维持概念缺口或重复出同质问题。 |
+| MQA与GQA | 已掌握 | ex012最终验收：学习者按此前位置容量提示自行补齐gqa_model_step的前置检查。当前model.py SHA256前缀fb2182c15a1d；实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention tests.exercises.test_grouped_query_cache -v，29项全部通过；再运行 .venv/bin/python -B -m unittest discover -s tests -t .，全仓284项全部通过，两组均无失败或跳过。验证MHA/MQA/GQA分组读取、CPU float32/float64、前向及梯度、全量/多种分块logits对齐、紧凑缓存及实际存储、位置偏移、容量超限前所有缓存保持、请求/层隔离和模式保持。教师运行 .venv/bin/python -B -m exercises.ex012_grouped_query_attention.demo：float64全量/分块logits最大绝对差2.22e-16；C=12/Hq=6/Hkv=2/D=2时每层KV参数96，2层/B=2/T=7的KV公式、实际有效及去重底层存储均1792字节。账本由教师demo采集，不冒充学习者独立实验设计；结合此前学习者分组一致性解释、KV比例及注意力计算不同比例缩减解释，以及已掌握的投影参数量推导，完成本课原理与实现验收。核心实现由学习者填写，期间有教师完整索引/位置代码示例、数据流讲解及排错提示；本轮教师未修改实现或测试。 |
 | KV Cache | 已掌握 | ex011最终验收：用户授权执行测试后，对提交1270a36的学习者实现实跑 .venv/bin/python -B -m unittest tests.exercises.test_kv_cache -v，26项全部通过；随后运行 .venv/bin/python -B -m unittest discover -s tests -t .，255项全部通过，两组均无跳过。覆盖缓存追加/重置/容量、块级全量与增量对齐、前缀长度变化、续用位置与逐层K/V、生成序列、请求隔离、模式及梯度保持、有效字节账本。发现教师prefill logits测试未使用其数值参照后，另以临时final_norm hook采集缓存路径实际logits，与全量MiniGPT逐位置对照：CPU、seed=0、3层宽32、4头、p=0，float64/float32各覆盖旧缓存长度0/3与新增输入长度1/2/5/9，共16组；每组生成4个token，使用未被参照贪心选中的合法EOS ID确保执行3次decode，不改变模型权重。每种dtype比较58个位置，最大绝对误差分别4.440892098500626e-16和2.682209014892578e-7，均满足既定atol=1e-12/1e-5、rtol=0。实现与测试运行前后SHA256前缀分别为d8395f4f0f32、e9a56f2e801a，未修改学习者答案。结合已记录的计算量和内存观察，完成本课验收。 |
 | 生成采样策略 | 未开始 | — |
 | 滑动窗口Attention | 未开始 | — |
@@ -145,6 +145,11 @@
 
 | 时间 | 知识点 | 状态变化 | 证据或备注 |
 |---|---|---|---|
+| 2026-09-22T11:51:30.767Z | MQA与GQA | 待验证 → 已掌握 | ex012最终验收：学习者按此前位置容量提示自行补齐gqa_model_step的前置检查。当前model.py SHA256前缀fb2182c15a1d；实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention tests.exercises.test_grouped_query_cache -v，29项全部通过；再运行 .venv/bin/python -B -m unittest discover -s tests -t .，全仓284项全部通过，两组均无失败或跳过。验证MHA/MQA/GQA分组读取、CPU float32/float64、前向及梯度、全量/多种分块logits对齐、紧凑缓存及实际存储、位置偏移、容量超限前所有缓存保持、请求/层隔离和模式保持。教师运行 .venv/bin/python -B -m exercises.ex012_grouped_query_attention.demo：float64全量/分块logits最大绝对差2.22e-16；C=12/Hq=6/Hkv=2/D=2时每层KV参数96，2层/B=2/T=7的KV公式、实际有效及去重底层存储均1792字节。账本由教师demo采集，不冒充学习者独立实验设计；结合此前学习者分组一致性解释、KV比例及注意力计算不同比例缩减解释，以及已掌握的投影参数量推导，完成本课原理与实现验收。核心实现由学习者填写，期间有教师完整索引/位置代码示例、数据流讲解及排错提示；本轮教师未修改实现或测试。 |
+| 2026-09-22T11:49:05.701Z | MQA与GQA | 待验证 → 待验证 | 学习者在教师数据流讲解和位置切片代码提示后完成 ex012 gqa_model_step 的内容/位置表示、多层独立缓存连接及final_norm/词表投影。对model.py SHA256前缀4007c1f0d68c实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_cache.TestImplementationStatus.test_model_step_is_implemented tests.exercises.test_grouped_query_cache.TestCompactModelCache -v，7项中6项通过、1项失败，无异常或跳过。通过CPU float32/float64、MHA/MQA/GQA全量/不同分块logits与独立参照对齐、位置偏移、跨请求和层隔离、参数与缓存字节账本及梯度/模式保持。剩余失败是未在查表及更新缓存前检查pos+n>model.L；教师临时复现L=6、旧长度5、新增2时位置切片只剩一行，被广播到两位置，未抛ValueError且各层缓存增长至7。运行前后实现及测试哈希一致，教师未修改学习者代码；不记作独立测试设计或性能证据。 |
+| 2026-09-22T11:27:26.084Z | MQA与GQA | 待验证 → 待验证 | 学习者在教师提供增量数据流讲解、mask代码示例及容量/KV读取纠错提示后完成 ex012 gqa_block_step。对 model.py SHA256 前缀45c3c2c8e07d实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_cache.TestImplementationStatus.test_block_step_is_implemented tests.exercises.test_grouped_query_cache.TestCompactBlockCache -v，7项全部通过，无失败或跳过。覆盖CPU float32/float64、MHA/MQA/GQA配置、非连续输入、不同分块的全量输出对齐、紧凑归一化K/V及实际存储、历史与新增输入及参数梯度、刚好装满/超限保持、重置及输入/已有梯度/模式保持。运行前后实现和测试哈希一致，教师未修改学习者代码；本次属于有提示的实现验证，未验证模型级缓存和性能。 |
+| 2026-09-22T09:21:47.952Z | MQA与GQA | 待验证 → 待验证 | 学习者提交 ex012 GQABlock.forward，正确复用已有 norm1/project_qkv/make_causal_allowed/grouped_query_attention 与 FFN，完成两条 Pre-LN 残差路径并保持紧凑K/V投影宽度。实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention -v，15项全部通过，无失败或跳过，其中5项覆盖block实现状态和行为。验证CPU float32/float64、非连续输入、MHA/MQA/GQA配置、训练及评估模式保持、输入及参数梯度、因果与PAD key隔离、前缀一致性及零分支残差。教师未修改学习者代码；构造器与验证参照由教师提供，底层GQA沿用此前有教学示例支持的实现。模型/缓存集成与性能未在本次验证。 |
+| 2026-09-22T09:02:28.322Z | MQA与GQA | 待验证 → 待验证 | ex012 grouped_query_attention：学习者在教师提供索引、广播说明及向量化代码示例后自行修改实现；当前使用 h//R 连续分组的 Tensor 索引、批量 QK 打分及 V 读取，不再逐头循环。实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention.ImplementationStatusTest.test_grouped_query_attention_is_implemented tests.exercises.test_grouped_query_attention.GroupedQueryAttentionTest -v，10项全部通过，无失败或跳过。覆盖CPU float32/float64、MHA/MQA/GQA、非连续输入、mask和全屏蔽异常、缩放与输出投影、输出及权重梯度、共享KV梯度累加和输入及已有梯度保持。教师未修改学习者代码；本次是有完整教学示例支持的实现验证，不作为无提示独立推导或性能实测证据。 |
 | 2026-09-21T18:28:02.499Z | MQA与GQA | 待验证 → 待验证 | A题收尾：学习者明确指出，若训练按连续分组[0,0,0,0,1,1,1,1]而推理改成交错分组[0,1,0,1,0,1,0,1]，计算约定不一致；若训练与推理始终采用同一交错分组，则是合法GQA设计。该解释确认能区分分组方式的选择与固定模型的映射一致性。此前教师已提示交错分组可合法，本次不记为无提示独立推导；原A题表述易使约定差异看起来像结构必然性，不能据此维持概念缺口或重复出同质问题。 |
 | 2026-09-21T18:20:38.226Z | MQA与GQA | 未开始 → 待验证 | 学习者提交 grouped-query-attention 讲义检查 B：在 Hq=12、D=64 不变、Hkv 从12减为3且持久保存紧凑KV的条件下，正确判断KV有效字节数为原1/4，注意力权重元素数不变，不能据此推出推理延迟为1/4；能区分K/V投影计算减少与QK打分、加权读取和Wo计算不同比例减少。回答承接本轮教师讲解，属于有教学支持的概念检查，不记作独立成本推导或性能实测。检查A中学习者尚不明确改变分组映射为何改变结果，教师用单key、不同V组的临时数值例子验证并解释；该教师反例不作为学习者证据。 |
 | 2026-09-21T13:56:00.935Z | KV Cache | 待验证 → 已掌握 | ex011最终验收：用户授权执行测试后，对提交1270a36的学习者实现实跑 .venv/bin/python -B -m unittest tests.exercises.test_kv_cache -v，26项全部通过；随后运行 .venv/bin/python -B -m unittest discover -s tests -t .，255项全部通过，两组均无跳过。覆盖缓存追加/重置/容量、块级全量与增量对齐、前缀长度变化、续用位置与逐层K/V、生成序列、请求隔离、模式及梯度保持、有效字节账本。发现教师prefill logits测试未使用其数值参照后，另以临时final_norm hook采集缓存路径实际logits，与全量MiniGPT逐位置对照：CPU、seed=0、3层宽32、4头、p=0，float64/float32各覆盖旧缓存长度0/3与新增输入长度1/2/5/9，共16组；每组生成4个token，使用未被参照贪心选中的合法EOS ID确保执行3次decode，不改变模型权重。每种dtype比较58个位置，最大绝对误差分别4.440892098500626e-16和2.682209014892578e-7，均满足既定atol=1e-12/1e-5、rtol=0。实现与测试运行前后SHA256前缀分别为d8395f4f0f32、e9a56f2e801a，未修改学习者答案。结合已记录的计算量和内存观察，完成本课验收。 |

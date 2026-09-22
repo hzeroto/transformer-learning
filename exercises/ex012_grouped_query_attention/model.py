@@ -78,8 +78,22 @@ def gqa_block_step(
     缓存前向也是可求导的算子；是否在推理时关闭梯度，由调用方控制。
     本课不做跨训练步复用缓存或截断反向，梯度测试只覆盖同一次图的分块前向。
     """
-    raise NotImplementedError("TODO 3：用紧凑 KV 缓存完成块级前向")
+    t = len(cache)
+    n = x.shape[1]
+    if cache.max_length is not None and n + t > cache.max_length:
+        raise ValueError("exceed max length")
 
+    n1 = block.norm1(x)
+    Q, K_new, V_new = project_qkv(n1, block.Wq, block.Wk, block.Wv)
+    cache.append(K_new, V_new)
+
+    # i >= j - t  (n, t + n)
+    allowed = torch.arange(t, n + t).view(1, n, 1) >= torch.arange(t + n).view(1, 1, t + n)
+    output, _ = grouped_query_attention(Q, cache.k, cache.v, block.Wo, block.num_query_heads, block.num_kv_heads, allowed)
+    X1 = x + block.drop1(output)
+
+    n2 = block.norm2(X1)
+    return X1 + block.drop2(block.ffn(n2))
 
 def gqa_model_step(
     model: GQAMiniGPT, input_ids: torch.Tensor, caches: list[LayerKVCache],
@@ -113,4 +127,20 @@ def gqa_model_step(
     不在函数内启用 eval/no_grad；推理调用者自己使用它们。
     本课 p=0；不引入 Dropout 随机性、EOS 处理或旧生成循环的新一轮实现。
     """
-    raise NotImplementedError("TODO 4：用缓存偏移完成模型级前向")
+    pos = len(caches[0])
+
+    if pos + input_ids.shape[1] > model.L:
+        raise ValueError("exceed max positions")
+
+    X = model.token_table[input_ids] + model.position_table[pos:pos+input_ids.shape[1]]# (B, n, C)
+
+    for block,cache in zip(model.blocks, caches):
+        X = gqa_block_step(block, X, cache) # (B, n, C) 该层grade
+
+    Y = model.final_norm(X)
+    logit = Y @ model.vocab_proj # (B, n, N)
+
+    return logit
+        
+
+

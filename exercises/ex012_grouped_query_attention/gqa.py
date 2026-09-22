@@ -4,6 +4,7 @@ CPU float32/float64；核心数学用基础 Tensor，教师构造与已验收组
 完整契约见 README.md。不要从 tests 导入教师参照。
 """
 import torch
+import math
 from torch import nn
 
 from exercises.ex006_single_head_attention.attention import make_causal_allowed, project_qkv
@@ -68,8 +69,35 @@ def grouped_query_attention(
         核心打分/归一化/读取由你实现，不调用已有 MHA、高级 Attention 或融合算子代做。
         不写逐 batch/head/query/key 的 Python 循环，采用批量 Tensor 运算。
     """
-    raise NotImplementedError("TODO 1：实现分组查询注意力")
+    # 1. 检查
+    C = Q.shape[-1]
+    _validate_heads(C, num_query_heads, num_kv_heads)
+    D = K.shape[-1] // num_kv_heads
 
+    if allowed is not None and torch.any(torch.all(~allowed, dim=-1)).item():
+        raise ValueError("allowed all False")
+
+    # 2. 分组
+    s_Q = split_heads(Q, num_query_heads) # (B,Hq,Tq,D)
+    s_K = split_heads(K, num_kv_heads) # (B,Hkv,Tk,D)
+    s_V = split_heads(V, num_kv_heads) # (B,Hkv,Tk,D)
+
+    # 2.1 计算每个 Q 头对应的 K/V 头索引
+    R = num_query_heads // num_kv_heads
+    kv_indices = torch.arange(num_query_heads) // R # (Hq,) 00..11..Hkv-1
+
+    k_for_q = s_K[:, kv_indices] # (B, Hq, Tk, D)
+    v_for_q = s_V[:, kv_indices] # (B, Hq, Tk, D)
+    scores = s_Q @ k_for_q.transpose(-2, -1) / math.sqrt(D) # (B, Hq, Tq, Tk)
+    if allowed is not None:
+        scores = scores.masked_fill(~allowed.unsqueeze(1), float('-inf')) # 屏蔽不允许的 key
+    sm_scores = torch.softmax(scores, dim=-1) # (B, Hq, Tq, Tk)
+    outputs = sm_scores @ v_for_q # (B, Hq, Tq, D)
+
+    # 3. 合头
+    m_outputs = merge_heads(outputs)
+
+    return m_outputs @ Wo, sm_scores
 
 class GQABlock(nn.Module):
     """教师构造：Pre-LN 块，只有 K/V 投影宽度改变，p 固定为 0。
@@ -116,4 +144,14 @@ class GQABlock(nn.Module):
         不切换模式，不在 forward 中启用 no_grad/detach，不保存请求缓存。
         只返回块输出，不返回权重、logits 或 loss。
         """
-        raise NotImplementedError("TODO 2：把 GQA 接入 Pre-LN 块")
+        # X1 = X + drop1(attention(N1(X)))
+        n1 = self.norm1(X)
+        Q, K, V = project_qkv(n1, self.Wq, self.Wk, self.Wv)
+        allowed = make_causal_allowed(input_valid)
+        output, _ = grouped_query_attention(Q, K, V, self.Wo, self.num_query_heads, self.num_kv_heads,allowed)
+
+        X1 = X + self.drop1(output)
+
+        n2 = self.norm2(X1)
+        U = X1 + self.drop2(self.ffn(n2))
+        return U
