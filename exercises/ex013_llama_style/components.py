@@ -36,7 +36,12 @@ class RMSNorm(nn.Module):
         不修改输入、参数或已有 .grad，不调用 backward/no_grad/detach。
         shape/dtype 合法由调用方保证，数值只要求本课 float32/64 范围。
         """
-        raise NotImplementedError("TODO 1: RMSNorm.forward")
+        # 1. 计算每个 token 的均方根
+        avg = torch.abs(X).pow(2).mean(dim=-1, keepdim=True)  # (B,T,1)
+        rms = torch.sqrt(avg + self.eps)  # (B,T,1)
+        # 2. 归一化并缩放
+        X_normed = X / rms  # (B,T,C)
+        return X_normed * self.gamma  # (B,T,C)
 
 
 class SwiGLU(nn.Module):
@@ -60,7 +65,10 @@ class SwiGLU(nn.Module):
         不用现成 F.silu/MLP 替代本次激活数学；参考讲义第 4 节。
         支持非连续输入，保留输入和三份权重梯度，不改任何输入或已有 .grad。
         """
-        raise NotImplementedError("TODO 2: SwiGLU.forward")
+        a = X @ self.Wgate  # (B,T,hidden_dim)
+        gate = a * torch.sigmoid(a)  # (B,T,hidden_dim)
+        up = X @ self.Wup  # (B,T,hidden_dim)
+        return (gate * up) @ self.Wdown  # (B,T,C)
 
 
 def apply_rope(
@@ -81,4 +89,26 @@ def apply_rope(
     不旋转 V、不修改 x/positions/已有 .grad、不创建可训练参数。
     使用批量 Tensor 运算，不写逐 batch/head/token/特征对的 Python 循环。
     """
-    raise NotImplementedError("TODO 3: apply_rope")
+    D = x.shape[-1]
+    if D % 2 != 0:
+        raise ValueError("D 必须是偶数")
+    # 1. 计算每个特征对的频率
+    half_D = D // 2
+    j = torch.arange(half_D, dtype=x.dtype, device=x.device)  #(half_D,)
+    freqs = theta ** (-2 * j / D)  # (half_D,)
+    # 2. 计算每个 token 的旋转角度
+    angles = positions.unsqueeze(1) * freqs.unsqueeze(0)  # (n, half_D)
+    # 3. 计算旋转矩阵的 cos/sin
+    cos = torch.cos(angles)  # (n, half_D)
+    sin = torch.sin(angles)  # (n, half_D)
+    # 4. 将 x 拆分为偶数/奇数特征对
+    x_even = x[..., 0::2]  # (B,H,n,half_D)
+    x_odd = x[..., 1::2]   # (B,H,n,half_D)
+    # 5. 应用旋转 逆时针旋转 a = r * cos(x+theta); b = r * sin(x+theta)
+    x_rotated_even = x_even * cos[None, None, ...] - x_odd * sin[None, None, ...]  # (B,H,n,half_D)
+    x_rotated_odd = x_even * sin[None, None, ...] + x_odd * cos[None, None, ...]  # (B,H,n,half_D)
+    # 6. 将旋转后的偶数/奇数特征对重新组合
+    x_rotated = torch.empty_like(x)
+    x_rotated[..., 0::2] = x_rotated_even
+    x_rotated[..., 1::2] = x_rotated_odd
+    return x_rotated

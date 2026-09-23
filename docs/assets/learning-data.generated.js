@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-23T11:14:38.698Z",
+  "generatedAt": "2026-09-23T18:26:49.900Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -1548,7 +1548,35 @@ window.LEARNING_DATA = {
             "RoPE位置偏移与缓存追加正确，全量和增量logits在预设容差内对齐"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-23T18:26:49.548Z",
+            "note": "本课 RMSNorm、SwiGLU、RoPE 与整模型实现四项均已完成当前验收，原 SwiGLU 参数预算缺口已解决。CPU 小型自定义 GQA 配置的训练、缓存与存档闭环已通过；官方版本辨析按用户要求免考，不作为其独立解释证据。不宣称官方 checkpoint 兼容、长上下文质量或 GPU 性能。",
+            "evidence": [
+              {
+                "at": "2026-09-23T17:54:26.442Z",
+                "text": "学习者完成 LlamaBlock.forward 的两条 RMSNorm 残差、Q/K 拆头后 RoPE 并合头、紧凑旋转 K 与原 V 追加缓存、增量 Q 读取完整 K/V、复用 GQA 输出投影以及 SwiGLU。教师运行 test_llama_components、LlamaBlockTest、LlamaBlockCacheTest：19 项组件及无缓存块测试通过、无跳过；缓存类初始化因 max_length=None 与整数比较报错，未执行其正式测试。另用未修改学习者代码的有限容量临时检查，分块 3/2/1 的块输出与独立参照最大误差 2.22e-15，缓存 K/V 数值和历史 K 保持正确，容量溢出保持缓存原样。修正过程有教师提示；不宣称全模型验收完成。"
+              },
+              {
+                "at": "2026-09-23T17:56:59.634Z",
+                "text": "学习者在容量边界提示后修正 LlamaBlock.forward 对 cache.max_length=None 的判断。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_model.LlamaBlockTest tests.exercises.test_llama_model.LlamaBlockCacheTest：6 项全部通过、无失败或跳过，覆盖 CPU float32/float64 的 MHA/MQA/GQA、非连续输入、非零位置、独立块数值及全部输入/参数梯度、因果与 PAD key 扰动、共同位置平移，以及分块 3/2/1 时缓存中的旋转 K 和未旋转 V、历史 K 不变、缓存/全量块输出一致及容量失败不改变状态。结合此前 15 项组件测试通过，LlamaBlock 在本课契约范围验收通过；代码修正有教师提示，未修改学习者实现，不等同于整模型验收。"
+              },
+              {
+                "at": "2026-09-23T18:06:44.590Z",
+                "text": "学习者补齐 LlamaLM.forward 和 llama_model_step，接通内容查表、各层、末尾 RMSNorm 与词表投影，并在增量入口使用缓存长度确定 RoPE 位置。教师运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部执行且无跳过：29 个测试方法通过、6 个存在错误，含子测试共 16 条错误。已通过整模型参数账本、无 PAD 全量梯度独立参照、全量位置上限、增量容量失败不修改各层缓存及模式/输入/已有梯度保持等检查。剩余错误归于全量入口沿 query 轴检查全屏蔽，和增量入口仍创建 n×n 而非 n×(t+n) 的因果权限；没有修改学习者实现。"
+              },
+              {
+                "at": "2026-09-23T18:15:38.824Z",
+                "text": "学习者在教师提示全屏蔽检查轴和历史可见范围后，自行修正 LlamaLM.forward 与 llama_model_step；未代改核心答案。运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部通过、无跳过；运行 .venv/bin/python -B -m exercises.ex013_llama_style.demo，全量/分块 logits 最大绝对差 8.9406967e-08，参数 12936，KV 逻辑/底层存储均 1536 字节，固定 8 条训练序列 loss 2.420402→0.001096、整序列准确率 100%，全量/缓存生成及目标匹配，存档恢复 logits 与 Adam 状态精确一致。全仓 .venv/bin/python -B -m unittest discover -s tests -t . 共 319 项全部通过、无跳过。数值、梯度、PAD/因果、历史缓存、容量失败和请求隔离均有独立测试，教师提供构造、测试与 demo。"
+              },
+              {
+                "at": "2026-09-23T18:24:55.717Z",
+                "text": "学习者完成 ex013 六处核心实现，在公式/API/边界提示后自行修正代码；既有实跑记录为 35 项专项和全仓 319 项测试全部通过、无跳过。组件及整模型独立数值/梯度、参数账本 12936、紧凑 KV 实际存储 1536 字节、全量/增量 logits 对齐、容量失败与请求隔离、固定八条序列训练准确率 100%、缓存生成和存档恢复均通过。本轮用户明确要求将官方型号与教学配置区别一题撤出验收、由教师直接说明，因此该解释不再作为此次整模型实现通关门槛，也不记录为学习者独立版本辨析证据。"
+              },
+              {
+                "at": "2026-09-23T18:26:49.548Z",
+                "text": "整模型实现的既有 35 项专项、319 项全仓测试和训练/缓存/存档验收继续有效。本轮学习者在两矩阵与三矩阵计数提示后自行修正 SwiGLU 等预算宽度比例为 2/3、F=96 时 G=64，已补齐先前备注保留的组件参数预算缺口；本次未重复运行已通过的代码测试。"
+              }
+            ]
           }
         },
         {
@@ -1632,7 +1660,23 @@ window.LEARNING_DATA = {
             "能说明它省略了哪一步"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-23T18:24:54.725Z",
+            "note": "RMSNorm 实现、数值/梯度及省略均值中心化的机制解释已验收。不把本课 CPU 实验推定为真实设备加速或一般训练优势。",
+            "evidence": [
+              {
+                "at": "2026-09-23T17:54:25.743Z",
+                "text": "学习者提交 exercises/ex013_llama_style/components.py 的 RMSNorm.forward；教师运行 test_llama_components 和 LlamaBlockTest，组件与无缓存块共 19 项测试通过、无跳过，其中 RMSNorm 的 4 项专项验证原始输入均方根、不减均值、epsilon 在根号内、逐 token 独立、零与常量及单特征输入、非连续布局、输入与 gamma 的梯度和状态保持。参数构造与参照测试由教师提供；该证据支持实现正确。"
+              },
+              {
+                "at": "2026-09-23T18:18:08.657Z",
+                "text": "补充 ex013 最终集成验收：学习者手写 RMSNorm 使用原始输入平方均值和根号内 epsilon，再乘 gamma；其四项组件测试、块与整模型数值及参数梯度参照均通过。上一轮实跑 ex013 全部 35 项专项与全仓 319 项测试通过、无跳过，demo 在两层模型中训练至 loss 0.001096、训练序列准确率 100%，全量/缓存生成与存档恢复通过。教师提供构造、参照和运行器，该证据支持组件实现及集成通过。"
+              },
+              {
+                "at": "2026-09-23T18:24:54.725Z",
+                "text": "最终测验中，学习者判断 x=[1,2,4] 与逐分量加 10 后的 x 的 LayerNorm 输出相同、RMSNorm 输出不同，并把差别归因于 LayerNorm 的减均值步骤及 RMSNorm 省略该步骤；其表述拉回到均值在反馈中精确为减去各自均值、居中到零。结合此前自行实现的 RMSNorm、四项组件数值/梯度测试及 ex013 全部 35 项专项、319 项全仓测试与训练集成通过，省略步骤的解释和实现验收标准均有证据。"
+              }
+            ]
           }
         },
         {
@@ -1647,13 +1691,29 @@ window.LEARNING_DATA = {
             "能计算和比较参数量"
           ],
           "progress": {
-            "status": "verify",
-            "updatedAt": "2026-09-23T09:49:58.544Z",
-            "note": "门控结构识别已通过，不再重复口头检查。题面中核对哪些参数的含义由教师补充说明，不把题面歧义判为概念缺口；矩阵形状与参数账本、数值及梯度在后续综合实现中核验。",
+            "status": "mastered",
+            "updatedAt": "2026-09-23T18:26:49.223Z",
+            "note": "门控结构、核心实现、数值/梯度及无偏置两矩阵 FFN 与三矩阵 SwiGLU 的等预算比较已验收。最后的矩阵数量比例错误已在提示后自行修正；不重复实现或参数计算测验。",
             "evidence": [
               {
                 "at": "2026-09-23T09:49:58.544Z",
                 "text": "学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。"
+              },
+              {
+                "at": "2026-09-23T17:54:26.052Z",
+                "text": "学习者根据 SiLU 数学和 API 提示修正 SwiGLU.forward 为门控投影 a 乘 sigmoid(a)，再乘独立 up 投影并经 Wdown 输出。教师运行组件及无缓存块测试共 19 项通过、无跳过，其中 SwiGLU 的 3 项专项覆盖 CPU float32/float64、连续与非连续布局、独立内容分支、门控符号和幅值、输入及全部三份权重梯度与不修改状态。三份矩阵由教师构造，参数契约通过不冒充学习者独立推导参数量。"
+              },
+              {
+                "at": "2026-09-23T18:18:08.971Z",
+                "text": "补充 ex013 最终集成验收：学习者实现 SiLU 门控投影、独立 up 分支及逐元素相乘后 down 投影；已有门控结构解释和获得数学/API 提示后的实现证据。上一轮实跑 35 项专项全部通过，其中三项 SwiGLU 测试验证独立分支、门控数值及输入和三份权重梯度；整模型全部参数梯度、12936 参数账本、固定 8 条序列训练与生成通过，全仓 319 项测试通过、无跳过。构造器和参数账本检查由教师提供，不据此推定学习者已独立推导参数量比较。"
+              },
+              {
+                "at": "2026-09-23T18:24:55.394Z",
+                "text": "最终测验的无偏置 FFN 参数预算比较中，学习者知道 SwiGLU 多一份矩阵，但对 C=24、普通 FFN 中间宽 F=96 的等预算问题回答 G=48，并认为同宽会翻倍，尚未正确区分普通 FFN 两份矩阵和 SwiGLU 三份矩阵的总量比例。此前门控结构解释、核心实现、三项组件测试与整模型训练验收继续有效；只需针对这处参数账本重新列式，不重考实现。"
+              },
+              {
+                "at": "2026-09-23T18:26:49.223Z",
+                "text": "最终测验中，教师指出普通 FFN 原本有两份矩阵、SwiGLU 增至三份后，学习者自行修正等参数预算的中间宽度比例为 2/3，并对 F=96 正确求得 G=64。该证据为针对性提示后的参数比较修正，不称作零提示推导。结合此前独立内容分支与门控结构解释、SiLU 门控核心实现、三项组件数值/梯度测试和 ex013 训练集成验收通过，SwiGLU 实现与参数预算的验收标准均已覆盖。"
               }
             ]
           }
@@ -1671,7 +1731,27 @@ window.LEARNING_DATA = {
             "能处理生成位置偏移并解释可计算长位置不保证模型可靠外推"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-09-23T18:24:55.044Z",
+            "note": "成对旋转、相对位置性质、生成偏移、缓存集成及长位置可计算不等于可靠外推的边界已验收。未做长上下文质量实验，不宣称已经实现或验证长上下文能力。",
+            "evidence": [
+              {
+                "at": "2026-09-23T17:04:11.849Z",
+                "text": "学习者在教师讲解位置广播、相邻特征切片及旋转符号后，完成 exercises/ex013_llama_style/components.py 的 apply_rope，并自行补上 empty_like、偶奇位置交错赋值与返回。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_components.TestRoPE，5 项测试全部通过、无跳过；覆盖 CPU float32/float64、不同特征对频率与非零位置、独立已知值及逐对数值参照、非连续输入、输入和已有梯度保持、反向梯度对齐、成对长度保持、共同位置平移后的点积不变及奇数头宽拒绝。该证据支持获得提示后的组件实现正确，不视为独立推导或独立测试设计。"
+              },
+              {
+                "at": "2026-09-23T17:56:59.962Z",
+                "text": "在已通过 apply_rope 五项组件测试的基础上，学习者把新 Q/K 的逐头旋转、合头和缓存连接到 LlamaBlock：缓存仅追加按原位置旋转的新 K 与未旋转 V，后续用新 Q 读取完整历史 K/V。教师运行 LlamaBlockTest 与 LlamaBlockCacheTest 共 6 项全部通过、无跳过；独立非零位置参照、块输出共同位置平移性质、分块 3/2/1 的实际缓存内容与历史 K 不变及块级全量/增量一致性均通过。实现过程获得教师公式、接口和容量边界提示，不视为独立理论推导。"
+              },
+              {
+                "at": "2026-09-23T18:15:39.173Z",
+                "text": "学习者将缓存长度 t 用于整模型各层的新 Q/K 位置 t..t+n-1，并在提示后修正 j<=t+i 的增量权限。35 项 ex013 专项全部通过、无跳过，覆盖 CPU float32/float64、MHA/MQA/GQA、整段/3-2-1/逐 token 追加的独立完整 logits 参照、各层旋转 K 与原 V、历史 K 不变及历史梯度。demo 的多层全量/分块 logits 最大绝对差 8.9406967e-08，训练后 8 个前缀的全量/缓存生成与目标均匹配。此为获得提示后的多层缓存集成证据，不视为独立理论推导或长上下文外推实验。"
+              },
+              {
+                "at": "2026-09-23T18:24:55.044Z",
+                "text": "最终测验中，学习者否定从长度 512 可运行和全量/缓存对齐推出可靠长上下文能力，主动提出训练输入长度有限可能导致未学到更长情形，并说明可能处理不好但并非必然失败。这为可计算长位置不保证可靠外推提供了边界解释证据。结合既有成对旋转、范数与相对位置性质、非零偏移、历史旋转 K 保持、多层全量/增量 logits 与梯度及训练生成的通过记录，完成本课 RoPE 验收。学习者同时询问受位置影响的可训练参数是否为 Wq/Wk/Wv；共享权重与固定旋转公式的详细说明由教师补充，不冒充其独立解释。"
+              }
+            ]
           }
         },
         {
@@ -2019,7 +2099,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-09-23T09:49:58.544Z",
+    "updatedAt": "2026-09-23T18:26:49.548Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -2786,27 +2866,303 @@ window.LEARNING_DATA = {
         ]
       },
       "modern.swiglu": {
-        "status": "verify",
-        "updatedAt": "2026-09-23T09:49:58.544Z",
-        "note": "门控结构识别已通过，不再重复口头检查。题面中核对哪些参数的含义由教师补充说明，不把题面歧义判为概念缺口；矩阵形状与参数账本、数值及梯度在后续综合实现中核验。",
+        "status": "mastered",
+        "updatedAt": "2026-09-23T18:26:49.223Z",
+        "note": "门控结构、核心实现、数值/梯度及无偏置两矩阵 FFN 与三矩阵 SwiGLU 的等预算比较已验收。最后的矩阵数量比例错误已在提示后自行修正；不重复实现或参数计算测验。",
         "evidence": [
           {
             "at": "2026-09-23T09:49:58.544Z",
             "text": "学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。"
+          },
+          {
+            "at": "2026-09-23T17:54:26.052Z",
+            "text": "学习者根据 SiLU 数学和 API 提示修正 SwiGLU.forward 为门控投影 a 乘 sigmoid(a)，再乘独立 up 投影并经 Wdown 输出。教师运行组件及无缓存块测试共 19 项通过、无跳过，其中 SwiGLU 的 3 项专项覆盖 CPU float32/float64、连续与非连续布局、独立内容分支、门控符号和幅值、输入及全部三份权重梯度与不修改状态。三份矩阵由教师构造，参数契约通过不冒充学习者独立推导参数量。"
+          },
+          {
+            "at": "2026-09-23T18:18:08.971Z",
+            "text": "补充 ex013 最终集成验收：学习者实现 SiLU 门控投影、独立 up 分支及逐元素相乘后 down 投影；已有门控结构解释和获得数学/API 提示后的实现证据。上一轮实跑 35 项专项全部通过，其中三项 SwiGLU 测试验证独立分支、门控数值及输入和三份权重梯度；整模型全部参数梯度、12936 参数账本、固定 8 条序列训练与生成通过，全仓 319 项测试通过、无跳过。构造器和参数账本检查由教师提供，不据此推定学习者已独立推导参数量比较。"
+          },
+          {
+            "at": "2026-09-23T18:24:55.394Z",
+            "text": "最终测验的无偏置 FFN 参数预算比较中，学习者知道 SwiGLU 多一份矩阵，但对 C=24、普通 FFN 中间宽 F=96 的等预算问题回答 G=48，并认为同宽会翻倍，尚未正确区分普通 FFN 两份矩阵和 SwiGLU 三份矩阵的总量比例。此前门控结构解释、核心实现、三项组件测试与整模型训练验收继续有效；只需针对这处参数账本重新列式，不重考实现。"
+          },
+          {
+            "at": "2026-09-23T18:26:49.223Z",
+            "text": "最终测验中，教师指出普通 FFN 原本有两份矩阵、SwiGLU 增至三份后，学习者自行修正等参数预算的中间宽度比例为 2/3，并对 F=96 正确求得 G=64。该证据为针对性提示后的参数比较修正，不称作零提示推导。结合此前独立内容分支与门控结构解释、SiLU 门控核心实现、三项组件数值/梯度测试和 ex013 训练集成验收通过，SwiGLU 实现与参数预算的验收标准均已覆盖。"
+          }
+        ]
+      },
+      "modern.rope": {
+        "status": "mastered",
+        "updatedAt": "2026-09-23T18:24:55.044Z",
+        "note": "成对旋转、相对位置性质、生成偏移、缓存集成及长位置可计算不等于可靠外推的边界已验收。未做长上下文质量实验，不宣称已经实现或验证长上下文能力。",
+        "evidence": [
+          {
+            "at": "2026-09-23T17:04:11.849Z",
+            "text": "学习者在教师讲解位置广播、相邻特征切片及旋转符号后，完成 exercises/ex013_llama_style/components.py 的 apply_rope，并自行补上 empty_like、偶奇位置交错赋值与返回。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_components.TestRoPE，5 项测试全部通过、无跳过；覆盖 CPU float32/float64、不同特征对频率与非零位置、独立已知值及逐对数值参照、非连续输入、输入和已有梯度保持、反向梯度对齐、成对长度保持、共同位置平移后的点积不变及奇数头宽拒绝。该证据支持获得提示后的组件实现正确，不视为独立推导或独立测试设计。"
+          },
+          {
+            "at": "2026-09-23T17:56:59.962Z",
+            "text": "在已通过 apply_rope 五项组件测试的基础上，学习者把新 Q/K 的逐头旋转、合头和缓存连接到 LlamaBlock：缓存仅追加按原位置旋转的新 K 与未旋转 V，后续用新 Q 读取完整历史 K/V。教师运行 LlamaBlockTest 与 LlamaBlockCacheTest 共 6 项全部通过、无跳过；独立非零位置参照、块输出共同位置平移性质、分块 3/2/1 的实际缓存内容与历史 K 不变及块级全量/增量一致性均通过。实现过程获得教师公式、接口和容量边界提示，不视为独立理论推导。"
+          },
+          {
+            "at": "2026-09-23T18:15:39.173Z",
+            "text": "学习者将缓存长度 t 用于整模型各层的新 Q/K 位置 t..t+n-1，并在提示后修正 j<=t+i 的增量权限。35 项 ex013 专项全部通过、无跳过，覆盖 CPU float32/float64、MHA/MQA/GQA、整段/3-2-1/逐 token 追加的独立完整 logits 参照、各层旋转 K 与原 V、历史 K 不变及历史梯度。demo 的多层全量/分块 logits 最大绝对差 8.9406967e-08，训练后 8 个前缀的全量/缓存生成与目标均匹配。此为获得提示后的多层缓存集成证据，不视为独立理论推导或长上下文外推实验。"
+          },
+          {
+            "at": "2026-09-23T18:24:55.044Z",
+            "text": "最终测验中，学习者否定从长度 512 可运行和全量/缓存对齐推出可靠长上下文能力，主动提出训练输入长度有限可能导致未学到更长情形，并说明可能处理不好但并非必然失败。这为可计算长位置不保证可靠外推提供了边界解释证据。结合既有成对旋转、范数与相对位置性质、非零偏移、历史旋转 K 保持、多层全量/增量 logits 与梯度及训练生成的通过记录，完成本课 RoPE 验收。学习者同时询问受位置影响的可训练参数是否为 Wq/Wk/Wv；共享权重与固定旋转公式的详细说明由教师补充，不冒充其独立解释。"
+          }
+        ]
+      },
+      "modern.rmsnorm": {
+        "status": "mastered",
+        "updatedAt": "2026-09-23T18:24:54.725Z",
+        "note": "RMSNorm 实现、数值/梯度及省略均值中心化的机制解释已验收。不把本课 CPU 实验推定为真实设备加速或一般训练优势。",
+        "evidence": [
+          {
+            "at": "2026-09-23T17:54:25.743Z",
+            "text": "学习者提交 exercises/ex013_llama_style/components.py 的 RMSNorm.forward；教师运行 test_llama_components 和 LlamaBlockTest，组件与无缓存块共 19 项测试通过、无跳过，其中 RMSNorm 的 4 项专项验证原始输入均方根、不减均值、epsilon 在根号内、逐 token 独立、零与常量及单特征输入、非连续布局、输入与 gamma 的梯度和状态保持。参数构造与参照测试由教师提供；该证据支持实现正确。"
+          },
+          {
+            "at": "2026-09-23T18:18:08.657Z",
+            "text": "补充 ex013 最终集成验收：学习者手写 RMSNorm 使用原始输入平方均值和根号内 epsilon，再乘 gamma；其四项组件测试、块与整模型数值及参数梯度参照均通过。上一轮实跑 ex013 全部 35 项专项与全仓 319 项测试通过、无跳过，demo 在两层模型中训练至 loss 0.001096、训练序列准确率 100%，全量/缓存生成与存档恢复通过。教师提供构造、参照和运行器，该证据支持组件实现及集成通过。"
+          },
+          {
+            "at": "2026-09-23T18:24:54.725Z",
+            "text": "最终测验中，学习者判断 x=[1,2,4] 与逐分量加 10 后的 x 的 LayerNorm 输出相同、RMSNorm 输出不同，并把差别归因于 LayerNorm 的减均值步骤及 RMSNorm 省略该步骤；其表述拉回到均值在反馈中精确为减去各自均值、居中到零。结合此前自行实现的 RMSNorm、四项组件数值/梯度测试及 ex013 全部 35 项专项、319 项全仓测试与训练集成通过，省略步骤的解释和实现验收标准均有证据。"
+          }
+        ]
+      },
+      "implementation.llama": {
+        "status": "mastered",
+        "updatedAt": "2026-09-23T18:26:49.548Z",
+        "note": "本课 RMSNorm、SwiGLU、RoPE 与整模型实现四项均已完成当前验收，原 SwiGLU 参数预算缺口已解决。CPU 小型自定义 GQA 配置的训练、缓存与存档闭环已通过；官方版本辨析按用户要求免考，不作为其独立解释证据。不宣称官方 checkpoint 兼容、长上下文质量或 GPU 性能。",
+        "evidence": [
+          {
+            "at": "2026-09-23T17:54:26.442Z",
+            "text": "学习者完成 LlamaBlock.forward 的两条 RMSNorm 残差、Q/K 拆头后 RoPE 并合头、紧凑旋转 K 与原 V 追加缓存、增量 Q 读取完整 K/V、复用 GQA 输出投影以及 SwiGLU。教师运行 test_llama_components、LlamaBlockTest、LlamaBlockCacheTest：19 项组件及无缓存块测试通过、无跳过；缓存类初始化因 max_length=None 与整数比较报错，未执行其正式测试。另用未修改学习者代码的有限容量临时检查，分块 3/2/1 的块输出与独立参照最大误差 2.22e-15，缓存 K/V 数值和历史 K 保持正确，容量溢出保持缓存原样。修正过程有教师提示；不宣称全模型验收完成。"
+          },
+          {
+            "at": "2026-09-23T17:56:59.634Z",
+            "text": "学习者在容量边界提示后修正 LlamaBlock.forward 对 cache.max_length=None 的判断。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_model.LlamaBlockTest tests.exercises.test_llama_model.LlamaBlockCacheTest：6 项全部通过、无失败或跳过，覆盖 CPU float32/float64 的 MHA/MQA/GQA、非连续输入、非零位置、独立块数值及全部输入/参数梯度、因果与 PAD key 扰动、共同位置平移，以及分块 3/2/1 时缓存中的旋转 K 和未旋转 V、历史 K 不变、缓存/全量块输出一致及容量失败不改变状态。结合此前 15 项组件测试通过，LlamaBlock 在本课契约范围验收通过；代码修正有教师提示，未修改学习者实现，不等同于整模型验收。"
+          },
+          {
+            "at": "2026-09-23T18:06:44.590Z",
+            "text": "学习者补齐 LlamaLM.forward 和 llama_model_step，接通内容查表、各层、末尾 RMSNorm 与词表投影，并在增量入口使用缓存长度确定 RoPE 位置。教师运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部执行且无跳过：29 个测试方法通过、6 个存在错误，含子测试共 16 条错误。已通过整模型参数账本、无 PAD 全量梯度独立参照、全量位置上限、增量容量失败不修改各层缓存及模式/输入/已有梯度保持等检查。剩余错误归于全量入口沿 query 轴检查全屏蔽，和增量入口仍创建 n×n 而非 n×(t+n) 的因果权限；没有修改学习者实现。"
+          },
+          {
+            "at": "2026-09-23T18:15:38.824Z",
+            "text": "学习者在教师提示全屏蔽检查轴和历史可见范围后，自行修正 LlamaLM.forward 与 llama_model_step；未代改核心答案。运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部通过、无跳过；运行 .venv/bin/python -B -m exercises.ex013_llama_style.demo，全量/分块 logits 最大绝对差 8.9406967e-08，参数 12936，KV 逻辑/底层存储均 1536 字节，固定 8 条训练序列 loss 2.420402→0.001096、整序列准确率 100%，全量/缓存生成及目标匹配，存档恢复 logits 与 Adam 状态精确一致。全仓 .venv/bin/python -B -m unittest discover -s tests -t . 共 319 项全部通过、无跳过。数值、梯度、PAD/因果、历史缓存、容量失败和请求隔离均有独立测试，教师提供构造、测试与 demo。"
+          },
+          {
+            "at": "2026-09-23T18:24:55.717Z",
+            "text": "学习者完成 ex013 六处核心实现，在公式/API/边界提示后自行修正代码；既有实跑记录为 35 项专项和全仓 319 项测试全部通过、无跳过。组件及整模型独立数值/梯度、参数账本 12936、紧凑 KV 实际存储 1536 字节、全量/增量 logits 对齐、容量失败与请求隔离、固定八条序列训练准确率 100%、缓存生成和存档恢复均通过。本轮用户明确要求将官方型号与教学配置区别一题撤出验收、由教师直接说明，因此该解释不再作为此次整模型实现通关门槛，也不记录为学习者独立版本辨析证据。"
+          },
+          {
+            "at": "2026-09-23T18:26:49.548Z",
+            "text": "整模型实现的既有 35 项专项、319 项全仓测试和训练/缓存/存档验收继续有效。本轮学习者在两矩阵与三矩阵计数提示后自行修正 SwiGLU 等预算宽度比例为 2/3、F=96 时 G=64，已补齐先前备注保留的组件参数预算缺口；本次未重复运行已通过的代码测试。"
           }
         ]
       }
     },
     "statusCounts": {
-      "mastered": 46,
+      "mastered": 50,
       "current": 0,
-      "verify": 5,
+      "verify": 4,
       "relearn": 1,
-      "pending": 27
+      "pending": 24
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "cef68dd5-ef93-483c-8934-e7b219185430",
+      "at": "2026-09-23T18:26:49.548Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "master",
+      "fromStatus": "mastered",
+      "toStatus": "mastered",
+      "evidence": "整模型实现的既有 35 项专项、319 项全仓测试和训练/缓存/存档验收继续有效。本轮学习者在两矩阵与三矩阵计数提示后自行修正 SwiGLU 等预算宽度比例为 2/3、F=96 时 G=64，已补齐先前备注保留的组件参数预算缺口；本次未重复运行已通过的代码测试。",
+      "note": "本课 RMSNorm、SwiGLU、RoPE 与整模型实现四项均已完成当前验收，原 SwiGLU 参数预算缺口已解决。CPU 小型自定义 GQA 配置的训练、缓存与存档闭环已通过；官方版本辨析按用户要求免考，不作为其独立解释证据。不宣称官方 checkpoint 兼容、长上下文质量或 GPU 性能。"
+    },
+    {
+      "id": "1424522d-3721-4454-a7de-5ea2a9840388",
+      "at": "2026-09-23T18:26:49.223Z",
+      "nodeId": "modern.swiglu",
+      "nodeTitle": "SwiGLU",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "最终测验中，教师指出普通 FFN 原本有两份矩阵、SwiGLU 增至三份后，学习者自行修正等参数预算的中间宽度比例为 2/3，并对 F=96 正确求得 G=64。该证据为针对性提示后的参数比较修正，不称作零提示推导。结合此前独立内容分支与门控结构解释、SiLU 门控核心实现、三项组件数值/梯度测试和 ex013 训练集成验收通过，SwiGLU 实现与参数预算的验收标准均已覆盖。",
+      "note": "门控结构、核心实现、数值/梯度及无偏置两矩阵 FFN 与三矩阵 SwiGLU 的等预算比较已验收。最后的矩阵数量比例错误已在提示后自行修正；不重复实现或参数计算测验。"
+    },
+    {
+      "id": "7ccabfee-2244-4964-83a7-f425ca1b3b07",
+      "at": "2026-09-23T18:24:55.717Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者完成 ex013 六处核心实现，在公式/API/边界提示后自行修正代码；既有实跑记录为 35 项专项和全仓 319 项测试全部通过、无跳过。组件及整模型独立数值/梯度、参数账本 12936、紧凑 KV 实际存储 1536 字节、全量/增量 logits 对齐、容量失败与请求隔离、固定八条序列训练准确率 100%、缓存生成和存档恢复均通过。本轮用户明确要求将官方型号与教学配置区别一题撤出验收、由教师直接说明，因此该解释不再作为此次整模型实现通关门槛，也不记录为学习者独立版本辨析证据。",
+      "note": "按本次明确验收范围标记整模型实现掌握；CPU 小型自定义 GQA 配置的训练、缓存与存档闭环已通过。官方版本辨析按用户要求免考；SwiGLU 参数预算计算的局部缺口保留在 modern.swiglu，不宣称官方 checkpoint 兼容、长上下文质量或 GPU 性能。"
+    },
+    {
+      "id": "72909173-951f-4a18-8d95-ad8074da3353",
+      "at": "2026-09-23T18:24:55.394Z",
+      "nodeId": "modern.swiglu",
+      "nodeTitle": "SwiGLU",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "最终测验的无偏置 FFN 参数预算比较中，学习者知道 SwiGLU 多一份矩阵，但对 C=24、普通 FFN 中间宽 F=96 的等预算问题回答 G=48，并认为同宽会翻倍，尚未正确区分普通 FFN 两份矩阵和 SwiGLU 三份矩阵的总量比例。此前门控结构解释、核心实现、三项组件测试与整模型训练验收继续有效；只需针对这处参数账本重新列式，不重考实现。",
+      "note": "唯一待确认项为普通两矩阵 FFN 与三矩阵 SwiGLU 的总参数预算比例；请按各矩阵 shape 汇总后修正本题 G。实现及训练/缓存集成已通过，不因局部计数错误回退已有能力。"
+    },
+    {
+      "id": "0979daef-b1aa-4f4a-8451-6cf082af1f9a",
+      "at": "2026-09-23T18:24:55.044Z",
+      "nodeId": "modern.rope",
+      "nodeTitle": "旋转位置编码RoPE",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "最终测验中，学习者否定从长度 512 可运行和全量/缓存对齐推出可靠长上下文能力，主动提出训练输入长度有限可能导致未学到更长情形，并说明可能处理不好但并非必然失败。这为可计算长位置不保证可靠外推提供了边界解释证据。结合既有成对旋转、范数与相对位置性质、非零偏移、历史旋转 K 保持、多层全量/增量 logits 与梯度及训练生成的通过记录，完成本课 RoPE 验收。学习者同时询问受位置影响的可训练参数是否为 Wq/Wk/Wv；共享权重与固定旋转公式的详细说明由教师补充，不冒充其独立解释。",
+      "note": "成对旋转、相对位置性质、生成偏移、缓存集成及长位置可计算不等于可靠外推的边界已验收。未做长上下文质量实验，不宣称已经实现或验证长上下文能力。"
+    },
+    {
+      "id": "7fe34711-481d-467b-8020-223328c9c420",
+      "at": "2026-09-23T18:24:54.725Z",
+      "nodeId": "modern.rmsnorm",
+      "nodeTitle": "RMSNorm",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "最终测验中，学习者判断 x=[1,2,4] 与逐分量加 10 后的 x 的 LayerNorm 输出相同、RMSNorm 输出不同，并把差别归因于 LayerNorm 的减均值步骤及 RMSNorm 省略该步骤；其表述拉回到均值在反馈中精确为减去各自均值、居中到零。结合此前自行实现的 RMSNorm、四项组件数值/梯度测试及 ex013 全部 35 项专项、319 项全仓测试与训练集成通过，省略步骤的解释和实现验收标准均有证据。",
+      "note": "RMSNorm 实现、数值/梯度及省略均值中心化的机制解释已验收。不把本课 CPU 实验推定为真实设备加速或一般训练优势。"
+    },
+    {
+      "id": "ecf29f45-92ab-4d20-b295-f4ab0a6a12a1",
+      "at": "2026-09-23T18:18:08.971Z",
+      "nodeId": "modern.swiglu",
+      "nodeTitle": "SwiGLU",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "补充 ex013 最终集成验收：学习者实现 SiLU 门控投影、独立 up 分支及逐元素相乘后 down 投影；已有门控结构解释和获得数学/API 提示后的实现证据。上一轮实跑 35 项专项全部通过，其中三项 SwiGLU 测试验证独立分支、门控数值及输入和三份权重梯度；整模型全部参数梯度、12936 参数账本、固定 8 条序列训练与生成通过，全仓 319 项测试通过、无跳过。构造器和参数账本检查由教师提供，不据此推定学习者已独立推导参数量比较。",
+      "note": "ex013 编程练习已验收通过，SwiGLU 组件及整模型训练集成没有待修复项。门控结构解释与实现均已验证；知识节点保留 verify 的具体缺口仅为与传统两矩阵 FFN 的参数量计算和比较，后续相关账本讨论中确认，不重复已通过的组件测试和门控定义。"
+    },
+    {
+      "id": "f9b9f4c9-5965-4aba-9c34-e35980e1ddc6",
+      "at": "2026-09-23T18:18:08.657Z",
+      "nodeId": "modern.rmsnorm",
+      "nodeTitle": "RMSNorm",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "补充 ex013 最终集成验收：学习者手写 RMSNorm 使用原始输入平方均值和根号内 epsilon，再乘 gamma；其四项组件测试、块与整模型数值及参数梯度参照均通过。上一轮实跑 ex013 全部 35 项专项与全仓 319 项测试通过、无跳过，demo 在两层模型中训练至 loss 0.001096、训练序列准确率 100%，全量/缓存生成与存档恢复通过。教师提供构造、参照和运行器，该证据支持组件实现及集成通过。",
+      "note": "ex013 编程练习已验收通过，RMSNorm 组件及整模型集成没有待修复项。知识节点保留 verify：实现已体现不减均值，但学习者对省略均值中心化这一步的解释尚无独立记录；不要求额外证明一般训练优劣，不重复代码测试，可在后续相关讨论中确认。"
+    },
+    {
+      "id": "2ea83e2c-5c92-4230-96aa-fde603b606ec",
+      "at": "2026-09-23T18:15:39.173Z",
+      "nodeId": "modern.rope",
+      "nodeTitle": "旋转位置编码RoPE",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者将缓存长度 t 用于整模型各层的新 Q/K 位置 t..t+n-1，并在提示后修正 j<=t+i 的增量权限。35 项 ex013 专项全部通过、无跳过，覆盖 CPU float32/float64、MHA/MQA/GQA、整段/3-2-1/逐 token 追加的独立完整 logits 参照、各层旋转 K 与原 V、历史 K 不变及历史梯度。demo 的多层全量/分块 logits 最大绝对差 8.9406967e-08，训练后 8 个前缀的全量/缓存生成与目标均匹配。此为获得提示后的多层缓存集成证据，不视为独立理论推导或长上下文外推实验。",
+      "note": "成对旋转、长度与相对位置性质、非零偏移、单块及多层缓存集成均已验证；不重复旋转公式或 shape 检查。仅可计算更长位置不保证可靠外推这一边界尚缺学习者解释证据，可在后续涉及长度的实验中自然确认，不阻塞本次练习通过。"
+    },
+    {
+      "id": "c5445ba4-e023-4c15-8fae-dc6826157851",
+      "at": "2026-09-23T18:15:38.824Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者在教师提示全屏蔽检查轴和历史可见范围后，自行修正 LlamaLM.forward 与 llama_model_step；未代改核心答案。运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部通过、无跳过；运行 .venv/bin/python -B -m exercises.ex013_llama_style.demo，全量/分块 logits 最大绝对差 8.9406967e-08，参数 12936，KV 逻辑/底层存储均 1536 字节，固定 8 条训练序列 loss 2.420402→0.001096、整序列准确率 100%，全量/缓存生成及目标匹配，存档恢复 logits 与 Adam 状态精确一致。全仓 .venv/bin/python -B -m unittest discover -s tests -t . 共 319 项全部通过、无跳过。数值、梯度、PAD/因果、历史缓存、容量失败和请求隔离均有独立测试，教师提供构造、测试与 demo。",
+      "note": "ex013 六处核心实现及训练/缓存/存档综合验收已通过，原两处 mask 问题已解决，无代码阻塞。节点仍保留 verify：所选 LLaMA 版本与教学自定义配置区别的解释尚无独立证据；相关组件的机制/参数比较/外推边界按各自节点保留，不追加重复口试。该实验只证明本题 CPU 小数据配置，不证明泛化或 GPU 性能。"
+    },
+    {
+      "id": "f76d42b2-2cce-457f-a41e-6883c127d76d",
+      "at": "2026-09-23T18:06:44.590Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者补齐 LlamaLM.forward 和 llama_model_step，接通内容查表、各层、末尾 RMSNorm 与词表投影，并在增量入口使用缓存长度确定 RoPE 位置。教师运行 .venv/bin/python -B -m unittest tests.exercises.test_llama_components tests.exercises.test_llama_model -v，35 项全部执行且无跳过：29 个测试方法通过、6 个存在错误，含子测试共 16 条错误。已通过整模型参数账本、无 PAD 全量梯度独立参照、全量位置上限、增量容量失败不修改各层缓存及模式/输入/已有梯度保持等检查。剩余错误归于全量入口沿 query 轴检查全屏蔽，和增量入口仍创建 n×n 而非 n×(t+n) 的因果权限；没有修改学习者实现。",
+      "note": "三个组件与块级验收继续有效；两个模型入口已提交，参数账本与部分整模型性质已验证。先修正全量 allowed 检查的 key 轴以及包含历史位置的增量 mask，再复跑 35 项专项、训练/生成/存档 demo 和全仓回归；整模型验收尚未完成。"
+    },
+    {
+      "id": "a0f6697b-0c65-4264-9ebb-9d2153a7d94f",
+      "at": "2026-09-23T17:56:59.962Z",
+      "nodeId": "modern.rope",
+      "nodeTitle": "旋转位置编码RoPE",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "在已通过 apply_rope 五项组件测试的基础上，学习者把新 Q/K 的逐头旋转、合头和缓存连接到 LlamaBlock：缓存仅追加按原位置旋转的新 K 与未旋转 V，后续用新 Q 读取完整历史 K/V。教师运行 LlamaBlockTest 与 LlamaBlockCacheTest 共 6 项全部通过、无跳过；独立非零位置参照、块输出共同位置平移性质、分块 3/2/1 的实际缓存内容与历史 K 不变及块级全量/增量一致性均通过。实现过程获得教师公式、接口和容量边界提示，不视为独立理论推导。",
+      "note": "RoPE 组件与单块内的位置偏移、旋转 K 缓存复用及全量/增量一致性已验证。不重复旋转公式或基础 shape 检查；多层整模型缓存集成与可计算更长位置不保证可靠外推的边界留到后续综合验收。"
+    },
+    {
+      "id": "b4e257b1-8730-4193-8183-bf4d8b89095d",
+      "at": "2026-09-23T17:56:59.634Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者在容量边界提示后修正 LlamaBlock.forward 对 cache.max_length=None 的判断。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_model.LlamaBlockTest tests.exercises.test_llama_model.LlamaBlockCacheTest：6 项全部通过、无失败或跳过，覆盖 CPU float32/float64 的 MHA/MQA/GQA、非连续输入、非零位置、独立块数值及全部输入/参数梯度、因果与 PAD key 扰动、共同位置平移，以及分块 3/2/1 时缓存中的旋转 K 和未旋转 V、历史 K 不变、缓存/全量块输出一致及容量失败不改变状态。结合此前 15 项组件测试通过，LlamaBlock 在本课契约范围验收通过；代码修正有教师提示，未修改学习者实现，不等同于整模型验收。",
+      "note": "三个组件及 LlamaBlock 的现有组件/块级测试已通过，原不限容量缓存边界已解决。不重复已通过的组件与块练习；后续完成并验证 LlamaLM.forward、llama_model_step、整模型全量/缓存一致性、参数账本与训练演示。"
+    },
+    {
+      "id": "29bcf485-1f59-494b-bb44-d97818f03a3a",
+      "at": "2026-09-23T17:54:26.442Z",
+      "nodeId": "implementation.llama",
+      "nodeTitle": "LLaMA风格模型",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者完成 LlamaBlock.forward 的两条 RMSNorm 残差、Q/K 拆头后 RoPE 并合头、紧凑旋转 K 与原 V 追加缓存、增量 Q 读取完整 K/V、复用 GQA 输出投影以及 SwiGLU。教师运行 test_llama_components、LlamaBlockTest、LlamaBlockCacheTest：19 项组件及无缓存块测试通过、无跳过；缓存类初始化因 max_length=None 与整数比较报错，未执行其正式测试。另用未修改学习者代码的有限容量临时检查，分块 3/2/1 的块输出与独立参照最大误差 2.22e-15，缓存 K/V 数值和历史 K 保持正确，容量溢出保持缓存原样。修正过程有教师提示；不宣称全模型验收完成。",
+      "note": "组件及无缓存块的数值、梯度、因果与 PAD 行为已通过；有限容量分块缓存诊断通过。当前须处理 cache.max_length=None 表示不限容量的边界，随后完成并验证全量/增量模型入口、整模型缓存一致性、参数账本和训练演示。"
+    },
+    {
+      "id": "34506f49-334f-40de-874d-ef043c0d88ff",
+      "at": "2026-09-23T17:54:26.052Z",
+      "nodeId": "modern.swiglu",
+      "nodeTitle": "SwiGLU",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "学习者根据 SiLU 数学和 API 提示修正 SwiGLU.forward 为门控投影 a 乘 sigmoid(a)，再乘独立 up 投影并经 Wdown 输出。教师运行组件及无缓存块测试共 19 项通过、无跳过，其中 SwiGLU 的 3 项专项覆盖 CPU float32/float64、连续与非连续布局、独立内容分支、门控符号和幅值、输入及全部三份权重梯度与不修改状态。三份矩阵由教师构造，参数契约通过不冒充学习者独立推导参数量。",
+      "note": "门控结构解释、获得提示后的核心实现及数值/梯度已通过。与传统两矩阵 FFN 的参数量比较尚待综合验收，不再重复已通过的激活数学和门控结构问答。"
+    },
+    {
+      "id": "5c784dcc-a482-48aa-9b10-ae0b185e5eaf",
+      "at": "2026-09-23T17:54:25.743Z",
+      "nodeId": "modern.rmsnorm",
+      "nodeTitle": "RMSNorm",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者提交 exercises/ex013_llama_style/components.py 的 RMSNorm.forward；教师运行 test_llama_components 和 LlamaBlockTest，组件与无缓存块共 19 项测试通过、无跳过，其中 RMSNorm 的 4 项专项验证原始输入均方根、不减均值、epsilon 在根号内、逐 token 独立、零与常量及单特征输入、非连续布局、输入与 gamma 的梯度和状态保持。参数构造与参照测试由教师提供；该证据支持实现正确。",
+      "note": "RMSNorm 组件及其在无缓存块中的数值和梯度已验证。与 LayerNorm 的机制取舍解释尚未单独形成证据，可在整模型集成讨论中确认，不重复基础定义测验。"
+    },
+    {
+      "id": "48f404a7-d2cf-46c2-a42f-5deec6d5f297",
+      "at": "2026-09-23T17:04:11.849Z",
+      "nodeId": "modern.rope",
+      "nodeTitle": "旋转位置编码RoPE",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在教师讲解位置广播、相邻特征切片及旋转符号后，完成 exercises/ex013_llama_style/components.py 的 apply_rope，并自行补上 empty_like、偶奇位置交错赋值与返回。教师运行 .venv/bin/python -m unittest -v tests.exercises.test_llama_components.TestRoPE，5 项测试全部通过、无跳过；覆盖 CPU float32/float64、不同特征对频率与非零位置、独立已知值及逐对数值参照、非连续输入、输入和已有梯度保持、反向梯度对齐、成对长度保持、共同位置平移后的点积不变及奇数头宽拒绝。该证据支持获得提示后的组件实现正确，不视为独立推导或独立测试设计。",
+      "note": "RoPE 组件实现及现有教师测试已通过，不必重复基础 shape 或公式复述。仍需在后续综合实现中核验新增 Q/K 的位置偏移、已旋转 K 的缓存复用及全量/增量一致性；可计算更长位置不保证可靠外推的解释尚未验收。"
+    },
     {
       "id": "0c55c19f-9802-483d-995c-b10bb031edc4",
       "at": "2026-09-23T09:49:58.544Z",

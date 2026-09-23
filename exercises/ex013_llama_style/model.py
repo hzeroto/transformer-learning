@@ -66,8 +66,40 @@ class LlamaBlock(nn.Module):
         保留包含历史 K/V 的同一次计算图；不 detach，不在内部 no_grad/backward。
         合法 batch/dtype/宽度/历史与参数一致性由调用方保证，不考通用校验。
         """
-        raise NotImplementedError("TODO 4: LlamaBlock.forward")
 
+        # 1. 入参检查
+        pos = len(cache) if cache is not None else 0
+        if pos + len(positions) > cache.max_length if cache is not None and cache.max_length is not None else 0:
+            raise ValueError("本次追加超出缓存容量")
+
+        # 2. Pre-Norm + Q/K/V 投影
+        x_normed = self.norm1(x)  # (B,n,C)
+        Q, K_new, V_new = project_qkv(x_normed, self.Wq, self.Wk, self.Wv)
+
+        # 3. RoPE
+        Q = split_heads(Q, self.num_query_heads)
+        K_new = split_heads(K_new, self.num_kv_heads)
+        V_new = split_heads(V_new, self.num_kv_heads)
+
+        Q = apply_rope(Q, positions, self.rope_theta)
+        K_new = apply_rope(K_new, positions, self.rope_theta)
+
+        Q = merge_heads(Q)
+        K_new = merge_heads(K_new)
+        V_new = merge_heads(V_new)
+
+        cache.append(K_new, V_new) if cache is not None else None
+
+        # 4. GQA + 残差 + FFN
+        K = cache.k if cache is not None else K_new
+        V = cache.v if cache is not None else V_new
+        grade, _ = grouped_query_attention(Q, K, V, self.Wo, self.num_query_heads, self.num_kv_heads, allowed)
+        x1 = x + grade
+
+        # 5. SwiGLU + 残差
+        n2 = self.norm2(x1)
+        x2 = x1 + self.ffn(n2)
+        return x2
 
 class LlamaLM(nn.Module):
     def __init__(
@@ -105,8 +137,25 @@ class LlamaLM(nn.Module):
         Raises: ValueError，当 T>self.L，或存在全屏蔽 query 行。
         不修改输入/参数/已有 .grad、不切换模式、不内部 no_grad，不保存 KV。
         """
-        raise NotImplementedError("TODO 5: LlamaLM.forward")
+        # 1. 入参检查
+        B, T = input_ids.shape
+        if T > self.L:
+            raise ValueError("输入长度超出模型容量")
 
+        # 2. Token embedding + 位置表 + 权限
+        x = self.token_table[input_ids]  # (B,T,C)
+        positions = torch.arange(T, device=input_ids.device)
+        allowed = make_causal_allowed(input_valid)  # (B,T,T)
+
+        if torch.any(torch.all(~allowed, dim=-1)).item():
+            raise ValueError("存在全屏蔽 query 行")
+
+        # 3. 逐层调用 LlamaBlock.forward
+        for block in self.blocks:
+            x = block(x, positions, allowed)
+        x = self.final_norm(x)  # (B,T,C)
+        logits = x @ self.vocab_proj  # (B,T,N)
+        return logits
 
 def new_caches(model: LlamaLM) -> list[LayerKVCache]:
     """教师辅助：每次调用为一个新请求创建互相独立的空容器，不计算 K/V。"""
@@ -133,4 +182,23 @@ def llama_model_step(
     不生成 token、不采样、不计算 loss；不修改输入/参数/已有 .grad/模式。
     不使用 no_grad/detach；推理调用方自己关闭求导。训练步之间不复用 KV。
     """
-    raise NotImplementedError("TODO 6: llama_model_step")
+    # 1. 入参检查
+    B, n = input_ids.shape
+    t = len(caches[0])
+    if any(len(cache) != t for cache in caches):
+        raise ValueError("各层缓存长度不一致")
+    if t + n > model.L:
+        raise ValueError("本次追加超出模型容量")
+
+    # 2. Token embedding + 位置表 + 权限
+    x = model.token_table[input_ids]  # (B,n,C)
+    positions = torch.arange(t, t+n, device=input_ids.device)
+    # 2.1 (n, t+n) -> i + t >= j -> j <= t+i
+    allowed = torch.arange(n).view(1,n,1) + t >= torch.arange(t+n).view(1,1,t+n)  # (1,n,t+n)
+
+    # 3. 逐层调用 LlamaBlock.forward
+    for block, cache in zip(model.blocks, caches):
+        x = block(x, positions, allowed, cache)
+    x = model.final_norm(x)  # (B,n,C)
+    logits = x @ model.vocab_proj  # (B,n,N)
+    return logits
