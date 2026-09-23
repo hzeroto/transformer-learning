@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="800" viewBox="0 0 1140 800" role="img" aria-labelledby="title desc">
+<title id="title">同一模型的 Prefill 与单 token Decode：score 矩形的变化</title>
+<desc id="desc">B=2,Hq=6,Hkv=2,D=4,C=24。左侧空缓存一次输入7个位置，单头score是7乘7矩阵，下三角28格允许读取，上三角21格被mask，全部49格都经过稠密矩阵乘法。完整score shape为2,6,7,7，共588个元素。右侧已有7个位置再输入1个位置，单头score是1乘8矩阵，8格都允许读取。完整score shape为2,6,1,8，共96个元素。K与V每层各以2,S,8紧凑存储。投影和FFN只作用于新增位置；Decode仍读取旧KV。</desc>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#182b45} .title{font-size:27px;font-weight:700}.head{font-size:23px;font-weight:700}.body{font-size:20px}.small{font-size:18px}.strong{font-weight:700}.muted{fill:#4b6079}.mono{font-family:Consolas,"Microsoft YaHei",monospace}</style>
+<rect width="1140" height="800" fill="#f7f9fd"/>
+<text x="40" y="43" class="title" >同一模型：新 query 变少，历史 key 仍需读取</text>
+<text x="40" y="78" class="body muted" >B=2，Hq=6，Hkv=2，D=4，C=24  ·  网格固定一个 batch 和一个 Q 头</text>
+<rect x="40" y="104" width="514" height="479" rx="16" fill="#ffffff" stroke="#d8e1ed"/>
+<rect x="586" y="104" width="514" height="479" rx="16" fill="#ffffff" stroke="#d8e1ed"/>
+<text x="60" y="141" class="head" >Prefill｜空 cache，一次输入 7 个位置</text>
+<text x="606" y="141" class="head" >Decode｜已有 7 个位置，再输入 1 个</text>
+<text x="60" y="177" class="body" >每头：Q [7,4] × Kᵀ [4,7] → [7,7]</text>
+<text x="606" y="177" class="body" >每头：Q [1,4] × Kᵀ [4,8] → [1,8]</text>
+<text x="60" y="208" class="body mono" >Q: (2,6,7,4)    K: (2,2,7,4)</text>
+<text x="606" y="208" class="body mono" >Q: (2,6,1,4)    K: (2,2,8,4)</text>
+<text x="60" y="239" class="body strong" >scores: (2,6,7,7) = 588 个元素</text>
+<text x="606" y="239" class="body strong" >scores: (2,6,1,8) = 96 个元素</text>
+<text x="60" y="281" class="small muted" >query 行 ↓</text>
+<text x="245" y="273" class="small muted" >key 列 →</text>
+<text x="188.5" y="292" class="small" text-anchor="middle" >0</text>
+<text x="219.5" y="292" class="small" text-anchor="middle" >1</text>
+<text x="250.5" y="292" class="small" text-anchor="middle" >2</text>
+<text x="281.5" y="292" class="small" text-anchor="middle" >3</text>
+<text x="312.5" y="292" class="small" text-anchor="middle" >4</text>
+<text x="343.5" y="292" class="small" text-anchor="middle" >5</text>
+<text x="374.5" y="292" class="small" text-anchor="middle" >6</text>
+<text x="155" y="322" class="small" text-anchor="middle" >0</text>
+<rect x="173" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="322" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="219.5" y="322" class="small" text-anchor="middle" >×</text>
+<rect x="235" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="250.5" y="322" class="small" text-anchor="middle" >×</text>
+<rect x="266" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="281.5" y="322" class="small" text-anchor="middle" >×</text>
+<rect x="297" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="312.5" y="322" class="small" text-anchor="middle" >×</text>
+<rect x="328" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="343.5" y="322" class="small" text-anchor="middle" >×</text>
+<rect x="359" y="300" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="322" class="small" text-anchor="middle" >×</text>
+<text x="155" y="353" class="small" text-anchor="middle" >1</text>
+<rect x="173" y="331" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="353" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="331" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="353" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="331" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="250.5" y="353" class="small" text-anchor="middle" >×</text>
+<rect x="266" y="331" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="281.5" y="353" class="small" text-anchor="middle" >×</text>
+<rect x="297" y="331" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="312.5" y="353" class="small" text-anchor="middle" >×</text>
+<rect x="328" y="331" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="343.5" y="353" class="small" text-anchor="middle" >×</text>
+<rect x="359" y="331" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="353" class="small" text-anchor="middle" >×</text>
+<text x="155" y="384" class="small" text-anchor="middle" >2</text>
+<rect x="173" y="362" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="384" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="362" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="384" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="362" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="250.5" y="384" class="small" text-anchor="middle" >✓</text>
+<rect x="266" y="362" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="281.5" y="384" class="small" text-anchor="middle" >×</text>
+<rect x="297" y="362" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="312.5" y="384" class="small" text-anchor="middle" >×</text>
+<rect x="328" y="362" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="343.5" y="384" class="small" text-anchor="middle" >×</text>
+<rect x="359" y="362" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="384" class="small" text-anchor="middle" >×</text>
+<text x="155" y="415" class="small" text-anchor="middle" >3</text>
+<rect x="173" y="393" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="415" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="393" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="415" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="393" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="250.5" y="415" class="small" text-anchor="middle" >✓</text>
+<rect x="266" y="393" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="281.5" y="415" class="small" text-anchor="middle" >✓</text>
+<rect x="297" y="393" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="312.5" y="415" class="small" text-anchor="middle" >×</text>
+<rect x="328" y="393" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="343.5" y="415" class="small" text-anchor="middle" >×</text>
+<rect x="359" y="393" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="415" class="small" text-anchor="middle" >×</text>
+<text x="155" y="446" class="small" text-anchor="middle" >4</text>
+<rect x="173" y="424" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="446" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="424" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="446" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="424" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="250.5" y="446" class="small" text-anchor="middle" >✓</text>
+<rect x="266" y="424" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="281.5" y="446" class="small" text-anchor="middle" >✓</text>
+<rect x="297" y="424" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="312.5" y="446" class="small" text-anchor="middle" >✓</text>
+<rect x="328" y="424" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="343.5" y="446" class="small" text-anchor="middle" >×</text>
+<rect x="359" y="424" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="446" class="small" text-anchor="middle" >×</text>
+<text x="155" y="477" class="small" text-anchor="middle" >5</text>
+<rect x="173" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="250.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="266" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="281.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="297" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="312.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="328" y="455" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="343.5" y="477" class="small" text-anchor="middle" >✓</text>
+<rect x="359" y="455" width="31" height="31" rx="0" fill="#e5e8ed" stroke="#ffffff"/>
+<text x="374.5" y="477" class="small" text-anchor="middle" >×</text>
+<text x="155" y="508" class="small" text-anchor="middle" >6</text>
+<rect x="173" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="188.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="204" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="219.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="235" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="250.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="266" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="281.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="297" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="312.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="328" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="343.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="359" y="486" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="374.5" y="508" class="small" text-anchor="middle" >✓</text>
+<rect x="173" y="300" width="217" height="217" rx="0" fill="none" stroke="#57718e"/>
+<text x="60" y="551" class="body strong" >单头：28 个可见，49 个 score 已计算</text>
+<text x="606" y="281" class="small muted" >query 行 ↓</text>
+<text x="837" y="273" class="small muted" >key 列 →</text>
+<text x="771.5" y="292" class="small" text-anchor="middle" >0</text>
+<rect x="756" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="771.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="802.5" y="292" class="small" text-anchor="middle" >1</text>
+<rect x="787" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="802.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="833.5" y="292" class="small" text-anchor="middle" >2</text>
+<rect x="818" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="833.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="864.5" y="292" class="small" text-anchor="middle" >3</text>
+<rect x="849" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="864.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="895.5" y="292" class="small" text-anchor="middle" >4</text>
+<rect x="880" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="895.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="926.5" y="292" class="small" text-anchor="middle" >5</text>
+<rect x="911" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="926.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="957.5" y="292" class="small" text-anchor="middle" >6</text>
+<rect x="942" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="957.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="988.5" y="292" class="small" text-anchor="middle" >7</text>
+<rect x="973" y="300" width="31" height="31" rx="0" fill="#a7d8f4" stroke="#ffffff"/>
+<text x="988.5" y="322" class="small" text-anchor="middle" >✓</text>
+<text x="733" y="322" class="small" text-anchor="middle" >7</text>
+<rect x="756" y="300" width="248" height="31" rx="0" fill="none" stroke="#57718e"/>
+<line x1="756" y1="344" x2="969" y2="344" stroke="#8090a7" stroke-width="1"/>
+<line x1="756" y1="340" x2="756" y2="348" stroke="#8090a7" stroke-width="1"/>
+<line x1="969" y1="340" x2="969" y2="348" stroke="#8090a7" stroke-width="1"/>
+<text x="860" y="370" class="small muted" text-anchor="middle" >历史 7 个 key</text>
+<line x1="976" y1="344" x2="1004" y2="344" stroke="#8090a7" stroke-width="1"/>
+<text x="988.5" y="370" class="small muted" text-anchor="middle" >新 key</text>
+<text x="606" y="411" class="body" >query 的绝对位置为 7；可读 key 0–7。</text>
+<text x="606" y="446" class="body muted" >旧位置不再产生新 query，</text>
+<text x="606" y="476" class="body muted" >但旧 K/V 仍参与本次注意力。</text>
+<text x="606" y="551" class="body strong" >单头：8 个可见，8 个 score 已计算</text>
+<rect x="43" y="602" width="21" height="21" rx="0" fill="#a7d8f4"/>
+<text x="73" y="620" class="small" >✓ 允许读取</text>
+<rect x="214" y="602" width="21" height="21" rx="0" fill="#e5e8ed"/>
+<text x="244" y="620" class="small" >× 被 mask</text>
+<text x="394" y="620" class="small muted" >每个 Q 头读取自己所属的 KV 头；矩阵形状相同。</text>
+<text x="40" y="650" class="body strong" >这里先做稠密 QKᵀ，再应用 mask；遮住上三角不会减少这次矩阵乘法。</text>
+<rect x="40" y="673" width="514" height="105" rx="12" fill="#edf3fa"/>
+<rect x="586" y="673" width="514" height="105" rx="12" fill="#edf3fa"/>
+<text x="58" y="704" class="body" >每层 K、V 各自紧凑存储：(2,7,8)</text>
+<text x="604" y="704" class="body" >每层 K、V 各自紧凑存储：(2,8,8)</text>
+<text x="58" y="742" class="body strong" >投影 / FFN：每条序列处理 7 个新位置</text>
+<text x="604" y="742" class="body strong" >投影 / FFN：每条序列处理 1 个新位置</text>
+</svg>

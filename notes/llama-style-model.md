@@ -400,3 +400,5 @@ RoPE 的角度可以按公式计算，因而不再受可训练 P 的行数约束
 ---
 
 教学衔接：本课联合覆盖 `modern.rmsnorm`、`modern.swiglu`、`modern.rope`，并衔接 `implementation.llama`。组件、缓存对齐和小数据训练将作为不同能力的具体证据；讲义准备完成不改变当前掌握状态。ALiBi、滑窗、FlashAttention 不在本课同时展开，避免把一次模型迁移变成无主线的组件合集。
+
+下一课：[模型成本与性能基线](model-cost-and-benchmark.md)，沿用本课实现，把计算与存储账本、prefill/decode 测量和算子记录连成一份综合实验。
