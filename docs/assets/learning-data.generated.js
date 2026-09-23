@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-22T13:45:10.389Z",
+  "generatedAt": "2026-09-23T11:14:38.698Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -1647,7 +1647,15 @@ window.LEARNING_DATA = {
             "能计算和比较参数量"
           ],
           "progress": {
-            "status": "pending"
+            "status": "verify",
+            "updatedAt": "2026-09-23T09:49:58.544Z",
+            "note": "门控结构识别已通过，不再重复口头检查。题面中核对哪些参数的含义由教师补充说明，不把题面歧义判为概念缺口；矩阵形状与参数账本、数值及梯度在后续综合实现中核验。",
+            "evidence": [
+              {
+                "at": "2026-09-23T09:49:58.544Z",
+                "text": "学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。"
+              }
+            ]
           }
         },
         {
@@ -2011,7 +2019,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-09-22T11:51:30.767Z",
+    "updatedAt": "2026-09-23T09:49:58.544Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -2776,18 +2784,40 @@ window.LEARNING_DATA = {
             "text": "ex012最终验收：学习者按此前位置容量提示自行补齐gqa_model_step的前置检查。当前model.py SHA256前缀fb2182c15a1d；实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention tests.exercises.test_grouped_query_cache -v，29项全部通过；再运行 .venv/bin/python -B -m unittest discover -s tests -t .，全仓284项全部通过，两组均无失败或跳过。验证MHA/MQA/GQA分组读取、CPU float32/float64、前向及梯度、全量/多种分块logits对齐、紧凑缓存及实际存储、位置偏移、容量超限前所有缓存保持、请求/层隔离和模式保持。教师运行 .venv/bin/python -B -m exercises.ex012_grouped_query_attention.demo：float64全量/分块logits最大绝对差2.22e-16；C=12/Hq=6/Hkv=2/D=2时每层KV参数96，2层/B=2/T=7的KV公式、实际有效及去重底层存储均1792字节。账本由教师demo采集，不冒充学习者独立实验设计；结合此前学习者分组一致性解释、KV比例及注意力计算不同比例缩减解释，以及已掌握的投影参数量推导，完成本课原理与实现验收。核心实现由学习者填写，期间有教师完整索引/位置代码示例、数据流讲解及排错提示；本轮教师未修改实现或测试。"
           }
         ]
+      },
+      "modern.swiglu": {
+        "status": "verify",
+        "updatedAt": "2026-09-23T09:49:58.544Z",
+        "note": "门控结构识别已通过，不再重复口头检查。题面中核对哪些参数的含义由教师补充说明，不把题面歧义判为概念缺口；矩阵形状与参数账本、数值及梯度在后续综合实现中核验。",
+        "evidence": [
+          {
+            "at": "2026-09-23T09:49:58.544Z",
+            "text": "学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。"
+          }
+        ]
       }
     },
     "statusCounts": {
       "mastered": 46,
       "current": 0,
-      "verify": 4,
+      "verify": 5,
       "relearn": 1,
-      "pending": 28
+      "pending": 27
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "0c55c19f-9802-483d-995c-b10bb031edc4",
+      "at": "2026-09-23T09:49:58.544Z",
+      "nodeId": "modern.swiglu",
+      "nodeTitle": "SwiGLU",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。",
+      "note": "门控结构识别已通过，不再重复口头检查。题面中核对哪些参数的含义由教师补充说明，不把题面歧义判为概念缺口；矩阵形状与参数账本、数值及梯度在后续综合实现中核验。"
+    },
     {
       "id": "b364b937-27ca-40f3-ae78-2d6d0add7190",
       "at": "2026-09-22T11:51:30.767Z",

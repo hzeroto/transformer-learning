@@ -28,6 +28,7 @@ exercises/
 - [010：训练 mini-GPT 并验证它真的学会了](ex010_train_mini_gpt/README.md)
 - [011：KV Cache 与两阶段生成](ex011_kv_cache/README.md)
 - [012：MQA / GQA 与紧凑 KV 缓存](ex012_grouped_query_attention/README.md)
+- [013：RMSNorm / SwiGLU / RoPE 与可缓存的 LLaMA 风格模型（待实现）](ex013_llama_style/README.md)
 
 ## 衔接讲义
 
@@ -39,3 +40,4 @@ exercises/
 - [从 Block 到 mini-GPT：把上下文表示变成下一 token 的预测](../notes/block-to-mini-gpt.md)：堆叠、输入管线、final LayerNorm 与词表投影，把块接成完整模型。
 - [训练 mini-GPT：从能跑到真的学会](../notes/training-mini-gpt.md)：Adam、训练/验证划分与记忆-泛化对照、四类不报错的训练故障、存档恢复与生成。
 - [KV Cache：把重复计算换成可管理的状态](../notes/kv-cache.md)：缓存成立的前提、prefill/decode 两阶段、缓存作为请求状态、容差对齐与字节账本。
+- [从 GQA MiniGPT 到 LLaMA 风格模型](../notes/llama-style-model.md)：沿同一个块贯通 RMSNorm、RoPE、SwiGLU，再连接缓存与小数据训练。

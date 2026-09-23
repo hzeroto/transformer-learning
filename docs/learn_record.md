@@ -6,9 +6,9 @@
 
 - 当前知识点：尚未指定
 - 已掌握：46 / 79
-- 待验证：4
+- 待验证：5
 - 待系统重学：1
-- 最近更新：2026-09-22T11:51:30.767Z
+- 最近更新：2026-09-23T09:49:58.544Z
 
 ## 知识点状态
 
@@ -112,7 +112,7 @@
 |---|---|---|
 | Pre-LN与Post-LN | 已掌握 | ex009 收尾：学习者在此前自行实现并通过 33 项测试的 Pre/Post-LN 模型上，明确解释 Pre-LN 残差保留输入到输出的直接通路、该支路导数为 1，而 Post-LN 的残差通路也经过 LN 的导数；此前已澄清层输出范数与参数梯度是不同观察对象。结合已验收的残差与 LayerNorm 基础、正确的两种排列前向及梯度实现、dtype 修复与参数对齐验证，以及教师协助的首末层梯度对照，完成本阶段排列与梯度路径的综合验收。 |
 | RMSNorm | 未开始 | — |
-| SwiGLU | 未开始 | — |
+| SwiGLU | 待验证 | 学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。 |
 | 旋转位置编码RoPE | 未开始 | — |
 | ALiBi与RoPE对照 | 未开始 | — |
 | MQA与GQA | 已掌握 | ex012最终验收：学习者按此前位置容量提示自行补齐gqa_model_step的前置检查。当前model.py SHA256前缀fb2182c15a1d；实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention tests.exercises.test_grouped_query_cache -v，29项全部通过；再运行 .venv/bin/python -B -m unittest discover -s tests -t .，全仓284项全部通过，两组均无失败或跳过。验证MHA/MQA/GQA分组读取、CPU float32/float64、前向及梯度、全量/多种分块logits对齐、紧凑缓存及实际存储、位置偏移、容量超限前所有缓存保持、请求/层隔离和模式保持。教师运行 .venv/bin/python -B -m exercises.ex012_grouped_query_attention.demo：float64全量/分块logits最大绝对差2.22e-16；C=12/Hq=6/Hkv=2/D=2时每层KV参数96，2层/B=2/T=7的KV公式、实际有效及去重底层存储均1792字节。账本由教师demo采集，不冒充学习者独立实验设计；结合此前学习者分组一致性解释、KV比例及注意力计算不同比例缩减解释，以及已掌握的投影参数量推导，完成本课原理与实现验收。核心实现由学习者填写，期间有教师完整索引/位置代码示例、数据流讲解及排错提示；本轮教师未修改实现或测试。 |
@@ -145,6 +145,7 @@
 
 | 时间 | 知识点 | 状态变化 | 证据或备注 |
 |---|---|---|---|
+| 2026-09-23T09:49:58.544Z | SwiGLU | 未开始 → 待验证 | 学习者阅读合并讲义后，针对仅把旧FFN激活换成SiLU的实现，正确指出缺少独立的Z@Wup分支及与门控结果的逐元素乘法，并将其作用解释为输入相关的特征调制。该回答支持门控结构识别；尚未提交本课实现或参数量推导。 |
 | 2026-09-22T11:51:30.767Z | MQA与GQA | 待验证 → 已掌握 | ex012最终验收：学习者按此前位置容量提示自行补齐gqa_model_step的前置检查。当前model.py SHA256前缀fb2182c15a1d；实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_attention tests.exercises.test_grouped_query_cache -v，29项全部通过；再运行 .venv/bin/python -B -m unittest discover -s tests -t .，全仓284项全部通过，两组均无失败或跳过。验证MHA/MQA/GQA分组读取、CPU float32/float64、前向及梯度、全量/多种分块logits对齐、紧凑缓存及实际存储、位置偏移、容量超限前所有缓存保持、请求/层隔离和模式保持。教师运行 .venv/bin/python -B -m exercises.ex012_grouped_query_attention.demo：float64全量/分块logits最大绝对差2.22e-16；C=12/Hq=6/Hkv=2/D=2时每层KV参数96，2层/B=2/T=7的KV公式、实际有效及去重底层存储均1792字节。账本由教师demo采集，不冒充学习者独立实验设计；结合此前学习者分组一致性解释、KV比例及注意力计算不同比例缩减解释，以及已掌握的投影参数量推导，完成本课原理与实现验收。核心实现由学习者填写，期间有教师完整索引/位置代码示例、数据流讲解及排错提示；本轮教师未修改实现或测试。 |
 | 2026-09-22T11:49:05.701Z | MQA与GQA | 待验证 → 待验证 | 学习者在教师数据流讲解和位置切片代码提示后完成 ex012 gqa_model_step 的内容/位置表示、多层独立缓存连接及final_norm/词表投影。对model.py SHA256前缀4007c1f0d68c实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_cache.TestImplementationStatus.test_model_step_is_implemented tests.exercises.test_grouped_query_cache.TestCompactModelCache -v，7项中6项通过、1项失败，无异常或跳过。通过CPU float32/float64、MHA/MQA/GQA全量/不同分块logits与独立参照对齐、位置偏移、跨请求和层隔离、参数与缓存字节账本及梯度/模式保持。剩余失败是未在查表及更新缓存前检查pos+n>model.L；教师临时复现L=6、旧长度5、新增2时位置切片只剩一行，被广播到两位置，未抛ValueError且各层缓存增长至7。运行前后实现及测试哈希一致，教师未修改学习者代码；不记作独立测试设计或性能证据。 |
 | 2026-09-22T11:27:26.084Z | MQA与GQA | 待验证 → 待验证 | 学习者在教师提供增量数据流讲解、mask代码示例及容量/KV读取纠错提示后完成 ex012 gqa_block_step。对 model.py SHA256 前缀45c3c2c8e07d实跑 .venv/bin/python -B -m unittest tests.exercises.test_grouped_query_cache.TestImplementationStatus.test_block_step_is_implemented tests.exercises.test_grouped_query_cache.TestCompactBlockCache -v，7项全部通过，无失败或跳过。覆盖CPU float32/float64、MHA/MQA/GQA配置、非连续输入、不同分块的全量输出对齐、紧凑归一化K/V及实际存储、历史与新增输入及参数梯度、刚好装满/超限保持、重置及输入/已有梯度/模式保持。运行前后实现和测试哈希一致，教师未修改学习者代码；本次属于有提示的实现验证，未验证模型级缓存和性能。 |
