@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1040" viewBox="0 0 1720 1040" role="img" aria-labelledby="title desc">
+<title id="title">三处 Attention 权限：谁能读取谁</title><desc id="desc">固定一个样本。行是 query，列是 key。Encoder self-attention 的五行均为 11100；Decoder self-attention 是四乘四含对角下三角；Cross-attention 的四行均为 11100，不施加因果三角限制。</desc>
+<defs><marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#52677e"/></marker><marker id="arrow-teal" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#329372"/></marker></defs>
+<rect width="1720" height="1040" fill="#f7f9fc"/>
+<g font-family="PingFang SC, Noto Sans CJK SC, Arial, sans-serif">
+<text x="60" y="62" font-size="37" font-weight="700" fill="#172a43" text-anchor="start">三处 Attention 权限：行发起查询，列提供可读内容</text>
+<text x="60" y="106" font-size="25" font-weight="400" fill="#53667f" text-anchor="start">固定一个样本；以下矩阵在各个 head 上使用。✓ = 允许读取，× = 屏蔽。</text>
+<text x="60" y="147" font-size="24" font-weight="400" fill="#53667f" text-anchor="start">源：[A, B, C, PAD, PAD]     目标输入：[BOS, C, B, A]     目标标签：[C, B, A, EOS]</text>
+<rect x="45" y="195" width="530" height="662" rx="20" fill="white" stroke="#cbd6e3" stroke-width="2"/>
+<text x="310.0" y="238" font-size="27" font-weight="700" fill="#329372" text-anchor="middle">① Encoder Self-Attention</text>
+<text x="310.0" y="276" font-size="22" font-weight="400" fill="#53667f" text-anchor="middle">行：源 query  ·  列：源 key</text>
+<text x="310.0" y="312" font-size="23" font-weight="500" fill="#172a43" text-anchor="middle">权限形状：(S, S) = (5, 5)</text>
+<text x="335.0" y="350" font-size="20" font-weight="400" fill="#53667f" text-anchor="middle">key →</text>
+<text x="207.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">A</text>
+<text x="271.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">B</text>
+<text x="335.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">C</text>
+<text x="399.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">PAD</text>
+<text x="463.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">PAD</text>
+<text x="160.0" y="419" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">A</text>
+<rect x="175.0" y="378" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="207.0" y="422" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="239.0" y="378" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="271.0" y="422" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="303.0" y="378" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="335.0" y="422" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="367.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="399.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="431.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="463.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="160.0" y="483" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">B</text>
+<rect x="175.0" y="442" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="207.0" y="486" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="239.0" y="442" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="271.0" y="486" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="303.0" y="442" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="335.0" y="486" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="367.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="399.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="431.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="463.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="160.0" y="547" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">C</text>
+<rect x="175.0" y="506" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="207.0" y="550" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="239.0" y="506" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="271.0" y="550" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="303.0" y="506" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="335.0" y="550" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="367.0" y="506" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="399.0" y="550" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="431.0" y="506" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="463.0" y="550" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="160.0" y="611" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">PAD</text>
+<rect x="175.0" y="570" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="207.0" y="614" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="239.0" y="570" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="271.0" y="614" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="303.0" y="570" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="335.0" y="614" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="367.0" y="570" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="399.0" y="614" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="431.0" y="570" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="463.0" y="614" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="160.0" y="675" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">PAD</text>
+<rect x="175.0" y="634" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="207.0" y="678" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="239.0" y="634" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="271.0" y="678" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="303.0" y="634" width="64" height="64" fill="#e4f4ed" stroke="white" stroke-width="3"/>
+<text x="335.0" y="678" font-size="35" font-weight="700" fill="#329372" text-anchor="middle">✓</text>
+<rect x="367.0" y="634" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="399.0" y="678" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="431.0" y="634" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="463.0" y="678" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="68" y="736" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">所有源 query 都可读 A / B / C。</text>
+<text x="68" y="767" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">PAD 列始终屏蔽。</text>
+<text x="68" y="798" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">PAD query 行仍可读有效 key；</text>
+<text x="68" y="829" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">这些 PAD 位置的输出不作为有效内容。</text>
+<rect x="595" y="195" width="530" height="662" rx="20" fill="white" stroke="#cbd6e3" stroke-width="2"/>
+<text x="860.0" y="238" font-size="27" font-weight="700" fill="#477ed2" text-anchor="middle">② Decoder Self-Attention</text>
+<text x="860.0" y="276" font-size="22" font-weight="400" fill="#53667f" text-anchor="middle">行：目标 query  ·  列：目标 key</text>
+<text x="860.0" y="312" font-size="23" font-weight="500" fill="#172a43" text-anchor="middle">权限形状：(T, T) = (4, 4)</text>
+<text x="885.0" y="350" font-size="20" font-weight="400" fill="#53667f" text-anchor="middle">key →</text>
+<text x="789.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">BOS</text>
+<text x="853.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">C</text>
+<text x="917.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">B</text>
+<text x="981.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">A</text>
+<text x="742.0" y="419" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">BOS</text>
+<rect x="757.0" y="378" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="789.0" y="422" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="821.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="853.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="885.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="917.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="949.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="981.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="742.0" y="483" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">C</text>
+<rect x="757.0" y="442" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="789.0" y="486" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="821.0" y="442" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="853.0" y="486" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="885.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="917.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="949.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="981.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="742.0" y="547" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">B</text>
+<rect x="757.0" y="506" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="789.0" y="550" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="821.0" y="506" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="853.0" y="550" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="885.0" y="506" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="917.0" y="550" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="949.0" y="506" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="981.0" y="550" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="742.0" y="611" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">A</text>
+<rect x="757.0" y="570" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="789.0" y="614" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="821.0" y="570" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="853.0" y="614" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="885.0" y="570" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="917.0" y="614" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<rect x="949.0" y="570" width="64" height="64" fill="#e7f0ff" stroke="white" stroke-width="3"/>
+<text x="981.0" y="614" font-size="35" font-weight="700" fill="#477ed2" text-anchor="middle">✓</text>
+<text x="618" y="736" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">目标位置 i 可读 j ≤ i。</text>
+<text x="618" y="767" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">包含当前位置；未来目标被屏蔽。</text>
+<text x="618" y="798" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">最后一行读完 [BOS, C, B, A]，</text>
+<text x="618" y="829" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">对应预测 EOS。</text>
+<rect x="1145" y="195" width="530" height="662" rx="20" fill="white" stroke="#cbd6e3" stroke-width="2"/>
+<text x="1410.0" y="238" font-size="27" font-weight="700" fill="#cf8d35" text-anchor="middle">③ Cross-Attention</text>
+<text x="1410.0" y="276" font-size="22" font-weight="400" fill="#53667f" text-anchor="middle">行：目标 query  ·  列：源 key</text>
+<text x="1410.0" y="312" font-size="23" font-weight="500" fill="#172a43" text-anchor="middle">权限形状：(T, S) = (4, 5)</text>
+<text x="1435.0" y="350" font-size="20" font-weight="400" fill="#53667f" text-anchor="middle">key →</text>
+<text x="1307.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">A</text>
+<text x="1371.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">B</text>
+<text x="1435.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">C</text>
+<text x="1499.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">PAD</text>
+<text x="1563.0" y="372" font-size="20" font-weight="600" fill="#172a43" text-anchor="middle">PAD</text>
+<text x="1260.0" y="419" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">BOS</text>
+<rect x="1275.0" y="378" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1307.0" y="422" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1339.0" y="378" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1371.0" y="422" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1403.0" y="378" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1435.0" y="422" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1467.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1499.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="1531.0" y="378" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1563.0" y="422" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="1260.0" y="483" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">C</text>
+<rect x="1275.0" y="442" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1307.0" y="486" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1339.0" y="442" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1371.0" y="486" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1403.0" y="442" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1435.0" y="486" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1467.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1499.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="1531.0" y="442" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1563.0" y="486" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="1260.0" y="547" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">B</text>
+<rect x="1275.0" y="506" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1307.0" y="550" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1339.0" y="506" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1371.0" y="550" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1403.0" y="506" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1435.0" y="550" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1467.0" y="506" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1499.0" y="550" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="1531.0" y="506" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1563.0" y="550" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="1260.0" y="611" font-size="20" font-weight="600" fill="#172a43" text-anchor="end">A</text>
+<rect x="1275.0" y="570" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1307.0" y="614" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1339.0" y="570" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1371.0" y="614" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1403.0" y="570" width="64" height="64" fill="#fff1df" stroke="white" stroke-width="3"/>
+<text x="1435.0" y="614" font-size="35" font-weight="700" fill="#cf8d35" text-anchor="middle">✓</text>
+<rect x="1467.0" y="570" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1499.0" y="614" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<rect x="1531.0" y="570" width="64" height="64" fill="#edf0f4" stroke="white" stroke-width="3"/>
+<text x="1563.0" y="614" font-size="35" font-weight="700" fill="#7b8795" text-anchor="middle">×</text>
+<text x="1168" y="736" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">每个目标 query 都可读 A / B / C。</text>
+<text x="1168" y="767" font-size="22" font-weight="400" fill="#172a43" text-anchor="start">源 PAD 列始终屏蔽。</text>
+<text x="1168" y="798" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">没有“源位置 ≤ 目标位置”的限制。</text>
+<text x="1168" y="829" font-size="22" font-weight="400" fill="#53667f" text-anchor="start">两个位置轴不是同一个时间轴。</text>
+<rect x="45" y="889" width="1630" height="103" rx="14" fill="#edf1f6" stroke="#cbd6e3" stroke-width="2"/>
+<text x="70" y="928" font-size="25" font-weight="600" fill="#172a43" text-anchor="start">目标长度 T 可以不同于源长度 S。Cross-Attention 的三角 mask 会错误地挡住已知的源信息。</text>
+<text x="70" y="968" font-size="23" font-weight="400" fill="#53667f" text-anchor="start">此例目标输入没有 PAD；若批次中有目标 PAD，目标 self-attention 还需屏蔽对应 key 列，loss 忽略 PAD 标签。</text>
+</g>
+</svg>

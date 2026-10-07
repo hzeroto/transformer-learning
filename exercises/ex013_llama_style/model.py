@@ -5,6 +5,7 @@
 """
 import torch
 from torch import nn
+from torch.profiler import record_function
 
 from exercises.ex006_single_head_attention.attention import make_causal_allowed, project_qkv
 from exercises.ex007_multi_head_attention.heads import split_heads, merge_heads
@@ -81,8 +82,9 @@ class LlamaBlock(nn.Module):
         K_new = split_heads(K_new, self.num_kv_heads)
         V_new = split_heads(V_new, self.num_kv_heads)
 
-        Q = apply_rope(Q, positions, self.rope_theta)
-        K_new = apply_rope(K_new, positions, self.rope_theta)
+        with record_function("rope"):
+            Q = apply_rope(Q, positions, self.rope_theta)
+            K_new = apply_rope(K_new, positions, self.rope_theta)
 
         Q = merge_heads(Q)
         K_new = merge_heads(K_new)

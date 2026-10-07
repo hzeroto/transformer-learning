@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="840" viewBox="0 0 1100 840" role="img" aria-labelledby="title desc">
+<title id="title">共享模型，不共享请求历史</title><desc id="desc">A 和 B 每个请求 batch 为 1。两次模型调用读取同一份只读权重，各自输入自己的 token、KV 和位置，各自获得 logits 并更新自己的状态。</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  <marker id="arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+  <marker id="arrow-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488"/></marker>
+  <pattern id="unused" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="#fff"/><path d="M-2 2 L2 -2 M0 9 L9 0 M7 11 L11 7" stroke="#94a3b8" stroke-width="1.3"/></pattern>
+</defs>
+<rect width="1100" height="840" fill="#ffffff"/>
+<g font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" fill="#172033">
+<text x="44" y="53" font-size="34" font-weight="600" fill="#172033" text-anchor="start">共享模型，不共享请求历史</text>
+<text x="44" y="88" font-size="24" font-weight="400" fill="#475569" text-anchor="start">每个请求 batch = 1；KV 来自该请求已经处理过的 token。</text>
+<rect x="335" y="120" width="430" height="115" rx="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="550" y="162" font-size="30" font-weight="600" fill="#172033" text-anchor="middle">同一份模型权重 W</text>
+<text x="550" y="200" font-size="23" font-weight="400" fill="#475569" text-anchor="middle">推理时只读，两次调用共同使用</text>
+<path d="M 395 235 V 267 H 60 V 541 H 145" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M 705 235 V 267 H 1040 V 541 H 955" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="132" y="259" font-size="22" font-weight="400" fill="#475569" text-anchor="start">读取 W</text>
+<text x="880" y="259" font-size="22" font-weight="400" fill="#475569" text-anchor="start">读取 W</text>
+<rect x="100" y="300" width="405" height="148" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="125" y="340" font-size="29" font-weight="600" fill="#172033" text-anchor="start">请求 A 的状态</text>
+<text x="125" y="381" font-size="25" font-weight="400" fill="#172033" text-anchor="start">A 的 KV · 当前位置</text>
+<text x="125" y="420" font-size="25" font-weight="400" fill="#172033" text-anchor="start">已生成 token · 停止条件</text>
+<path d="M 302.5 448 L 302.5 505" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-a)"/>
+<text x="320.5" y="482" font-size="22" font-weight="400" fill="#475569" text-anchor="start">token + KV + 位置</text>
+<rect x="145" y="510" width="315" height="65" rx="10" fill="white" stroke="#2563eb" stroke-width="2"/>
+<text x="302.5" y="552" font-size="24" font-weight="600" fill="#172033" text-anchor="middle">为 A 执行一次模型调用</text>
+<path d="M 302.5 575 L 302.5 633" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-a)"/>
+<text x="320.5" y="601" font-size="22" font-weight="400" fill="#475569" text-anchor="start">A 的 logits</text>
+<text x="320.5" y="627" font-size="22" font-weight="400" fill="#475569" text-anchor="start">更新后的 KV</text>
+<rect x="100" y="640" width="405" height="100" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="124" y="680" font-size="25" font-weight="600" fill="#172033" text-anchor="start">为 A 选下一个 token</text>
+<text x="124" y="718" font-size="23" font-weight="400" fill="#172033" text-anchor="start">保留 A 更新后的 KV 与位置</text>
+<rect x="595" y="300" width="405" height="148" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="620" y="340" font-size="29" font-weight="600" fill="#172033" text-anchor="start">请求 B 的状态</text>
+<text x="620" y="381" font-size="25" font-weight="400" fill="#172033" text-anchor="start">B 的 KV · 当前位置</text>
+<text x="620" y="420" font-size="25" font-weight="400" fill="#172033" text-anchor="start">已生成 token · 停止条件</text>
+<path d="M 797.5 448 L 797.5 505" fill="none" stroke="#0d9488" stroke-width="2.5" marker-end="url(#arrow-b)"/>
+<text x="815.5" y="482" font-size="22" font-weight="400" fill="#475569" text-anchor="start">token + KV + 位置</text>
+<rect x="640" y="510" width="315" height="65" rx="10" fill="white" stroke="#0d9488" stroke-width="2"/>
+<text x="797.5" y="552" font-size="24" font-weight="600" fill="#172033" text-anchor="middle">为 B 执行一次模型调用</text>
+<path d="M 797.5 575 L 797.5 633" fill="none" stroke="#0d9488" stroke-width="2.5" marker-end="url(#arrow-b)"/>
+<text x="815.5" y="601" font-size="22" font-weight="400" fill="#475569" text-anchor="start">B 的 logits</text>
+<text x="815.5" y="627" font-size="22" font-weight="400" fill="#475569" text-anchor="start">更新后的 KV</text>
+<rect x="595" y="640" width="405" height="100" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="619" y="680" font-size="25" font-weight="600" fill="#172033" text-anchor="start">为 B 选下一个 token</text>
+<text x="619" y="718" font-size="23" font-weight="400" fill="#172033" text-anchor="start">保留 B 更新后的 KV 与位置</text>
+<rect x="44" y="770" width="1012" height="48" rx="10" fill="#f1f5f9" stroke="#f1f5f9" stroke-width="1.5"/>
+<text x="550" y="802" font-size="25" font-weight="600" fill="#172033" text-anchor="middle">下一轮：A 仍携带 A 的历史；B 仍携带 B 的历史。</text>
+</g></svg>

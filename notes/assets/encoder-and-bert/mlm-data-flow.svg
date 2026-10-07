@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="750" viewBox="0 0 960 750" role="img" aria-labelledby="title desc">
+  <title id="title">MLM：模型输入与还原标签分两条路径</title>
+  <desc id="desc">原始 ID 复制并改写后才进入 Encoder 和 MLM 头。原始 ID 作为同位置标签只进入损失。选中位置决定损失范围，不等于输入中 MASK 的位置。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10Z" fill="#526477"/></marker>
+    <style>
+      text {font-family: "PingFang SC", "Noto Sans CJK SC", sans-serif; fill: #182b40; font-size: 22px;}
+      .heading {font-size: 29px; font-weight: 600;}
+      .sub {font-size: 20px; fill: #46586b;}
+      .label {font-size: 21px; font-weight: 600;}
+      .box {stroke: #98a9bc; stroke-width: 1.5; rx: 10;}
+      .line {fill: none; stroke: #526477; stroke-width: 2; marker-end: url(#arrow);}
+    </style>
+  </defs>
+  <rect width="960" height="750" fill="#ffffff"/>
+  <text x="40" y="48" class="heading">MLM：输入被改写，标签保留原样</text>
+  <text x="40" y="79" class="sub">B：batch　T：输入长度　C：特征宽度　N：词表大小</text>
+  <rect x="225" y="108" width="510" height="70" class="box" fill="#eef3f8"/>
+  <text x="480" y="138" text-anchor="middle" class="label">原始文本对应的 clean_ids</text>
+  <text x="480" y="164" text-anchor="middle" class="sub">(B,T)，每个位置保留原 token ID</text>
+  <path d="M350 178 V202 H275 V230" class="line"/>
+  <path d="M620 178 V202 H772 V230" class="line"/>
+  <text x="40" y="216" class="sub">复制，并改写选中位置</text>
+  <text x="795" y="216" class="sub">不改写</text>
+  <rect x="40" y="232" width="480" height="84" class="box" fill="#e8f4ef"/>
+  <text x="280" y="266" text-anchor="middle" class="label">corrupted_ids  (B,T)</text>
+  <text x="280" y="296" text-anchor="middle" class="sub">MASK / 随机替换 / 保持原样</text>
+  <rect x="605" y="232" width="315" height="84" class="box" fill="#fff2df"/>
+  <text x="762" y="266" text-anchor="middle" class="label">同位置标签：clean_ids</text>
+  <text x="762" y="296" text-anchor="middle" class="sub">(B,T)，不传入 Encoder</text>
+  <path d="M280 316 V356" class="line"/>
+  <rect x="40" y="358" width="480" height="94" class="box" fill="#e8f4ef"/>
+  <text x="280" y="394" text-anchor="middle" class="label">输入表示 + 双向 Encoder</text>
+  <text x="280" y="429" text-anchor="middle" class="sub">输出 Z (B,T,C)，PAD key 不可读</text>
+  <rect x="605" y="378" width="315" height="94" class="box" fill="#fff2df"/>
+  <text x="762" y="413" text-anchor="middle" class="label">prediction_selected</text>
+  <text x="762" y="444" text-anchor="middle" class="sub">(B,T)，三种选中分支都计分</text>
+  <path d="M280 452 V492" class="line"/>
+  <rect x="40" y="494" width="480" height="82" class="box" fill="#e8f4ef"/>
+  <text x="280" y="527" text-anchor="middle" class="label">MLM 头</text>
+  <text x="280" y="557" text-anchor="middle" class="sub">mlm_logits (B,T,N)</text>
+  <path d="M280 576 V612 H365 V638" class="line"/>
+  <path d="M892 316 H941 V605 H698 V638" class="line"/>
+  <path d="M762 472 V557 H650 V638" class="line"/>
+  <text x="775" y="596" class="sub">标签</text>
+  <text x="670" y="539" class="sub">计分范围</text>
+  <rect x="225" y="640" width="510" height="72" class="box" fill="#eef3f8"/>
+  <text x="480" y="670" text-anchor="middle" class="label">选中位置的平均交叉熵 → 标量 loss</text>
+  <text x="480" y="699" text-anchor="middle" class="sub">预测第 t 个原 token；没有错开一位</text>
+</svg>

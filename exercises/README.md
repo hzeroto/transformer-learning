@@ -29,6 +29,9 @@ exercises/
 - [011：KV Cache 与两阶段生成](ex011_kv_cache/README.md)
 - [012：MQA / GQA 与紧凑 KV 缓存](ex012_grouped_query_attention/README.md)
 - [013：RMSNorm / SwiGLU / RoPE 与可缓存的 LLaMA 风格模型（待实现）](ex013_llama_style/README.md)
+- [014：现有 LLaMA 的成本与执行报告（已验收）](ex014_model_cost/README.md)
+- [015：同一个模型的 FP32 / BF16 数值对照（参考实现）](ex015_mixed_precision/README.md)
+- [016：Mini-BERT——双向 Encoder、MLM / NSP 与分类微调（教师完整导读版）](ex016_mini_bert/README.md)
 
 ## 衔接讲义
 
@@ -41,3 +44,7 @@ exercises/
 - [训练 mini-GPT：从能跑到真的学会](../notes/training-mini-gpt.md)：Adam、训练/验证划分与记忆-泛化对照、四类不报错的训练故障、存档恢复与生成。
 - [KV Cache：把重复计算换成可管理的状态](../notes/kv-cache.md)：缓存成立的前提、prefill/decode 两阶段、缓存作为请求状态、容差对齐与字节账本。
 - [从 GQA MiniGPT 到 LLaMA 风格模型](../notes/llama-style-model.md)：沿同一个块贯通 RMSNorm、RoPE、SwiGLU，再连接缓存与小数据训练。
+- [模型成本与性能测量](../notes/model-cost-and-benchmark.md)：从计算与存储账本到固定工作量计时和算子执行记录。
+- [数值精度与混合精度](../notes/mixed-precision.md)：范围、舍入、归约误差、autocast 与梯度缩放。
+- [从生成到读取完整输入：Encoder 与 BERT](../notes/encoder-and-bert.md)：双向读取、遮盖目标、句段表示及预训练到分类的完整路径。
+- [原版 Encoder–Decoder：读完源序列，再按需生成目标序列](../notes/original-encoder-decoder.md)：源/目标角色、跨序列 Attention、正弦位置与后续综合实现安排，附结构图及教师机制演示。

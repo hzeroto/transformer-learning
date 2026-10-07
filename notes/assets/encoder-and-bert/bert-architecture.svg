@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1610" viewBox="0 0 1440 1610" role="img" aria-labelledby="title desc">
+  <title id="title">Mini-BERT 整体架构：输入、完整 Encoder、任务头与损失</title>
+  <desc id="desc">输入 ID 经过内容、位置、句段查表相加与归一化，再通过 L 层双向 Post-LN Encoder。每层包括 QKV、双向多头注意力、残差归一化和 GELU FFN。最终 Z 为特征，不是预测分数。MLM 头逐位置进行仿射、GELU、LayerNorm 与共享内容表输出投影，之后使用原文标签和目标位置掩码计算交叉熵。另一支路取 CLS，通过 pooler 得到整句特征，分别接 NSP 与下游分类头。预训练只相加 MLM 和 NSP 损失，分类微调只用分类损失。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#53677f"/></marker>
+    <marker id="shared-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#28826c"/></marker>
+    <style>
+      text {font-family:"PingFang SC","Noto Sans CJK SC",sans-serif; fill:#1d3048; text-anchor:middle; font-size:24px;}
+      .title {font-size:34px; font-weight:650; text-anchor:start;}
+      .subtitle {font-size:23px; fill:#526477; text-anchor:start;}
+      .heading {font-size:26px; font-weight:650;}
+      .small {font-size:21px; fill:#526477;}
+      .tiny {font-size:20px; fill:#526477;}
+      .box {stroke-width:1.5; rx:12;}
+      .input {fill:#eaf6f0; stroke:#83bda8;}
+      .encoder {fill:#edf3fc; stroke:#8faed4;}
+      .mlm {fill:#f1edfc; stroke:#b29ad6;}
+      .pool {fill:#fff3df; stroke:#d6af73;}
+      .loss {fill:#fff0ee; stroke:#d99b91;}
+      .white {fill:#ffffff; stroke:#b7c4d5;}
+      .edge {fill:none; stroke:#53677f; stroke-width:2.2; marker-end:url(#arrow);}
+      .wire {fill:none; stroke:#53677f; stroke-width:2.2;}
+      .shared {fill:none; stroke:#28826c; stroke-width:2; stroke-dasharray:7 6; marker-end:url(#shared-arrow);}
+    </style>
+  </defs>
+  <rect width="1440" height="1610" fill="#ffffff"/>
+  <text x="48" y="50" class="title">Mini-BERT：主干先算特征，任务头再算分数，最后计算 loss</text>
+  <text x="48" y="88" class="subtitle">对应 ex016 完整实现 · Post-LN · Dropout = 0 · 不包含另一套 Decoder</text>
+  <text x="48" y="120" class="subtitle">B：batch　T：输入长度　C：特征宽度　N：词表大小　K：分类数　L：层数　F：FFN 中间宽度</text>
+
+  <rect x="440" y="154" width="560" height="89" class="box input"/>
+  <text x="720" y="190" class="heading">input_ids  (B,T)</text>
+  <text x="720" y="223" class="small">含 CLS / SEP；每一项仍是 token ID</text>
+  <rect x="48" y="154" width="346" height="137" class="box white"/>
+  <text x="221" y="189" class="heading">两种阶段，同一个主干</text>
+  <text x="221" y="229" class="small">预训练：按 MLM 计划改写输入</text>
+  <text x="221" y="263" class="small">分类微调：输入完整原文</text>
+  <path d="M394 200 H440" class="edge"/>
+  <path d="M720 243 V335" class="edge"/>
+
+  <rect x="408" y="279" width="624" height="608" rx="18" fill="#f7faff" stroke="#8faed4" stroke-width="2"/>
+  <text x="432" y="310" class="heading" style="text-anchor:start">encode：完整 Encoder 主干</text>
+  <path d="M720 319 V335" class="edge"/>
+  <rect x="442" y="335" width="556" height="94" class="box input"/>
+  <text x="720" y="372" class="heading">内容 E + 绝对位置 P + 句段 S</text>
+  <text x="720" y="408" class="small">三表查值相加 → embedding_norm → (B,T,C)</text>
+  <path d="M720 429 V464" class="edge"/>
+
+  <rect x="48" y="340" width="306" height="122" class="box input"/>
+  <text x="201" y="375" class="heading">token_table = E</text>
+  <text x="201" y="410">(N,C)，同一份参数</text>
+  <text x="201" y="442" class="small">输入查表 + MLM 输出投影</text>
+  <path d="M354 388 H442" class="shared"/>
+  <path d="M48 406 H24 V1153 H48" class="shared"/>
+  <text x="175" y="514" class="small" style="fill:#28826c">虚线：共享参数 E</text>
+  <text x="175" y="550" class="small">两条使用路径的梯度</text>
+  <text x="175" y="580" class="small">累加到同一张表</text>
+
+  <rect x="442" y="464" width="556" height="294" class="box encoder"/>
+  <text x="720" y="495" class="heading">EncoderBlock × L　每层输入 X (B,T,C)</text>
+  <rect x="472" y="512" width="496" height="42" class="box white"/>
+  <text x="720" y="540" class="small">Q/K/V → 双向 MHA → Wo + bo</text>
+  <path d="M720 554 V566" class="edge"/>
+  <rect x="472" y="566" width="496" height="42" class="box white"/>
+  <text x="720" y="594" class="small">U = LayerNorm(X + Attention 输出)</text>
+  <path d="M720 608 V620" class="edge"/>
+  <rect x="472" y="620" width="496" height="42" class="box white"/>
+  <text x="720" y="648" class="small">FFN：C → F → C，中间使用 GELU</text>
+  <path d="M720 662 V674" class="edge"/>
+  <rect x="472" y="674" width="496" height="42" class="box white"/>
+  <text x="720" y="702" class="small">Y = LayerNorm(U + FFN 输出)</text>
+  <text x="720" y="744" class="tiny">本层 Y 交给下一层作为 X；每层输出仍为 (B,T,C)</text>
+  <path d="M720 758 V794" class="edge"/>
+  <rect x="442" y="794" width="556" height="68" class="box encoder"/>
+  <text x="720" y="822" class="heading">Z  (B,T,C)：所有 block 已经执行完</text>
+  <text x="720" y="850" class="small">每个位置的上下文特征；还不是词表预测分数</text>
+
+  <rect x="1080" y="335" width="312" height="181" class="box white"/>
+  <text x="1236" y="372" class="heading">input_valid (B,T)</text>
+  <text x="1236" y="409" class="small">控制每一层的 key 可见性</text>
+  <text x="1236" y="447" class="small">左右两侧有效位置都可读</text>
+  <text x="1236" y="482" class="small">屏蔽 PAD，不按句段隔离</text>
+  <path d="M1080 491 H1056 V533 H968" class="edge"/>
+  <rect x="1080" y="591" width="312" height="213" class="box white"/>
+  <text x="1236" y="630" class="heading">Attention 跨位置读取</text>
+  <text x="1236" y="670" class="small">FFN 与 MLM 头分别处理</text>
+  <text x="1236" y="700" class="small">每个位置自己的特征向量</text>
+  <text x="1236" y="746" class="small">LayerNorm 沿 C 维归一化</text>
+  <text x="1236" y="777" class="small">全部位置共享同一套参数</text>
+
+  <path d="M720 862 V916 H368 V958" class="edge"/>
+  <path d="M720 916 H1072 V958" class="edge"/>
+  <circle cx="720" cy="916" r="4" fill="#53677f"/>
+  <text x="258" y="938" class="small">保留所有位置</text>
+  <text x="1190" y="938" class="small">取 CLS 位置</text>
+
+  <rect x="48" y="958" width="640" height="270" class="box mlm"/>
+  <text x="368" y="994" class="heading">mlm_logits：逐位置的原词预测头</text>
+  <text x="368" y="1034">z @ Wm + bm　→　(B,T,C)</text>
+  <text x="368" y="1073">GELU　→　(B,T,C)</text>
+  <text x="368" y="1112">mlm_norm　→　(B,T,C)</text>
+  <text x="368" y="1155" style="font-weight:650">x @ Eᵀ + bvocab　→　(B,T,N)</text>
+  <text x="368" y="1200" class="small">这时每个位置才有 N 个候选词的分数</text>
+
+  <rect x="752" y="958" width="640" height="115" class="box pool"/>
+  <text x="1072" y="991" class="heading">pool：准备整句任务的特征</text>
+  <text x="1072" y="1025">取 z[:,0,:] → 仿射 + tanh → (B,C)</text>
+  <text x="1072" y="1055" class="small">pooled 仍然是特征，还不是分类分数</text>
+  <path d="M1072 1073 V1093 H902 V1114" class="edge"/>
+  <path d="M1072 1093 H1242 V1114" class="edge"/>
+  <rect x="752" y="1114" width="300" height="114" class="box pool"/>
+  <text x="902" y="1147" class="heading">NSP 头</text>
+  <text x="902" y="1181" class="tiny">pooled @ Wnsp + bnsp</text>
+  <text x="902" y="1210" class="small">nsp_logits  (B,2)</text>
+  <rect x="1092" y="1114" width="300" height="114" class="box pool"/>
+  <text x="1242" y="1147" class="heading">下游分类头</text>
+  <text x="1242" y="1181" class="tiny">pooled @ Wclass + bclass</text>
+  <text x="1242" y="1210" class="small">class_logits  (B,K)</text>
+
+  <path d="M368 1228 V1280" class="edge"/>
+  <path d="M902 1228 V1280" class="edge"/>
+  <path d="M1242 1228 V1280" class="edge"/>
+  <text x="398" y="1262" class="small" style="text-anchor:start">直接传 logits</text>
+  <rect x="48" y="1280" width="640" height="134" class="box loss"/>
+  <text x="368" y="1318" class="heading">MLM 交叉熵 → mlm_loss</text>
+  <text x="368" y="1355">原文 targets (B,T) + target_valid (B,T)</text>
+  <text x="368" y="1390" class="small">只在选中位置计分；同位置还原，不 shift 标签</text>
+  <rect x="752" y="1280" width="300" height="134" class="box loss"/>
+  <text x="902" y="1318" class="heading">NSP 交叉熵</text>
+  <text x="902" y="1355">nsp_labels (B,)</text>
+  <text x="902" y="1390" class="small">判断两段是否实际相邻</text>
+  <rect x="1092" y="1280" width="300" height="134" class="box loss"/>
+  <text x="1242" y="1318" class="heading">分类交叉熵</text>
+  <text x="1242" y="1355">class_labels (B,)</text>
+  <text x="1242" y="1390" class="small">下游任务的类别标签</text>
+  <path d="M368 1414 V1447 H550" class="wire"/>
+  <path d="M902 1414 V1447 H550" class="wire"/>
+  <path d="M550 1447 V1482" class="edge"/>
+  <path d="M1242 1414 V1482" class="edge"/>
+  <rect x="48" y="1482" width="1004" height="82" class="box loss"/>
+  <text x="550" y="1516" class="heading">预训练：total = mlm_loss + nsp_loss</text>
+  <text x="550" y="1547" class="small">backward：两条任务路径共同更新 Encoder 与对应预测头</text>
+  <rect x="1092" y="1482" width="300" height="82" class="box loss"/>
+  <text x="1242" y="1516" class="heading">分类微调：分类 loss</text>
+  <text x="1242" y="1547" class="tiny">更新 Encoder / pool / 分类头</text>
+  <text x="720" y="1594" class="small">图中画出三种输出以说明连接关系；两个训练阶段使用各自的目标，不把三项 loss 全部相加。</text>
+</svg>

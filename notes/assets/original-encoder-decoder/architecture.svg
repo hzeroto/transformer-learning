@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1890" viewBox="0 0 1680 1890" role="img" aria-labelledby="title desc">
+<title id="title">原版 Encoder–Decoder：从源序列到目标词表分数</title><desc id="desc">源序列经 Encoder 产生完整特征序列 E。每层 Decoder 先做因果自注意力，再以自身特征为 Q、Encoder 最终输出 E 为 K 和 V 的来源做交叉注意力。最后输出各目标位置的词表分数。</desc>
+<defs><marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#52677e"/></marker><marker id="arrow-teal" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#329372"/></marker></defs>
+<rect width="1680" height="1890" fill="#f7f9fc"/>
+<g font-family="PingFang SC, Noto Sans CJK SC, Arial, sans-serif">
+<text x="65" y="66" font-size="39" font-weight="700" fill="#172a43" text-anchor="start">原版 Encoder–Decoder：两条序列，三种注意力</text>
+<text x="65" y="110" font-size="25" font-weight="400" fill="#53667f" text-anchor="start">B：批次   S：源长度   T：目标输入长度   C：特征宽度   H：头数   D = C / H</text>
+<text x="65" y="148" font-size="25" font-weight="400" fill="#53667f" text-anchor="start">训练时目标右移一位：当前位置读取前缀，预测下一个目标 token。</text>
+<text x="385" y="202" font-size="30" font-weight="700" fill="#329372" text-anchor="middle">源序列 → Encoder</text>
+<rect x="70" y="226" width="630" height="96" rx="16" fill="#e4f4ed" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="265" font-size="27" font-weight="600" fill="#172a43" text-anchor="middle">src_ids  (B, S)</text>
+<text x="385.0" y="301" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">示例：[A, B, C, PAD, PAD]</text>
+<path d="M 385 322 V 357" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="70" y="363" width="630" height="102" rx="16" fill="#e4f4ed" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="402" font-size="27" font-weight="600" fill="#172a43" text-anchor="middle">源 Embedding × √C + 正弦位置编码</text>
+<text x="385.0" y="438" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">进入 block 的特征：(B, S, C)</text>
+<path d="M 385 465 V 498" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="70" y="503" width="630" height="572" rx="22" fill="#f0f8f4" stroke="#329372" stroke-width="2"/>
+<text x="94" y="540" font-size="26" font-weight="700" fill="#329372" text-anchor="start">Encoder block × L_e  ·  每层参数独立</text>
+<rect x="105" y="565" width="560" height="98" rx="16" fill="#e4f4ed" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="604" font-size="27" font-weight="600" fill="#172a43" text-anchor="middle">① 双向 Self-Attention</text>
+<text x="385.0" y="640" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">Q / K / V 都来自本层源特征</text>
+<path d="M 385 663 V 701" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="105" y="708" width="560" height="64" rx="16" fill="white" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="749.0" font-size="25" font-weight="600" fill="#172a43" text-anchor="middle">残差相加 → LayerNorm</text>
+<path d="M 385 772 V 810" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="105" y="817" width="560" height="98" rx="16" fill="#e4f4ed" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="856" font-size="26" font-weight="600" fill="#172a43" text-anchor="middle">FFN：C → F → C</text>
+<text x="385.0" y="892" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">逐位置线性变换 → ReLU → 线性变换</text>
+<path d="M 385 915 V 953" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="105" y="960" width="560" height="64" rx="16" fill="white" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="1001.0" font-size="25" font-weight="600" fill="#172a43" text-anchor="middle">残差相加 → LayerNorm</text>
+<path d="M 385 1075 V 1125" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="70" y="1132" width="630" height="125" rx="16" fill="#e4f4ed" stroke="#329372" stroke-width="2"/>
+<text x="385.0" y="1171" font-size="30" font-weight="600" fill="#172a43" text-anchor="middle">最终源特征 E  (B, S, C)</text>
+<text x="385.0" y="1207" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">每个源位置保留一个带上下文的特征</text>
+<text x="385" y="1237" font-size="22" font-weight="500" fill="#329372" text-anchor="middle">E 是计算结果；不是参数，也不是池化向量。</text>
+<text x="1260" y="202" font-size="30" font-weight="700" fill="#477ed2" text-anchor="middle">目标前缀 → Decoder</text>
+<rect x="925" y="226" width="670" height="96" rx="16" fill="#e7f0ff" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="265" font-size="27" font-weight="600" fill="#172a43" text-anchor="middle">decoder_input_ids  (B, T)</text>
+<text x="1260.0" y="301" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">示例：[BOS, C, B, A]</text>
+<path d="M 1260 322 V 357" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="925" y="363" width="670" height="102" rx="16" fill="#e7f0ff" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="402" font-size="27" font-weight="600" fill="#172a43" text-anchor="middle">目标 Embedding × √C + 正弦位置编码</text>
+<text x="1260.0" y="438" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">进入 block 的特征：(B, T, C)</text>
+<path d="M 1260 465 V 498" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="925" y="503" width="670" height="904" rx="22" fill="#f0f5fd" stroke="#477ed2" stroke-width="2"/>
+<text x="949" y="540" font-size="26" font-weight="700" fill="#477ed2" text-anchor="start">Decoder block × L_d  ·  每层参数独立</text>
+<rect x="960" y="565" width="600" height="98" rx="16" fill="#e7f0ff" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="604" font-size="26" font-weight="600" fill="#172a43" text-anchor="middle">② Masked Self-Attention</text>
+<text x="1260.0" y="640" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">Q / K / V 来自目标侧；只能读当前位置及过去</text>
+<path d="M 1260 663 V 701" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="960" y="708" width="600" height="64" rx="16" fill="white" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="749.0" font-size="25" font-weight="600" fill="#172a43" text-anchor="middle">残差相加 → LayerNorm → U</text>
+<path d="M 1260 772 V 810" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="960" y="817" width="600" height="158" rx="16" fill="#fff1df" stroke="#cf8d35" stroke-width="2"/>
+<text x="1260" y="857" font-size="28" font-weight="700" fill="#cf8d35" text-anchor="middle">③ Cross-Attention（交叉注意力）</text>
+<text x="1260" y="897" font-size="26" font-weight="500" fill="#172a43" text-anchor="middle">Q = U Wqᶜ；K = E Wkᶜ；V = E Wvᶜ</text>
+<text x="1260" y="935" font-size="25" font-weight="500" fill="#172a43" text-anchor="middle">目标位置查询全部有效源位置</text>
+<text x="1260" y="963" font-size="22" font-weight="400" fill="#53667f" text-anchor="middle">输出：(B, T, C)</text>
+<path d="M 1260 975 V 1013" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="960" y="1020" width="600" height="64" rx="16" fill="white" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="1061.0" font-size="25" font-weight="600" fill="#172a43" text-anchor="middle">残差相加 → LayerNorm</text>
+<path d="M 1260 1084 V 1122" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="960" y="1129" width="600" height="98" rx="16" fill="#e7f0ff" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="1168" font-size="26" font-weight="600" fill="#172a43" text-anchor="middle">FFN：C → F → C</text>
+<text x="1260.0" y="1204" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">逐位置线性变换 → ReLU → 线性变换</text>
+<path d="M 1260 1227 V 1265" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="960" y="1272" width="600" height="64" rx="16" fill="white" stroke="#477ed2" stroke-width="2"/>
+<text x="1260.0" y="1313.0" font-size="25" font-weight="600" fill="#172a43" text-anchor="middle">残差相加 → LayerNorm</text>
+<text x="1260" y="1377" font-size="22" font-weight="400" fill="#53667f" text-anchor="middle">三种 Attention 各自包含拆头、合头和输出投影。</text>
+<path d="M 1260 1407 V 1450" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="925" y="1457" width="670" height="98" rx="16" fill="#f0eafa" stroke="#8d65bd" stroke-width="2"/>
+<text x="1260.0" y="1496" font-size="28" font-weight="600" fill="#172a43" text-anchor="middle">词表投影 → logits  (B, T, N_t)</text>
+<text x="1260.0" y="1532" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">N_t：目标词表大小；每个位置都有一组词表分数</text>
+<path d="M 1260 1555 V 1593" fill="none" stroke="#52677e" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="925" y="1600" width="670" height="102" rx="16" fill="#f0eafa" stroke="#8d65bd" stroke-width="2"/>
+<text x="1260.0" y="1639" font-size="28" font-weight="600" fill="#172a43" text-anchor="middle">目标交叉熵 loss</text>
+<text x="1260.0" y="1675" font-size="23" font-weight="400" fill="#53667f" text-anchor="middle">标签：[C, B, A, EOS]；PAD 标签不计分</text>
+<path d="M 700 1193 H 790 V 900 H 951" fill="none" stroke="#329372" stroke-width="3" stroke-linejoin="round" marker-end="url(#arrow-teal)"/>
+<text x="773" y="1100" font-size="30" font-weight="700" fill="#329372" text-anchor="end">E</text>
+<rect x="70" y="1300" width="745" height="178" rx="16" fill="white" stroke="#329372" stroke-width="2"/>
+<text x="95" y="1341" font-size="27" font-weight="700" fill="#329372" text-anchor="start">每一层 Decoder 都接收同一份最终 E</text>
+<text x="95" y="1385" font-size="23" font-weight="400" fill="#172a43" text-anchor="start">同一份源特征值 → 每层用自己的 Wkᶜ / Wvᶜ 投影。</text>
+<text x="95" y="1424" font-size="23" font-weight="400" fill="#172a43" text-anchor="start">不取对应层 Encoder 输出；不把 E 压成一个向量。</text>
+<text x="95" y="1459" font-size="23" font-weight="400" fill="#172a43" text-anchor="start">Cross-Attention 的残差来自目标侧 U。</text>
+<rect x="70" y="1510" width="745" height="192" rx="16" fill="white" stroke="#aebdce" stroke-width="2"/>
+<text x="95" y="1550" font-size="27" font-weight="700" fill="#172a43" text-anchor="start">三套 Attention，不共用投影参数</text>
+<text x="95" y="1593" font-size="24" font-weight="400" fill="#172a43" text-anchor="start">① Encoder self：源位置 ↔ 源位置</text>
+<text x="95" y="1635" font-size="24" font-weight="400" fill="#172a43" text-anchor="start">② Decoder self：目标位置 → 已有目标前缀</text>
+<text x="95" y="1677" font-size="24" font-weight="400" fill="#172a43" text-anchor="start">③ Decoder cross：目标位置 → 有效源位置</text>
+<rect x="70" y="1740" width="1525" height="102" rx="14" fill="#edf1f6" stroke="#cbd6e3" stroke-width="2"/>
+<text x="94" y="1777" font-size="24" font-weight="500" fill="#172a43" text-anchor="start">结构约定：原版 Post-LN（子层计算 → 残差相加 → LN）；F 是 FFN 中间宽度。</text>
+<text x="94" y="1817" font-size="24" font-weight="400" fill="#53667f" text-anchor="start">为突出主干，省略图中的 Dropout 支路及细节；图中三种注意力的权限见下一张图。</text>
+</g>
+</svg>

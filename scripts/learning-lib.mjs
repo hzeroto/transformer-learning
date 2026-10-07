@@ -128,6 +128,12 @@ export function appendRecord(record) {
   fs.appendFileSync(paths.records, `${JSON.stringify(record)}\n`);
 }
 
+export function writeRecordsAtomic(records) {
+  const temporaryPath = `${paths.records}.tmp`;
+  fs.writeFileSync(temporaryPath, records.map((record) => `${JSON.stringify(record)}\n`).join(''));
+  fs.renameSync(temporaryPath, paths.records);
+}
+
 export function buildGeneratedData() {
   const { map, progress, records } = loadState();
   const index = validateState(map, progress, records);

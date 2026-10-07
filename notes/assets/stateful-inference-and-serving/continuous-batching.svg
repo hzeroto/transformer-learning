@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="910" viewBox="0 0 1100 910" role="img" aria-labelledby="title desc">
+<title id="title">连续批处理：结束一个，就有机会接入下一个</title><desc id="desc">固定整组等待 A 和 B 都完成后才接入 C；连续批处理可在 A 完成且资源允许时让 C 先 prefill，再与 B 持续 decode。每列表示调度阶段，不代表等长时间。</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  <marker id="arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+  <marker id="arrow-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488"/></marker>
+  <pattern id="unused" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="#fff"/><path d="M-2 2 L2 -2 M0 9 L9 0 M7 11 L11 7" stroke="#94a3b8" stroke-width="1.3"/></pattern>
+</defs>
+<rect width="1100" height="910" fill="#ffffff"/>
+<g font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" fill="#172033">
+<text x="44" y="53" font-size="32" font-weight="600" fill="#172033" text-anchor="start">连续批处理：结束一个，就有机会接入下一个</text>
+<text x="44" y="91" font-size="24" font-weight="400" fill="#475569" text-anchor="start">贯穿场景：A、B 正在生成，C 等待；假设 A 先结束。</text>
+<text x="44" y="145" font-size="27" font-weight="600" fill="#172033" text-anchor="start">固定整组：等原来这一组全部结束</text>
+<rect x="44" y="168" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="64" y="204" font-size="25" font-weight="600" fill="#172033" text-anchor="start">① 当前</text>
+<rect x="64" y="225" width="266" height="48" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="197.0" y="257" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">A、B decode</text>
+<rect x="64" y="283" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="197.0" y="315" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 排队</text>
+<rect x="397" y="168" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="417" y="204" font-size="25" font-weight="600" fill="#172033" text-anchor="start">② A 已结束</text>
+<rect x="417" y="225" width="266" height="48" rx="9" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+<text x="550.0" y="257" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">B 继续 decode</text>
+<rect x="417" y="283" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="550.0" y="315" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 仍在排队</text>
+<rect x="750" y="168" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="770" y="204" font-size="25" font-weight="600" fill="#172033" text-anchor="start">③ B 也结束</text>
+<rect x="770" y="225" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="903.0" y="257" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 先 prefill</text>
+<rect x="770" y="283" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="903.0" y="315" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 再 decode</text>
+<path d="M 358 267 L 386 267" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M 711 267 L 739 267" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="44" y="408" font-size="25" font-weight="400" fill="#475569" text-anchor="start">A 腾出了位置，但 C 还要等 B。</text>
+<path d="M 44 445 L 1056 445" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+<text x="44" y="497" font-size="27" font-weight="600" fill="#172033" text-anchor="start">连续批处理：每轮重新决定参与请求</text>
+<rect x="44" y="520" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="64" y="556" font-size="25" font-weight="600" fill="#172033" text-anchor="start">① 当前</text>
+<rect x="64" y="577" width="266" height="48" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="197.0" y="609" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">A、B decode</text>
+<rect x="64" y="635" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="197.0" y="667" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 排队</text>
+<rect x="397" y="520" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="417" y="556" font-size="25" font-weight="600" fill="#172033" text-anchor="start">② A 已结束</text>
+<rect x="417" y="577" width="266" height="48" rx="9" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+<text x="550.0" y="609" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">B 继续 decode</text>
+<rect x="417" y="635" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="550.0" y="667" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">接入 C：先 prefill</text>
+<rect x="750" y="520" width="306" height="196" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="770" y="556" font-size="25" font-weight="600" fill="#172033" text-anchor="start">③ 随后的轮次</text>
+<rect x="770" y="577" width="266" height="48" rx="9" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+<text x="903.0" y="609" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">B 继续 decode</text>
+<rect x="770" y="635" width="266" height="48" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="903.0" y="667" font-size="24" font-weight="500" fill="#172033" text-anchor="middle">C 开始 decode</text>
+<path d="M 358 619 L 386 619" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M 711 619 L 739 619" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="44" y="758" font-size="25" font-weight="600" fill="#172033" text-anchor="start">资源允许时，C 可以在 B 结束前进入服务。</text>
+<rect x="44" y="789" width="1012" height="92" rx="10" fill="#f1f5f9" stroke="#f1f5f9" stroke-width="1.5"/>
+<text x="66" y="827" font-size="23" font-weight="400" fill="#475569" text-anchor="start">这是调度示意：各列不表示相等时长，也不是实测加速结果。</text>
+<text x="66" y="860" font-size="23" font-weight="400" fill="#475569" text-anchor="start">prefill 与 decode 如何组合执行，需要相应的调度和模型实现支持。</text>
+</g></svg>
