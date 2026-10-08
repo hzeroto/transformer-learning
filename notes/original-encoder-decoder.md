@@ -262,9 +262,11 @@ loss = masked_cross_entropy(logits, target_labels, target_valid)
 
 最后一行提到的标签平滑，是把监督分布从“正确类概率 1”改成略分散的分布；多候选搜索是生成时保留多条候选前缀。它们不是本课前置要求。小模型的学习率和步数根据实际训练曲线调整，不预先保证某个配置一定学会任务。
 
-## 5. 接下来写什么，以及怎样证明接对了
+## 5. 沿代码串起整章，验证源条件生成
 
-后续综合实现只新增正弦位置、双侧输入组织、cross-attention 接线、原版两种 block 的组合与源条件生成。以下是实现安排，不是声称仓库已经有完整 Encoder–Decoder 模型。
+完整代码已放在 [ex017：原版 Encoder–Decoder 教师导读版](../exercises/ex017_original_transformer/README.md)。
+代码新增正弦位置、双侧输入组织、cross-attention 接线、原版两种 block 的组合与源条件生成，
+并在关键计算旁解释数据来源、shape 与作用；已有组件继续复用，可直接运行训练入口。
 
 | 已有代码 | 这次怎样使用 |
 |---|---|
@@ -290,4 +292,6 @@ loss = masked_cross_entropy(logits, target_labels, target_valid)
 
 本章覆盖 `architecture.sequence-roles`、`attention.source-types`、`text-input.sinusoidal-position`，最终在同一份实现中验收 `architecture.encoder-decoder` 与 `implementation.original-transformer`。已掌握的先修不重考；`implementation.testing-debugging` 保留的自主选测试边界可并入本次实现，不单独开重复补课。
 
-当前已准备讲义、两张结构图及教师机制演示；完整模型作业与训练实验是下一阶段。材料准备不改变掌握状态。正式推进从第 1、2 节这一条双序列数据流开始，讲清后再进入正弦位置和整体实现。
+当前已准备讲义、两张结构图、教师机制演示及 [ex017 完整导读代码](../exercises/ex017_original_transformer/README.md)。
+先从 forward 定位整体，再看源权限与 Cross Attention，沿注释追踪数据、位置、模型堆栈和源条件生成。
+使用训练入口验证反转任务；教师补全与运行通过不自动计为学习者独立实现掌握。

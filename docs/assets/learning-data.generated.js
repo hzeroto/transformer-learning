@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-07T04:08:55.307Z",
+  "generatedAt": "2026-10-08T14:16:55.021Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -476,7 +476,23 @@ window.LEARNING_DATA = {
             "能区分可计算更长位置和模型能可靠外推到更长序列"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-10-08T14:16:48.162Z",
+            "note": "按本次约定的教师导读与理解验收范围掌握。完整位置编码、shape/offset/奇偶性质的程序验证由教师提供，未宣称学习者从空文件独立实现；不再以独立重写作为本轮门槛。",
+            "evidence": [
+              {
+                "at": "2026-10-08T13:54:37.302Z",
+                "text": "综合验收第 5 题中，学习者正确将奇数宽度的余弦赋值裁剪为 angles[:, :C // 2]，说明最后未配对的维度保留 sin；正确否定可计算位置 10000 就保证模型可靠外推，以及 embedding 与位置编码天生相差 sqrt(C) 倍的说法。"
+              },
+              {
+                "at": "2026-10-08T14:04:58.705Z",
+                "text": "在位置偏移提示后，学习者进一步写出从 positions 本身取值再扩维的表达式，表明已转向使用实际位置编号而非输出行号；其中浮点索引和最终可运行 angles 写法由教师纠正。结合此前正确修复奇数宽度余弦槽位、否定可靠长序列外推保证及固定 sqrt(C) 天然尺度差，已验证相应局部理解。"
+              },
+              {
+                "at": "2026-10-08T14:16:48.162Z",
+                "text": "按学习者明确指定的教师实现与代码理解验收口径，综合本轮可观察回答：能修正奇数宽度的余弦槽位，保留最后未配对的 sin；提示后尝试从实际 positions 取值；能区分公式可计算更长位置与模型可靠外推，并否定 embedding 与 PE 天生相差 sqrt(C) 倍。实际位置取值表达式的 API 修正由教师提供。"
+              }
+            ]
           }
         }
       ]
@@ -992,7 +1008,19 @@ window.LEARNING_DATA = {
             "能解释两种数据流分别解决什么问题"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-10-08T14:04:57.996Z",
+            "note": "同序列与跨序列 Attention 的来源和用途达到本节点标准。cross 读取权限与 Encoder 双向读取的区别已补充讲解；权重 shape 与跨层参数题面未理解不作为撤销已有来源判断的依据。",
+            "evidence": [
+              {
+                "at": "2026-10-08T13:33:01.585Z",
+                "text": "原版 Encoder–Decoder 综合验收第 2 题中，学习者准确指出 Encoder self 的 Q/K/V 上游均为 Xs，Decoder self 均为 Y，Decoder cross 分别为 U/E/E；判断首个目标位置可读取最后一个有效源位置，但将理由归为 Encoder 双向读取，尚需区分 cross 自身的源读取权限。"
+              },
+              {
+                "at": "2026-10-08T14:04:57.996Z",
+                "text": "综合已有作品和本轮验收：学习者此前完成 CrossAttention 的关键接线，以目标状态投影 Q、最终源特征 E 投影 K/V；第 2 题准确给出三处上游 Xs/Xs/Xs、Y/Y/Y、U/E/E，并结合源/目标双序列角色和第 4 题固定 E、持续增长目标前缀的生成流程，说明同序列读取与目标读取源特征的不同数据流和用途。"
+              }
+            ]
           }
         }
       ]
@@ -1228,7 +1256,15 @@ window.LEARNING_DATA = {
             "能说明何时存在两条独立序列"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-10-08T13:07:02.542Z",
+            "note": "源/目标序列角色验收通过；目标 loss mask 的局部错误在本课后续验收中纠正，不作为序列角色能力的回退理由。",
+            "evidence": [
+              {
+                "at": "2026-10-08T13:07:02.542Z",
+                "text": "在原版 Encoder–Decoder 综合验收第 1 题中，学习者明确区分翻译式双序列处理：源序列进入 Encoder，目标序列进入 Decoder；并说明 GPT prompt 续写的 prompt 与后续生成均经过 Decoder，prompt 对应 prefill。结合反转样本中分别组织源输入、目标前缀与右移标签，证明能区分双序列转换与单序列续写。"
+              }
+            ]
           }
         },
         {
@@ -1296,7 +1332,19 @@ window.LEARNING_DATA = {
             "能实现小型序列转换任务"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-10-08T14:16:48.827Z",
+            "note": "按学习者明确指定的教师实现与理解验收范围掌握。所有可读源位置应排除 PAD 由教师澄清；detach 截断 Encoder 梯度的机制由教师补讲，不记为学习者独立梯度推导通过。完整模型由教师完成，不代表已独立重写。",
+            "evidence": [
+              {
+                "at": "2026-10-08T13:45:52.471Z",
+                "text": "综合验收中，学习者准确给出三处 Attention 的 Q/K/V 上游；第 4 题独立写出生成前缀 BOS、BOS d、BOS d c，说明每次从末位 logits 取 argmax，源输入和最终 E 固定、单次请求只 encode 一次，且首步错误生成 f 后必须继续使用 BOS f，而不能使用真实答案纠正前缀。"
+              },
+              {
+                "at": "2026-10-08T14:16:48.827Z",
+                "text": "学习者已准确给出三处 Attention 的 Q/K/V 上游，区分源与目标序列，说明固定 E、源只 encode 一次以及用自身输出延长目标前缀。本轮进一步正确判断 BOS 位置预测首 token 要计 loss、目标不能读取未来 token，并将 cross 子层错误的 E+b 残差修正为 u+b，说明应保留该子层输入连接。"
+              }
+            ]
           }
         },
         {
@@ -1517,7 +1565,19 @@ window.LEARNING_DATA = {
             "源序列、目标序列长度不同，补齐与未来屏蔽均正确"
           ],
           "progress": {
-            "status": "pending"
+            "status": "mastered",
+            "updatedAt": "2026-10-08T14:16:49.480Z",
+            "note": "依据本次明确约定，掌握结论限定为教师导读与代码行为理解验收；完整模型、测试及训练实验由教师完成，不声明学习者已独立实现、设计测试或亲自完成未见组合实验。梯度截断由教师补充讲解；先前跳过的模糊题面不记答错。本系列本轮验收结束，不追加题目。",
+            "evidence": [
+              {
+                "at": "2026-10-08T14:04:59.411Z",
+                "text": "本轮综合验收中，学习者正确组织反转目标的右移标签，区分源/目标处理路径，准确指出三处 Attention 的上游，说明只给源输入时的自回归前缀、末位 argmax、固定 E 和错误预测继续进入前缀；对位置编码给出了局部修复与边界判断。完整模型为教师导读实现，这些回答只支持相应部分理解，不作为独立整模型实现或未见组合实测证据。"
+              },
+              {
+                "at": "2026-10-08T14:16:49.480Z",
+                "text": "基于教师完整实现，学习者通过目标右移标签、三处 Attention 数据来源、cross 残差接线、自回归前缀和末位预测的理解验收。最后对同一验证集的真实前缀 token 准确率与自由生成整句准确率作出正确选择，并说明真实前缀会使模型不必持续承受自身错误预测的影响。学习者明确要求将已读懂教师实现作为本次掌握证据。"
+              }
+            ]
           }
         },
         {
@@ -2228,7 +2288,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-09-28T03:18:22.709Z",
+    "updatedAt": "2026-10-08T14:16:49.480Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -3237,18 +3297,203 @@ window.LEARNING_DATA = {
             "text": "学习者能说明共享上下文表示分别接 MLM 与 CLS 整句分类分支，识别分类头为仿射变换，并判断仅分类 loss 会回传 Encoder 与 pool、不会经过 MLM 的 Wm；识别原文误送模型造成答案泄漏。经教师反馈纠正只按 MASK_ID 计分及检查 allow 的误区后，准确完成预训练接线：模型输入 input_ids、原位标签 clean_ids、计分范围 selected；结合双向读取与 PAD 边界回答，完成 BERT 架构与任务目标的理解验收。"
           }
         ]
+      },
+      "architecture.sequence-roles": {
+        "status": "mastered",
+        "updatedAt": "2026-10-08T13:07:02.542Z",
+        "note": "源/目标序列角色验收通过；目标 loss mask 的局部错误在本课后续验收中纠正，不作为序列角色能力的回退理由。",
+        "evidence": [
+          {
+            "at": "2026-10-08T13:07:02.542Z",
+            "text": "在原版 Encoder–Decoder 综合验收第 1 题中，学习者明确区分翻译式双序列处理：源序列进入 Encoder，目标序列进入 Decoder；并说明 GPT prompt 续写的 prompt 与后续生成均经过 Decoder，prompt 对应 prefill。结合反转样本中分别组织源输入、目标前缀与右移标签，证明能区分双序列转换与单序列续写。"
+          }
+        ]
+      },
+      "attention.source-types": {
+        "status": "mastered",
+        "updatedAt": "2026-10-08T14:04:57.996Z",
+        "note": "同序列与跨序列 Attention 的来源和用途达到本节点标准。cross 读取权限与 Encoder 双向读取的区别已补充讲解；权重 shape 与跨层参数题面未理解不作为撤销已有来源判断的依据。",
+        "evidence": [
+          {
+            "at": "2026-10-08T13:33:01.585Z",
+            "text": "原版 Encoder–Decoder 综合验收第 2 题中，学习者准确指出 Encoder self 的 Q/K/V 上游均为 Xs，Decoder self 均为 Y，Decoder cross 分别为 U/E/E；判断首个目标位置可读取最后一个有效源位置，但将理由归为 Encoder 双向读取，尚需区分 cross 自身的源读取权限。"
+          },
+          {
+            "at": "2026-10-08T14:04:57.996Z",
+            "text": "综合已有作品和本轮验收：学习者此前完成 CrossAttention 的关键接线，以目标状态投影 Q、最终源特征 E 投影 K/V；第 2 题准确给出三处上游 Xs/Xs/Xs、Y/Y/Y、U/E/E，并结合源/目标双序列角色和第 4 题固定 E、持续增长目标前缀的生成流程，说明同序列读取与目标读取源特征的不同数据流和用途。"
+          }
+        ]
+      },
+      "architecture.encoder-decoder": {
+        "status": "mastered",
+        "updatedAt": "2026-10-08T14:16:48.827Z",
+        "note": "按学习者明确指定的教师实现与理解验收范围掌握。所有可读源位置应排除 PAD 由教师澄清；detach 截断 Encoder 梯度的机制由教师补讲，不记为学习者独立梯度推导通过。完整模型由教师完成，不代表已独立重写。",
+        "evidence": [
+          {
+            "at": "2026-10-08T13:45:52.471Z",
+            "text": "综合验收中，学习者准确给出三处 Attention 的 Q/K/V 上游；第 4 题独立写出生成前缀 BOS、BOS d、BOS d c，说明每次从末位 logits 取 argmax，源输入和最终 E 固定、单次请求只 encode 一次，且首步错误生成 f 后必须继续使用 BOS f，而不能使用真实答案纠正前缀。"
+          },
+          {
+            "at": "2026-10-08T14:16:48.827Z",
+            "text": "学习者已准确给出三处 Attention 的 Q/K/V 上游，区分源与目标序列，说明固定 E、源只 encode 一次以及用自身输出延长目标前缀。本轮进一步正确判断 BOS 位置预测首 token 要计 loss、目标不能读取未来 token，并将 cross 子层错误的 E+b 残差修正为 u+b，说明应保留该子层输入连接。"
+          }
+        ]
+      },
+      "text-input.sinusoidal-position": {
+        "status": "mastered",
+        "updatedAt": "2026-10-08T14:16:48.162Z",
+        "note": "按本次约定的教师导读与理解验收范围掌握。完整位置编码、shape/offset/奇偶性质的程序验证由教师提供，未宣称学习者从空文件独立实现；不再以独立重写作为本轮门槛。",
+        "evidence": [
+          {
+            "at": "2026-10-08T13:54:37.302Z",
+            "text": "综合验收第 5 题中，学习者正确将奇数宽度的余弦赋值裁剪为 angles[:, :C // 2]，说明最后未配对的维度保留 sin；正确否定可计算位置 10000 就保证模型可靠外推，以及 embedding 与位置编码天生相差 sqrt(C) 倍的说法。"
+          },
+          {
+            "at": "2026-10-08T14:04:58.705Z",
+            "text": "在位置偏移提示后，学习者进一步写出从 positions 本身取值再扩维的表达式，表明已转向使用实际位置编号而非输出行号；其中浮点索引和最终可运行 angles 写法由教师纠正。结合此前正确修复奇数宽度余弦槽位、否定可靠长序列外推保证及固定 sqrt(C) 天然尺度差，已验证相应局部理解。"
+          },
+          {
+            "at": "2026-10-08T14:16:48.162Z",
+            "text": "按学习者明确指定的教师实现与代码理解验收口径，综合本轮可观察回答：能修正奇数宽度的余弦槽位，保留最后未配对的 sin；提示后尝试从实际 positions 取值；能区分公式可计算更长位置与模型可靠外推，并否定 embedding 与 PE 天生相差 sqrt(C) 倍。实际位置取值表达式的 API 修正由教师提供。"
+          }
+        ]
+      },
+      "implementation.original-transformer": {
+        "status": "mastered",
+        "updatedAt": "2026-10-08T14:16:49.480Z",
+        "note": "依据本次明确约定，掌握结论限定为教师导读与代码行为理解验收；完整模型、测试及训练实验由教师完成，不声明学习者已独立实现、设计测试或亲自完成未见组合实验。梯度截断由教师补充讲解；先前跳过的模糊题面不记答错。本系列本轮验收结束，不追加题目。",
+        "evidence": [
+          {
+            "at": "2026-10-08T14:04:59.411Z",
+            "text": "本轮综合验收中，学习者正确组织反转目标的右移标签，区分源/目标处理路径，准确指出三处 Attention 的上游，说明只给源输入时的自回归前缀、末位 argmax、固定 E 和错误预测继续进入前缀；对位置编码给出了局部修复与边界判断。完整模型为教师导读实现，这些回答只支持相应部分理解，不作为独立整模型实现或未见组合实测证据。"
+          },
+          {
+            "at": "2026-10-08T14:16:49.480Z",
+            "text": "基于教师完整实现，学习者通过目标右移标签、三处 Attention 数据来源、cross 残差接线、自回归前缀和末位预测的理解验收。最后对同一验证集的真实前缀 token 准确率与自由生成整句准确率作出正确选择，并说明真实前缀会使模型不必持续承受自身错误预测的影响。学习者明确要求将已读懂教师实现作为本次掌握证据。"
+          }
+        ]
       }
     },
     "statusCounts": {
-      "mastered": 59,
+      "mastered": 64,
       "current": 0,
       "verify": 1,
       "relearn": 0,
-      "pending": 19
+      "pending": 14
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "b227c32e-9dfc-4fb1-9698-842981a20a2a",
+      "at": "2026-10-08T14:16:49.480Z",
+      "nodeId": "implementation.original-transformer",
+      "nodeTitle": "原版Transformer",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "基于教师完整实现，学习者通过目标右移标签、三处 Attention 数据来源、cross 残差接线、自回归前缀和末位预测的理解验收。最后对同一验证集的真实前缀 token 准确率与自由生成整句准确率作出正确选择，并说明真实前缀会使模型不必持续承受自身错误预测的影响。学习者明确要求将已读懂教师实现作为本次掌握证据。",
+      "note": "依据本次明确约定，掌握结论限定为教师导读与代码行为理解验收；完整模型、测试及训练实验由教师完成，不声明学习者已独立实现、设计测试或亲自完成未见组合实验。梯度截断由教师补充讲解；先前跳过的模糊题面不记答错。本系列本轮验收结束，不追加题目。"
+    },
+    {
+      "id": "3867dec2-7d53-4850-b90c-8dd8a3c0c170",
+      "at": "2026-10-08T14:16:48.827Z",
+      "nodeId": "architecture.encoder-decoder",
+      "nodeTitle": "原版Encoder–Decoder",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "学习者已准确给出三处 Attention 的 Q/K/V 上游，区分源与目标序列，说明固定 E、源只 encode 一次以及用自身输出延长目标前缀。本轮进一步正确判断 BOS 位置预测首 token 要计 loss、目标不能读取未来 token，并将 cross 子层错误的 E+b 残差修正为 u+b，说明应保留该子层输入连接。",
+      "note": "按学习者明确指定的教师实现与理解验收范围掌握。所有可读源位置应排除 PAD 由教师澄清；detach 截断 Encoder 梯度的机制由教师补讲，不记为学习者独立梯度推导通过。完整模型由教师完成，不代表已独立重写。"
+    },
+    {
+      "id": "b227a5d8-6f18-4cf4-bf02-74e4eb7b3684",
+      "at": "2026-10-08T14:16:48.162Z",
+      "nodeId": "text-input.sinusoidal-position",
+      "nodeTitle": "正弦位置编码",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "按学习者明确指定的教师实现与代码理解验收口径，综合本轮可观察回答：能修正奇数宽度的余弦槽位，保留最后未配对的 sin；提示后尝试从实际 positions 取值；能区分公式可计算更长位置与模型可靠外推，并否定 embedding 与 PE 天生相差 sqrt(C) 倍。实际位置取值表达式的 API 修正由教师提供。",
+      "note": "按本次约定的教师导读与理解验收范围掌握。完整位置编码、shape/offset/奇偶性质的程序验证由教师提供，未宣称学习者从空文件独立实现；不再以独立重写作为本轮门槛。"
+    },
+    {
+      "id": "d92447c8-7f34-4138-9db9-f1abb4060f90",
+      "at": "2026-10-08T14:04:59.411Z",
+      "nodeId": "implementation.original-transformer",
+      "nodeTitle": "原版Transformer",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "本轮综合验收中，学习者正确组织反转目标的右移标签，区分源/目标处理路径，准确指出三处 Attention 的上游，说明只给源输入时的自回归前缀、末位 argmax、固定 E 和错误预测继续进入前缀；对位置编码给出了局部修复与边界判断。完整模型为教师导读实现，这些回答只支持相应部分理解，不作为独立整模型实现或未见组合实测证据。",
+      "note": "已完成教师代码导读和部分原理验收；整模型自主接线、标签 mask/梯度性质与未见组合生成验证仍缺学习者证据。第 3、6 题因题面反馈而跳过，记为本轮未验收，不记答错；教师代码测试和训练结果不替代学习者证据。本轮验收到此结束，不新增口试。"
+    },
+    {
+      "id": "8184dc1f-94b2-43a9-bedb-e3ce3e29d848",
+      "at": "2026-10-08T14:04:58.705Z",
+      "nodeId": "text-input.sinusoidal-position",
+      "nodeTitle": "正弦位置编码",
+      "action": "verify",
+      "fromStatus": "verify",
+      "toStatus": "verify",
+      "evidence": "在位置偏移提示后，学习者进一步写出从 positions 本身取值再扩维的表达式，表明已转向使用实际位置编号而非输出行号；其中浮点索引和最终可运行 angles 写法由教师纠正。结合此前正确修复奇数宽度余弦槽位、否定可靠长序列外推保证及固定 sqrt(C) 天然尺度差，已验证相应局部理解。",
+      "note": "奇偶维、实际位置编号和外推边界已有解释或辅助修正证据；API 小错不判为概念不懂。完整可运行编码及 shape/offset/奇偶性质的学习者实现验证尚未完成，保留 verify，不要求继续本轮口试。"
+    },
+    {
+      "id": "970e7b79-de45-4e06-a596-88719d880a64",
+      "at": "2026-10-08T14:04:57.996Z",
+      "nodeId": "attention.source-types",
+      "nodeTitle": "同序列与跨序列Attention",
+      "action": "master",
+      "fromStatus": "verify",
+      "toStatus": "mastered",
+      "evidence": "综合已有作品和本轮验收：学习者此前完成 CrossAttention 的关键接线，以目标状态投影 Q、最终源特征 E 投影 K/V；第 2 题准确给出三处上游 Xs/Xs/Xs、Y/Y/Y、U/E/E，并结合源/目标双序列角色和第 4 题固定 E、持续增长目标前缀的生成流程，说明同序列读取与目标读取源特征的不同数据流和用途。",
+      "note": "同序列与跨序列 Attention 的来源和用途达到本节点标准。cross 读取权限与 Encoder 双向读取的区别已补充讲解；权重 shape 与跨层参数题面未理解不作为撤销已有来源判断的依据。"
+    },
+    {
+      "id": "355db07c-a8f7-49fd-b0d2-8778348da64c",
+      "at": "2026-10-08T13:54:37.302Z",
+      "nodeId": "text-input.sinusoidal-position",
+      "nodeTitle": "正弦位置编码",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "综合验收第 5 题中，学习者正确将奇数宽度的余弦赋值裁剪为 angles[:, :C // 2]，说明最后未配对的维度保留 sin；正确否定可计算位置 10000 就保证模型可靠外推，以及 embedding 与位置编码天生相差 sqrt(C) 倍的说法。",
+      "note": "奇数维度与外推边界的解释已核验；仍遗漏题面中将实际 positions=[3,7] 替换成行号 [0,1] 的错误。余弦修复与已提供导读代码一致，不作为从头独立实现的证据；本轮尚未实跑学习者完整位置编码实现。"
+    },
+    {
+      "id": "d77640d8-cc91-4c11-821b-1196d6221158",
+      "at": "2026-10-08T13:45:52.471Z",
+      "nodeId": "architecture.encoder-decoder",
+      "nodeTitle": "原版Encoder–Decoder",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "综合验收中，学习者准确给出三处 Attention 的 Q/K/V 上游；第 4 题独立写出生成前缀 BOS、BOS d、BOS d c，说明每次从末位 logits 取 argmax，源输入和最终 E 固定、单次请求只 encode 一次，且首步错误生成 f 后必须继续使用 BOS f，而不能使用真实答案纠正前缀。",
+      "note": "源条件自回归生成流程已验证。两类缓存需按 Decoder self KV 与 Decoder cross KV 区分，而非笼统按 Encoder/Decoder 区分；完整模型实现与任务实测仍未取得学习者独立证据。第 3 题因题面不清被跳过，不据此判定相关能力未掌握。"
+    },
+    {
+      "id": "8bd029e9-cf65-405f-b961-41fee9f0df7a",
+      "at": "2026-10-08T13:33:01.585Z",
+      "nodeId": "attention.source-types",
+      "nodeTitle": "同序列与跨序列Attention",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "原版 Encoder–Decoder 综合验收第 2 题中，学习者准确指出 Encoder self 的 Q/K/V 上游均为 Xs，Decoder self 均为 Y，Decoder cross 分别为 U/E/E；判断首个目标位置可读取最后一个有效源位置，但将理由归为 Encoder 双向读取，尚需区分 cross 自身的源读取权限。",
+      "note": "三处 Q/K/V 上游已验证；待确认 self 与 cross 分别读取什么信息，以及 cross 可见性由自身 mask 决定。对权重 shape 和跨层投影参数的问题先澄清题意，不据此推定既有基础能力退步。"
+    },
+    {
+      "id": "0b34ef9f-ae0c-46fd-8413-fdd2f48a86fe",
+      "at": "2026-10-08T13:07:02.542Z",
+      "nodeId": "architecture.sequence-roles",
+      "nodeTitle": "输入序列与输出序列",
+      "action": "master",
+      "fromStatus": "pending",
+      "toStatus": "mastered",
+      "evidence": "在原版 Encoder–Decoder 综合验收第 1 题中，学习者明确区分翻译式双序列处理：源序列进入 Encoder，目标序列进入 Decoder；并说明 GPT prompt 续写的 prompt 与后续生成均经过 Decoder，prompt 对应 prefill。结合反转样本中分别组织源输入、目标前缀与右移标签，证明能区分双序列转换与单序列续写。",
+      "note": "源/目标序列角色验收通过；目标 loss mask 的局部错误在本课后续验收中纠正，不作为序列角色能力的回退理由。"
+    },
     {
       "id": "e977d3de-e45f-4564-93bd-b8a032d7d3a7",
       "at": "2026-09-28T03:18:22.709Z",

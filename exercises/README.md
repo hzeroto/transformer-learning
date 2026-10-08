@@ -32,6 +32,7 @@ exercises/
 - [014：现有 LLaMA 的成本与执行报告（已验收）](ex014_model_cost/README.md)
 - [015：同一个模型的 FP32 / BF16 数值对照（参考实现）](ex015_mixed_precision/README.md)
 - [016：Mini-BERT——双向 Encoder、MLM / NSP 与分类微调（教师完整导读版）](ex016_mini_bert/README.md)
+- [017：原版 Encoder–Decoder——源条件反转、Cross Attention 与正弦位置（教师完整导读版）](ex017_original_transformer/README.md)
 
 ## 衔接讲义
 
