@@ -33,6 +33,7 @@ exercises/
 - [015：同一个模型的 FP32 / BF16 数值对照（参考实现）](ex015_mixed_precision/README.md)
 - [016：Mini-BERT——双向 Encoder、MLM / NSP 与分类微调（教师完整导读版）](ex016_mini_bert/README.md)
 - [017：原版 Encoder–Decoder——源条件反转、Cross Attention 与正弦位置（教师完整导读版）](ex017_original_transformer/README.md)
+- [018：滑动窗口与在线分块 Attention——局部计算、在线归一化与模型缓存（带注释参考实现）](ex018_efficient_attention/README.md)
 
 ## 衔接讲义
 
@@ -49,3 +50,4 @@ exercises/
 - [数值精度与混合精度](../notes/mixed-precision.md)：范围、舍入、归约误差、autocast 与梯度缩放。
 - [从生成到读取完整输入：Encoder 与 BERT](../notes/encoder-and-bert.md)：双向读取、遮盖目标、句段表示及预训练到分类的完整路径。
 - [原版 Encoder–Decoder：读完源序列，再按需生成目标序列](../notes/original-encoder-decoder.md)：源/目标角色、跨序列 Attention、正弦位置与后续综合实现安排，附结构图及教师机制演示。
+- [长序列 Attention：滑窗与在线分块](../notes/sliding-window-and-flash-attention.md)：局部读取、缓存驱逐、在线归一化与执行范围验证。

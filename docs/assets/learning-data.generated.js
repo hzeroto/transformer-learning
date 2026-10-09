@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-09T14:25:35.543Z",
+  "generatedAt": "2026-10-09T17:56:24.792Z",
   "goal": {
     "title": "从基础到独立手搓 Transformer",
     "description": "面向后端工程师转向 AI Infra，在理解数学、数据流和训练机制的基础上，独立实现 Transformer 及常见变体，验证增量推理并用可复现实验分析执行成本。主题分组不代表授课顺序，能力关卡见 learning/roadmap.md。",
@@ -1961,7 +1961,15 @@ window.LEARNING_DATA = {
             "能解释单纯加mask不会降低稠密矩阵乘法复杂度，区分操作量减少与实际运行加速"
           ],
           "progress": {
-            "status": "pending"
+            "status": "verify",
+            "updatedAt": "2026-10-09T16:37:48.152Z",
+            "note": "本轮为概念复述审查。尚需明确 Q/K/V 投影与两两配对、整段前向与单 token decode 的计数区别；真实跳过窗口外计算、改变可见范围的输出代价及在线代码行为尚未验收，不把省略内容记为答错。",
+            "evidence": [
+              {
+                "at": "2026-10-09T16:37:48.152Z",
+                "text": "学习者在读完联合讲义后用自己的话说明：长序列 Attention 的计算成本增长，限制每个 query 只读取邻近 x 个 KV，可将整段序列的配对规模从 n² 降至 nx。该复述支持局部读取的优化动机与配对数量级理解。"
+              }
+            ]
           }
         },
         {
@@ -1980,7 +1988,15 @@ window.LEARNING_DATA = {
             "能区分CPU算法验证与融合GPU内核的性能验证，不把Python分块循环当成加速实现"
           ],
           "progress": {
-            "status": "pending"
+            "status": "verify",
+            "updatedAt": "2026-10-09T16:37:48.552Z",
+            "note": "尚需校准完整 S/A 与输入 V 的角色，以及片上存储和计算单元的区别；在线 Softmax 状态合并、同 mask 下数学等价、全注意力二次算术量仍在及 CPU 分块与融合 GPU 性能的边界尚未验收。教师补充讲解不计为学习者新增掌握证据。",
+            "evidence": [
+              {
+                "at": "2026-10-09T16:37:48.552Z",
+                "text": "学习者在读完联合讲义后用自己的话指出：Attention 中间结果在 HBM 与计算侧之间反复搬运，带来读写和存储成本；分块计算可避免保存完整中间矩阵，减少搬运及空间需求。该复述支持 IO 优化动机和分块思路的理解，不视为在线归一化独立推导或代码验证。"
+              }
+            ]
           }
         },
         {
@@ -2288,7 +2304,7 @@ window.LEARNING_DATA = {
   "progress": {
     "schemaVersion": 1,
     "currentNodeId": null,
-    "updatedAt": "2026-10-08T14:16:49.480Z",
+    "updatedAt": "2026-10-09T16:37:48.552Z",
     "nodes": {
       "foundation.matrix-multiplication": {
         "status": "mastered",
@@ -3372,18 +3388,62 @@ window.LEARNING_DATA = {
             "text": "基于教师完整实现，学习者通过目标右移标签、三处 Attention 数据来源、cross 残差接线、自回归前缀和末位预测的理解验收。最后对同一验证集的真实前缀 token 准确率与自由生成整句准确率作出正确选择，并说明真实前缀会使模型不必持续承受自身错误预测的影响。学习者明确要求将已读懂教师实现作为本次掌握证据。"
           }
         ]
+      },
+      "modern.sliding-window": {
+        "status": "verify",
+        "updatedAt": "2026-10-09T16:37:48.152Z",
+        "note": "本轮为概念复述审查。尚需明确 Q/K/V 投影与两两配对、整段前向与单 token decode 的计数区别；真实跳过窗口外计算、改变可见范围的输出代价及在线代码行为尚未验收，不把省略内容记为答错。",
+        "evidence": [
+          {
+            "at": "2026-10-09T16:37:48.152Z",
+            "text": "学习者在读完联合讲义后用自己的话说明：长序列 Attention 的计算成本增长，限制每个 query 只读取邻近 x 个 KV，可将整段序列的配对规模从 n² 降至 nx。该复述支持局部读取的优化动机与配对数量级理解。"
+          }
+        ]
+      },
+      "modern.flash-attention": {
+        "status": "verify",
+        "updatedAt": "2026-10-09T16:37:48.552Z",
+        "note": "尚需校准完整 S/A 与输入 V 的角色，以及片上存储和计算单元的区别；在线 Softmax 状态合并、同 mask 下数学等价、全注意力二次算术量仍在及 CPU 分块与融合 GPU 性能的边界尚未验收。教师补充讲解不计为学习者新增掌握证据。",
+        "evidence": [
+          {
+            "at": "2026-10-09T16:37:48.552Z",
+            "text": "学习者在读完联合讲义后用自己的话指出：Attention 中间结果在 HBM 与计算侧之间反复搬运，带来读写和存储成本；分块计算可避免保存完整中间矩阵，减少搬运及空间需求。该复述支持 IO 优化动机和分块思路的理解，不视为在线归一化独立推导或代码验证。"
+          }
+        ]
       }
     },
     "statusCounts": {
       "mastered": 64,
       "current": 0,
-      "verify": 1,
+      "verify": 3,
       "relearn": 0,
-      "pending": 14
+      "pending": 12
     },
     "totalNodes": 79
   },
   "records": [
+    {
+      "id": "5a021d2e-7e7f-4f3c-9558-dac014b23f8e",
+      "at": "2026-10-09T16:37:48.552Z",
+      "nodeId": "modern.flash-attention",
+      "nodeTitle": "FlashAttention核心思想",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在读完联合讲义后用自己的话指出：Attention 中间结果在 HBM 与计算侧之间反复搬运，带来读写和存储成本；分块计算可避免保存完整中间矩阵，减少搬运及空间需求。该复述支持 IO 优化动机和分块思路的理解，不视为在线归一化独立推导或代码验证。",
+      "note": "尚需校准完整 S/A 与输入 V 的角色，以及片上存储和计算单元的区别；在线 Softmax 状态合并、同 mask 下数学等价、全注意力二次算术量仍在及 CPU 分块与融合 GPU 性能的边界尚未验收。教师补充讲解不计为学习者新增掌握证据。"
+    },
+    {
+      "id": "a540464c-adb8-4b45-9612-a13cf8c3a53c",
+      "at": "2026-10-09T16:37:48.152Z",
+      "nodeId": "modern.sliding-window",
+      "nodeTitle": "滑动窗口Attention",
+      "action": "verify",
+      "fromStatus": "pending",
+      "toStatus": "verify",
+      "evidence": "学习者在读完联合讲义后用自己的话说明：长序列 Attention 的计算成本增长，限制每个 query 只读取邻近 x 个 KV，可将整段序列的配对规模从 n² 降至 nx。该复述支持局部读取的优化动机与配对数量级理解。",
+      "note": "本轮为概念复述审查。尚需明确 Q/K/V 投影与两两配对、整段前向与单 token decode 的计数区别；真实跳过窗口外计算、改变可见范围的输出代价及在线代码行为尚未验收，不把省略内容记为答错。"
+    },
     {
       "id": "b227c32e-9dfc-4fb1-9698-842981a20a2a",
       "at": "2026-10-08T14:16:49.480Z",
