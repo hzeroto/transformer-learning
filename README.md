@@ -22,6 +22,13 @@ Transformer，再验证缓存推理和分析模型执行成本。
 - `examples/` — small runnable experiments
 - `exercises/` — learner-completed programming assignments and task instructions
 
+## 课程讲义
+
+- [MoE 图文主讲义](notes/mixture-of-experts.md)：路由、专家分组、梯度、负载均衡与成本。
+- [MoE 结构速览与玩具代码](notes/sparse-moe.md)：前向数据流与简化层实现。
+- [生成采样策略](notes/generation-sampling.md)：贪心、温度、Top-k 与 Top-p。
+- [Vision Transformer](notes/vision-transformer.md)：图像分块、序列构造与分类。
+
 ## Learning map
 
 The repository contains a persistent, evidence-driven learning system:
