@@ -1,0 +1,202 @@
+<div id="sliding-attention-architecture">
+  <style>
+    #sliding-attention-architecture { color: var(--foreground); }
+    #sliding-attention-architecture .architecture-graphic { width: 100%; display: block; overflow: visible; }
+    #sliding-attention-architecture .architecture-graphic text { fill: var(--foreground); font-family: inherit; font-weight: 400; }
+    #sliding-attention-architecture .architecture-graphic .secondary-label { fill: var(--muted-foreground); }
+    #sliding-attention-architecture .architecture-graphic .node-title { font-weight: 500; }
+    #sliding-attention-architecture .node { fill: var(--secondary); stroke: var(--border); stroke-width: 1; }
+    #sliding-attention-architecture .active-node { fill: color-mix(in srgb, var(--viz-series-1) 14%, transparent); stroke: var(--border); stroke-width: 1; }
+    #sliding-attention-architecture .edge { fill: none; stroke: var(--muted-foreground); stroke-width: 1.2; }
+    #sliding-attention-architecture .token-muted { fill: var(--muted); }
+    #sliding-attention-architecture .token-active { fill: color-mix(in srgb, var(--viz-series-1) 25%, transparent); }
+    #sliding-attention-architecture .window-band { fill: color-mix(in srgb, var(--viz-series-1) 11%, transparent); }
+    #sliding-attention-architecture .legend-dot { width: 10px; height: 10px; display: inline-block; background: var(--viz-series-1); }
+    #sliding-attention-architecture .scope { margin: 4px 0 12px; }
+    #sliding-attention-architecture .selected-detail { margin-top: 8px; }
+    @media (prefers-reduced-motion: no-preference) {
+      #sliding-attention-architecture .window-band { transition: x 180ms ease, width 180ms ease; }
+    }
+  </style>
+  <h3>滑动窗口 Attention 在 Transformer 层里的位置</h3>
+  <div class="viz-controls">
+    <label class="form-label" for="attention-query-position">
+      当前 query 位置：<output id="attention-query-value" class="tabular-nums">7</output>
+      <input id="attention-query-position" class="form-range" type="range" min="0" max="9" step="1" value="7">
+    </label>
+    <span>窗口宽度 W = 4（包含自己）</span>
+  </div>
+  <div class="viz-row text-small scope">
+    <span>放大部分：单个 batch、单个 head；无 PAD</span>
+    <span><span class="legend-dot" aria-hidden="true"></span> 窗口内的 K/V</span>
+    <span>− 窗口外　× 未来位置</span>
+  </div>
+  <svg class="architecture-graphic" role="img" aria-labelledby="attention-architecture-title attention-architecture-desc"></svg>
+  <div id="attention-selection-detail" class="text-small selected-detail" aria-live="polite"></div>
+  <script>
+    (() => {
+      const root = document.getElementById('sliding-attention-architecture');
+      const graphic = root.querySelector('.architecture-graphic');
+      const control = root.querySelector('#attention-query-position');
+      const valueLabel = root.querySelector('#attention-query-value');
+      const detail = root.querySelector('#attention-selection-detail');
+      const ns = 'http://www.w3.org/2000/svg';
+      let query = 7;
+      let lastWidth = 0;
+      let windowBand = null;
+
+      function positionFromState(saved) {
+        const candidate = saved?.modelContent?.queryPosition;
+        return Number.isInteger(candidate) && candidate >= 0 && candidate <= 9 ? candidate : 7;
+      }
+      query = positionFromState(window.openai?.widgetState);
+
+      function element(name, attributes = {}, parent = graphic) {
+        const node = document.createElementNS(ns, name);
+        Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+        parent.appendChild(node);
+        return node;
+      }
+      function label(x, y, text, className = '', parent = graphic) {
+        const node = element('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', class: className }, parent);
+        node.textContent = text;
+        return node;
+      }
+      function box(cx, y, width, height, lines, active = false) {
+        element('rect', { x: cx - width / 2, y, width, height, rx: 7, class: active ? 'active-node' : 'node' });
+        const step = 21;
+        lines.forEach((line, index) => label(cx, y + height / 2 + (index - (lines.length - 1) / 2) * step,
+          line, index === 0 ? 'node-title' : 'text-small secondary-label'));
+      }
+      function arrow(points) {
+        element('path', { d: points, class: 'edge', 'marker-end': 'url(#attention-flow-arrow)' });
+      }
+      function vertical(x, y1, y2) { arrow(`M ${x} ${y1} V ${y2}`); }
+      function chunksFor(keys) {
+        const result = [];
+        for (let start = 0; start < 10; start += 2) {
+          const allowed = keys.filter(key => key >= start && key < start + 2);
+          if (allowed.length) result.push(allowed);
+        }
+        return result;
+      }
+      function draw() {
+        const width = Math.max(280, Math.round(root.getBoundingClientRect().width));
+        const narrow = width < 540;
+        const middle = width / 2;
+        const margin = narrow ? 12 : 32;
+        const contentWidth = width - margin * 2;
+        const sharedWidth = Math.min(contentWidth, 360);
+        const branchGap = narrow ? 16 : 40;
+        const branchWidth = Math.min(270, (contentWidth - branchGap) / 2);
+        const leftX = middle - (branchWidth + branchGap) / 2;
+        const rightX = middle + (branchWidth + branchGap) / 2;
+        const keys = Array.from({ length: query - Math.max(0, query - 3) + 1 }, (_, index) => Math.max(0, query - 3) + index);
+        const chunks = chunksFor(keys);
+        const branchTop = 362;
+        const branchBody = branchTop + 24;
+        const branchEnd = branchBody + Math.max(3, chunks.length) * 66;
+        const commonOutput = branchEnd + 70;
+        const height = commonOutput + 214;
+        const previousBand = windowBand ? { x: windowBand.getAttribute('x'), width: windowBand.getAttribute('width') } : null;
+        graphic.replaceChildren();
+        graphic.setAttribute('width', String(width));
+        graphic.setAttribute('height', String(height));
+        graphic.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        const title = element('title', { id: 'attention-architecture-title' });
+        title.textContent = '一个 Transformer 层中的滑动窗口 Attention；local 和 online 是两种可选实现。';
+        const desc = element('desc', { id: 'attention-architecture-desc' });
+        desc.textContent = `本层输入先归一化并产生 Q、K、V。固定一个 head 的 query ${query}，窗口宽度 4，仅允许读取 key 和 value 位置 ${keys.join('、')}。左路 local 一次处理整个窗口；右路 online 逐块更新最大值、分母和加权和。两路二选一，得到相同的每头输出，再合头、投影、残差连接及 FFN。`;
+        const defs = element('defs');
+        const marker = element('marker', { id: 'attention-flow-arrow', viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+        element('path', { d: 'M 0 0 L 8 4 L 0 8 Z', fill: 'var(--muted-foreground)' }, marker);
+
+        box(middle, 6, sharedWidth, 34, ['本层输入 X']);
+        vertical(middle, 40, 59);
+        box(middle, 62, sharedWidth, 56, ['RMSNorm → Q/K/V 投影', '拆头；Q/K 应用 RoPE']);
+        vertical(middle, 118, 140);
+        box(middle, 143, sharedWidth, 50, [`Attention：放大 q${query} 的计算`, 'Q、K、V 已由上面的投影得到'], true);
+        vertical(middle, 193, 211);
+
+        label(middle, 227, 'K/V 的位置（同一层、同一个 head）', 'text-small secondary-label');
+        const cellWidth = contentWidth / 10;
+        const cellY = 247;
+        const bandX = margin + keys[0] * cellWidth;
+        const bandWidth = keys.length * cellWidth;
+        windowBand = element('rect', { x: bandX, y: cellY - 5, width: bandWidth, height: 47, rx: 6, class: 'window-band' });
+        if (previousBand && lastWidth === width) {
+          windowBand.setAttribute('x', previousBand.x);
+          windowBand.setAttribute('width', previousBand.width);
+          const activeBand = windowBand;
+          requestAnimationFrame(() => {
+            if (activeBand.isConnected) { activeBand.setAttribute('x', bandX); activeBand.setAttribute('width', bandWidth); }
+          });
+        }
+        for (let index = 0; index < 10; index += 1) {
+          const allowed = keys.includes(index);
+          const cx = margin + (index + 0.5) * cellWidth;
+          element('rect', { x: cx - (cellWidth - 4) / 2, y: cellY, width: cellWidth - 4, height: 36, rx: 4, class: allowed ? 'token-active' : 'token-muted' });
+          label(cx, cellY + 18, String(index), 'tabular-nums');
+          if (index > query) label(cx, cellY + 51, '×', 'secondary-label');
+          else if (!allowed) label(cx, cellY + 51, '−', 'secondary-label');
+        }
+        label(middle, 315, `q${query} 只读取 [${keys.join(', ')}]；窗口随 query 移动`, 'text-small');
+        label(middle, 340, '同一个 Attention 模块 · 两路二选一', 'node-title');
+
+        arrow(`M ${middle} 351 H ${leftX} V ${branchTop - 4}`);
+        arrow(`M ${middle} 351 H ${rightX} V ${branchTop - 4}`);
+        label(leftX, branchTop + 9, 'local_attention', 'node-title');
+        label(rightX, branchTop + 9, 'online_attention', 'node-title');
+
+        box(leftX, branchBody + 10, branchWidth, 48, ['一次取出窗口', `[${keys.join(', ')}]`], true);
+        vertical(leftX, branchBody + 58, branchBody + 73);
+        box(leftX, branchBody + 76, branchWidth, 48, ['窗口内打分', 'q 与选中的 K 做点积']);
+        vertical(leftX, branchBody + 124, branchBody + 139);
+        box(leftX, branchBody + 142, branchWidth, 48, ['统一 softmax', '加权读取窗口内 V']);
+
+        chunks.forEach((chunk, index) => {
+          const y = branchBody + 10 + index * 66;
+          box(rightX, y, branchWidth, 48, [`块 ${index + 1}：[${chunk.join(', ')}]`, '打分 → 更新累计状态'], true);
+          if (index < chunks.length - 1) vertical(rightX, y + 48, y + 63);
+        });
+        const onlineBottom = branchBody + 10 + (chunks.length - 1) * 66 + 48;
+        vertical(rightX, onlineBottom, branchEnd + 11);
+        box(rightX, branchEnd + 14, branchWidth, 48, ['累计分子 ÷ 分母', '最大值 · 分母 · 分子']);
+
+        const localBottom = branchBody + 190;
+        const outWidth = Math.min(200, rightX - leftX - 24);
+        arrow(`M ${leftX} ${localBottom} V ${commonOutput + 25} H ${middle - outWidth / 2 - 3}`);
+        arrow(`M ${rightX} ${branchEnd + 62} V ${commonOutput + 25} H ${middle + outWidth / 2 + 3}`);
+        box(middle, commonOutput, outWidth, 50, [`相同输出 o${query}`, '浮点误差范围内'], true);
+        vertical(middle, commonOutput + 50, commonOutput + 68);
+        box(middle, commonOutput + 71, sharedWidth, 40, ['所有位置、所有 head 的输出']);
+        vertical(middle, commonOutput + 111, commonOutput + 129);
+        box(middle, commonOutput + 132, sharedWidth, 64, ['合头、Wo 投影 → 加回 X', 'RMSNorm → FFN → 残差相加', '本层输出 → 下一层']);
+
+        valueLabel.textContent = String(query);
+        control.value = String(query);
+        detail.textContent = `当前 q${query}：窗口 [${keys.join(', ')}]；online 的块宽为 2，图中仅列可读位置。`;
+        lastWidth = width;
+      }
+      control.addEventListener('input', () => {
+        query = Number(control.value);
+        draw();
+      });
+      control.addEventListener('change', () => {
+        if (window.openai?.setWidgetState) {
+          window.openai.setWidgetState({ modelContent: { queryPosition: query, window: 4, keyBlock: 2, comparison: 'local 与 online 在同一滑窗下的两种实现' }, privateContent: null }).catch(() => {});
+        }
+      });
+      window.addEventListener('openai:set_globals', event => {
+        if (event.detail?.globals && Object.prototype.hasOwnProperty.call(event.detail.globals, 'widgetState')) {
+          query = positionFromState(event.detail.globals.widgetState);
+          draw();
+        }
+      });
+      new ResizeObserver(() => {
+        if (Math.round(root.getBoundingClientRect().width) !== lastWidth) draw();
+      }).observe(root);
+      draw();
+    })();
+  </script>
+</div>
