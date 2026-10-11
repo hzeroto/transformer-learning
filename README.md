@@ -1,12 +1,9 @@
 # Transformer Learning
 
-A personal repository for learning Transformer models from first principles.
+个人学习 Transformer 的笔记、代码和实验。从张量运算、Attention 和训练循环开始，
+逐步实现完整模型，再学习缓存推理和性能分析。
 
-面向有后端经验、准备学习 AI 基础原理和 Infra 相关知识的学习者：从最小训练闭环到独立实现
-Transformer，再验证缓存推理和分析模型执行成本。
-
-当前教学顺序与完成标准见 [能力关卡路线](learning/roadmap.md)，本次调整依据见
-[学习计划审查](learning/reviews/2026-09-05-plan-review.md)。知识地图的主题分组不等于授课顺序。
+学习顺序与各阶段的具体要求见 [学习路线](learning/roadmap.md)。知识地图按主题分组。
 
 ## Goals
 
@@ -26,17 +23,18 @@ Transformer，再验证缓存推理和分析模型执行成本。
 
 - [MoE 图文主讲义](notes/mixture-of-experts.md)：路由、专家分组、梯度、负载均衡与成本。
 - [MoE 结构速览与玩具代码](notes/sparse-moe.md)：前向数据流与简化层实现。
+- [MoE 完整代码导读](notes/moe-code-walkthrough.md)：架构图、逐项中间值，以及可直接运行的小模型训练和生成。
 - [生成采样策略](notes/generation-sampling.md)：贪心、温度、Top-k 与 Top-p。
 - [Vision Transformer](notes/vision-transformer.md)：图像分块、序列构造与分类。
 
 ## Learning map
 
-The repository contains a persistent, evidence-driven learning system:
+学习地图整理知识点依赖、当前进度和练习记录：
 
 - `learning/map.json` — complete curriculum, dependencies, and mastery criteria
 - `learning/roadmap.md` — capability gates, recommended order, implementation boundaries, and AI Infra bridge
 - `learning/learner-profile.md` — stable learner background and teaching preferences
-- `learning/progress.json` — current capability boundary and evidence for each knowledge point
+- `learning/progress.json` — current status and notes for each knowledge point
 - `learning/records.jsonl` — append-only learning event log
 - `docs/learn_record.md` — generated human-readable progress report
 - `docs/index.html` — interactive learning-map frontend
@@ -48,7 +46,7 @@ Start the local map viewer with:
 npm run serve
 ```
 
-Report demonstrated mastery with concrete evidence:
+记录已掌握的知识点，并附上具体的回答或练习结果：
 
 ```bash
 npm run learning:report -- master foundation.batch-matmul \
@@ -73,7 +71,7 @@ npm run learning:validate
 The ChatGPT project keeps the teaching conversation continuous. The repository only supplies durable context:
 
 - `learning/learner-profile.md` describes the learner's stable background and preferences.
-- `learning/progress.json` records the current capability boundary and evidence.
+- `learning/progress.json` records the current learning status and notes.
 - `learning/map.json` provides the overall path and prerequisite relationships.
 
 Ordinary lesson details stay in the project conversation rather than being duplicated in the repository.
@@ -86,7 +84,7 @@ Ordinary lesson details stay in the project conversation rather than being dupli
 |---|---|---|
 | [transformer-lesson-design](.agents/skills/transformer-lesson-design/SKILL.md) | 设计可直接学习的讲解、必要图解与理解检查 | `使用 $transformer-lesson-design 设计下一块教学内容` |
 | [transformer-exercise](.agents/skills/transformer-exercise/SKILL.md) | 提供接口、TODO、教师测试与运行入口，核心实现留给学习者 | `使用 $transformer-exercise 准备这块的练习框架` |
-| [transformer-review](.agents/skills/transformer-review/SKILL.md) | 审查真实代码/回答，按证据验收并同步进度 | `使用 $transformer-review 看看我写的，不改答案` |
+| [transformer-review](.agents/skills/transformer-review/SKILL.md) | 检查代码和回答，更新学习进度 | `使用 $transformer-review 看看我写的，不改答案` |
 
 普通的“继续推进”“没懂”留在自然课堂对话中，不启动一次新的课程设计。
 教学设计不设固定的“为什么学”环节；map 和进度服务于实际教学内容，不替代讲解。

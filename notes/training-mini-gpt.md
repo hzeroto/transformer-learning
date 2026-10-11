@@ -381,5 +381,3 @@ for step in range(N):
 - 尚未展开：学习率调度与 warmup、权重衰减与 AdamW 的区别、多种子重复实验、
   更长序列与更深堆栈的训练行为、`systems.cost-model` 的参数与激活账本。
 - 第 6 节指出的重复计算问题（KV Cache）属于 G4，先修是本课产出的已训练模型。
-- 读过本文不构成任何节点的掌握证据。实际状态以 `learning/progress.json` 为准。
-  本次不修改知识地图依赖，不切换 `currentNodeId`，不新增已掌握记录。

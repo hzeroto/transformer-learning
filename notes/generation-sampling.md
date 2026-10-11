@@ -84,7 +84,7 @@ topk_logits, topk_indices = torch.topk(logits, k)
 
 **核心思想**：不固定候选词数量，而是**固定累积概率阈值 $p \in (0, 1]$**（例如 $p = 0.9$）。
 1. 将所有 token 按 logits/概率从大到小降序排列。
-2. 从头累加概率，直到累积概率刚好**大于等于 $p$** 时停止。
+2. 对排序后的 logits 做 Softmax，得到总和为 1 的概率分布；从头累加这些概率，直到累积概率首次**大于等于 $p$** 时停止。
 3. 仅保留这个最小的候选集合（称为 Nucleus，核心集），集合外的所有 token logits 置为 $-\infty$。
 4. 在核心集上重新做 Softmax 并采样。
 
@@ -105,12 +105,18 @@ topk_logits, topk_indices = torch.topk(logits, k)
        ↓
 ② Top-k 过滤 (保留前 k 个，其余设为 -inf)
        ↓
-③ Top-p 核过滤 (按累积概率保留核集合，其余设为 -inf)
+③a Softmax -> 得到临时概率分布 Q，供 Top-p 计算累积概率
+       ↓
+③b Top-p 核过滤 (按 Q 的累积概率保留核集合，将集合外的 logits 设为 -inf)
        ↓
 ④ Softmax 重新归一化 -> 得到最终采样概率分布 P
        ↓
 ⑤ torch.multinomial(P, 1) -> 抽样得出 next_token
 ```
+
+② 的输出仍是 logits：Top-k 只需比较分数大小，不必先计算概率。③a 的 Softmax 同时完成从 logits 到概率的转换与归一化；Top-k 排除的项为 $-\infty$，对应概率为 0，所以 $Q$ 在 Top-k 保留的候选上总和为 1。
+
+两次 Softmax 的用途不同：③a 得到的 $Q$ 用于决定 Top-p 保留哪些 token；③b 根据这个结果修改 logits，④ 再对修改后的 logits 做 Softmax，得到最终用于采样的 $P$。例如，若 $Q=[0.6,0.3,0.1,0]$、$p=0.8$，Top-p 保留前两项；它们原本的概率和为 0.9，重新归一化后 $P=[2/3,1/3,0,0]$。④ 也等价于将 $Q$ 中被排除的项清零，再除以剩余概率之和；不是对 $Q$ 本身再做一次 Softmax。若不启用 Top-p，则跳过③a、③b，直接在④计算采样概率。
 
 ### 完整自包含 PyTorch 实现
 
@@ -157,11 +163,11 @@ def sample_next_token(
 
     # 3. Top-p (Nucleus) 截断
     if top_p < 1.0:
-        # 降序排序
+        # 3a. 降序排序后做 Softmax，得到筛选用的概率；logits 本身仍保留
         sorted_logits, sorted_indices = torch.sort(logits, descending=True)
         sorted_probs = F.softmax(sorted_logits, dim=-1)
 
-        # 累积概率
+        # 3b. 按累积概率决定保留集合，再把集合外的 logits 设为 -inf
         cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
 
         # 若此前的累计概率已经达到 p，就不再需要当前项。

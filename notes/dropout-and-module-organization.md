@@ -445,13 +445,7 @@ X 为 CPU float64 的 `(1,8,2)` 全 1 Tensor，gamma 初始全 1、beta 全 0。
   已有的残差、LayerNorm、FFN、MHA、链式法则和手写 SGD 直接复用，不在此重考。
 - 第 3、4 节新增示例的参数、梯度、统一更新、状态键、恢复遗漏与模式行为已实跑核对。
   第 1 节有限采样仅是观察，期望恒等由公式推导；这些教师演示不算学习者独立实现。
-- 仓库中**尚不存在**完整 Transformer 块的实现代码。本文给出的块结构
-  （含 Dropout 位置）是可理解的组合方案，不冒充已完成的工程。
+- 本文给出 Transformer 块的组合方案，包含 Dropout 在块内的位置。
 - 尚未展开的内容：`torch.optim` 的更复杂优化器（Adam/AdamW）及其状态、
   梯度裁剪、参数初始化策略、完整模型的训练与验证集划分。
   这些按 roadmap 属于 G3 的后续部分，本文只把 `parameters()` 与优化器的接口关系讲到够用。
-- 读过本文不构成 `block.dropout`、`block.complete` 或
-  `implementation.transformer-block` 的掌握证据。
-  按项目约定，掌握需要独立解释、实现、测试或排错的可观察表现；
-  实际状态以 `learning/progress.json` 为准。
-- 课程准备不自动改变能力状态；课堂已有回答和后续实现，按学习协议分别记录真实证据。

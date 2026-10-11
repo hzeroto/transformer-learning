@@ -574,7 +574,7 @@ Attention 读取 V 后传入 `merge_heads` 的 Y，以及返回结果的 storage
 1. **建立账本**：对同一配置输出参数、KV、单份分数、主要矩阵 FLOPs；把逻辑量与去重底层存储分开。参数结构沿用已有证据，重点是推导每项操作量、识别复制和账本边界。
 2. **测同一工作量**：分别记录 prefill、固定历史 decode；CPU 先采用 B∈{1,2}、T/t∈{8,16}、模型容量 32、其他配置不变，逐项对照。每次 decode 断言进入长度 t、退出长度 t+1；在计时外对齐同一权重下全量与增量最后 logits，float32 使用 rtol=1e-5、atol=1e-6。
 3. **解释一处差异**：选一个从账本产生的假设，抓取相关算子轨迹。报告实际输入 shape、耗时口径和支持或反对假设的观察；不要求必须测出加速。
-4. **自己选择一个反例**：为报告最担心的一种静默错误补一项检查，并说明错误版本为什么会失败。教师会提供基础框架和必要测试，这一项用于积累你独立选择测试的证据。
+4. **自己选择一个反例**：为报告最担心的一种静默错误补一项检查，并说明错误版本为什么会失败。基础框架和必要测试由教师提供。
 
 报告还需记录 CPU 型号、OS/WSL、Python/PyTorch、dtype、线程、种子、模型配置、输入长度、样本数、热身次数、计时范围、缓存恢复办法与未验证项。只改变 B 或长度时，其他条件保持一致；初始比较不混入量化、编译或新的注意力实现。
 
@@ -594,8 +594,8 @@ Attention 读取 V 后传入 `merge_heads` 的 Y，以及返回结果的 storage
 它用于核对讲义数字，不是通用预算工具，也不包含你的性能基准答案。
 成本、存储与计时练习位于 [ex014](../exercises/ex014_model_cost/README.md)，
 三部分实现已通过对应检查；现在用第 6 节的采集入口解释已有数据。
-此处没有宣称已获得 GPU 加速或硬件带宽结论。
+本课实验未测量 GPU 加速或硬件带宽。
 
-本课联合覆盖 `systems.cost-model`、`systems.benchmarking`，并在实际存储分析中补 `foundation.tensor-layout` 尚缺的复制条件解释。独立选择反例可以为 `implementation.testing-debugging` 积累新证据；不会仅凭教师测试通过自动补齐该节点。
+本课对应 `systems.cost-model`、`systems.benchmarking`，并通过实际存储分析讨论 `foundation.tensor-layout` 中的复制条件。反例设计对应 `implementation.testing-debugging`。
 
-讲义准备不改变能力状态。已有组件与缓存验收继续有效；FlashAttention、滑窗等后续改动可以用本课建立的口径比较。原版 Transformer、BERT/T5 分支仍保留在原路线中，本次不重排全局计划。
+FlashAttention、滑窗等后续改动可以沿用本课的测量方法进行比较。

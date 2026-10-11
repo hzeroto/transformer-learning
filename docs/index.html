@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="从当前学习点出发，探索 Transformer 的知识依赖、掌握要求与能力证据。">
+  <meta name="description" content="Transformer 学习地图：知识点依赖、学习进度和练习记录。">
   <meta name="theme-color" content="#f5f7fc">
   <title>Transformer Lab · 学习工作台</title>
   <link rel="stylesheet" href="assets/styles.css">
@@ -19,7 +19,7 @@
     </div>
     <nav class="header-nav" aria-label="主导航">
       <button type="button" data-jump-target="learning-workspace">学习地图</button>
-      <button type="button" data-jump-target="learning-history">学习轨迹</button>
+      <button type="button" data-jump-target="learning-history">学习记录</button>
       <button type="button" data-jump-target="learning-goal">学习目标</button>
     </nav>
     <span class="header-meta" id="updated-at">—</span>
@@ -35,12 +35,11 @@
         <div class="progress-track" role="progressbar" aria-label="总体掌握进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progress-fill"></div></div>
         <span id="mastery-count">—</span><p id="mastery-caption"></p>
       </div>
-      <p class="sidebar-footnote">以能力为刻度<br>以证据记录成长</p>
     </aside>
 
     <main id="main-content">
       <div class="page-heading"><div><p class="breadcrumb">我的学习 / Transformer</p><h1>学习工作台</h1></div><div class="page-stats"><span id="curriculum-size" class="curriculum-size">—</span><span id="mobile-mastery" class="mobile-mastery"></span></div></div>
-      <section class="learning-brief" aria-label="当前学习与能力概览">
+      <section class="learning-brief" aria-label="当前学习进度">
         <article class="focus-card">
           <div class="focus-heading"><span class="status-label current" id="current-status">当前学习</span><span class="focus-stage" id="current-stage">—</span></div>
           <h2 id="current-node">—</h2>
@@ -50,7 +49,7 @@
         <div class="learning-pulse">
           <div class="pulse-heading"><span>待巩固</span><strong id="review-count">—</strong><span>个知识点</span></div>
           <div class="review-actions"><button type="button" data-quick-filter="verify"><span class="status-dot verify" aria-hidden="true"></span>待验证 <strong id="verify-count">—</strong></button><button type="button" data-quick-filter="relearn"><span class="status-dot relearn" aria-hidden="true"></span>待重学 <strong id="relearn-count">—</strong></button></div>
-          <div class="ready-count"><span>先修已就绪</span><strong id="ready-count">—</strong></div>
+          <div class="ready-count"><span>先修已掌握</span><strong id="ready-count">—</strong></div>
         </div>
       </section>
 
@@ -163,7 +162,7 @@
 
           <section class="detail-section">
             <div class="detail-section-heading">
-              <h3>下一层会用到它</h3>
+              <h3>后续知识点</h3>
               <span id="dependent-count"></span>
             </div>
             <div id="detail-dependents" class="dependency-list"></div>
@@ -175,7 +174,7 @@
           </section>
 
           <section class="detail-section">
-            <h3>可核验的掌握证据</h3>
+            <h3>学习记录</h3>
             <div id="detail-evidence" class="evidence-list"></div>
           </section>
         </div>
@@ -184,8 +183,7 @@
     <section id="learning-history" class="records-panel" aria-labelledby="records-heading">
       <div class="section-heading">
         <div>
-          <p class="section-kicker">每一次进步，都有证据</p>
-          <h2 id="records-heading">学习轨迹</h2>
+          <h2 id="records-heading">学习记录</h2>
         </div>
         <button class="quiet-button compact" id="records-toggle" type="button" hidden>展开全部</button>
       </div>
@@ -194,15 +192,15 @@
     <details class="goal-panel" id="learning-goal">
       <summary>
         <span>
-          <span class="section-kicker">最终出口</span>
-          <strong id="goal-title">从基础到独立手搓 Transformer</strong>
+          <span class="section-kicker">学习目标</span>
+          <strong id="goal-title">Transformer 原理与实现</strong>
         </span>
-        <span class="summary-hint">查看毕业标准 <span aria-hidden="true">＋</span></span>
+        <span class="summary-hint">查看具体要求 <span aria-hidden="true">＋</span></span>
       </summary>
       <ol id="graduation-criteria" class="graduation-grid"></ol>
     </details>
 
-      <footer class="site-footer"><p id="goal-description"></p><span>状态以可观察证据为准。</span></footer>
+      <footer class="site-footer"><p id="goal-description"></p></footer>
     </main>
   </div>
   <script src="assets/learning-data.generated.js"></script>

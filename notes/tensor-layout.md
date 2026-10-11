@@ -355,7 +355,7 @@ merged = by_token.contiguous().view(B, T, H * Dh)
 ## 6. 教师布局实验和一个检查
 
 运行 `examples/tensor_layout_probe.py` 可查看以上确定性数值与存储布局。
-该脚本是教师演示，不是学习者已完成的实现或测试证据。
+该脚本由教师提供，用于演示存储布局。
 
 ```bash
 .venv/bin/python -B examples/tensor_layout_probe.py

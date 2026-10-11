@@ -201,7 +201,7 @@ export function buildGeneratedData() {
   ];
 
   for (const stage of stages) {
-    markdown.push(`### ${stage.title}`, '', '| 知识点 | 状态 | 最近证据或备注 |', '|---|---|---|');
+    markdown.push(`### ${stage.title}`, '', '| 知识点 | 状态 | 最近记录或备注 |', '|---|---|---|');
     for (const node of stage.nodes) {
       const latestEvidence = node.progress.evidence?.at(-1)?.text;
       markdown.push(`| ${escapeCell(node.title)} | ${statusLabels[node.progress.status]} | ${escapeCell(latestEvidence || node.progress.note || '—')} |`);
@@ -209,11 +209,11 @@ export function buildGeneratedData() {
     markdown.push('');
   }
 
-  markdown.push('## 学习事件', '');
+  markdown.push('## 进度更新', '');
   if (records.length === 0) {
     markdown.push('暂无记录。');
   } else {
-    markdown.push('| 时间 | 知识点 | 状态变化 | 证据或备注 |', '|---|---|---|---|');
+    markdown.push('| 时间 | 知识点 | 状态变化 | 记录或备注 |', '|---|---|---|---|');
     for (const record of [...records].reverse()) {
       markdown.push(`| ${escapeCell(record.at)} | ${escapeCell(record.nodeTitle)} | ${statusLabels[record.fromStatus]} → ${statusLabels[record.toStatus]} | ${escapeCell(record.evidence || record.note || '—')} |`);
     }

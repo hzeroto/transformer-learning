@@ -196,7 +196,7 @@
     elements.detailReadiness.className = 'detail-readiness';
     if (status === 'mastered') {
       elements.detailReadiness.classList.add('is-ready');
-      elements.detailReadiness.textContent = '已有可核验的掌握证据';
+      elements.detailReadiness.textContent = '已掌握';
     } else if (missing.length === 0) {
       elements.detailReadiness.classList.add('is-ready');
       elements.detailReadiness.textContent = '直接先修均已掌握，可以推进';
@@ -214,8 +214,8 @@
       ? `${node.prerequisites.length - missing.length}/${node.prerequisites.length} 已掌握`
       : '无先修';
     elements.dependentCount.textContent = `${dependents.get(node.id)?.length ?? 0} 个直接后续`;
-    renderDependencies(elements.detailPrerequisites, node.prerequisites, '这是一个路线起点，没有直接先修。');
-    renderDependencies(elements.detailDependents, dependents.get(node.id) ?? [], '这是当前路线的终点之一。');
+    renderDependencies(elements.detailPrerequisites, node.prerequisites, '无直接先修。');
+    renderDependencies(elements.detailDependents, dependents.get(node.id) ?? [], '暂无后续知识点。');
 
     elements.detailCriteria.replaceChildren();
     for (const criterion of node.masteryCriteria) {
@@ -235,7 +235,7 @@
     if (evidence.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'evidence-empty';
-      empty.innerHTML = '<span aria-hidden="true">○</span><div><strong>尚无掌握证据</strong><p>需要通过解释、实现、测试或排错来证明。</p></div>';
+      empty.innerHTML = '<span aria-hidden="true">○</span><div><strong>暂无学习记录</strong></div>';
       elements.detailEvidence.appendChild(empty);
     } else {
       for (const entry of [...evidence].reverse()) {
@@ -301,34 +301,32 @@
     elements.masteryCount.textContent = `${counts.mastered} / ${data.progress.totalNodes}`;
     elements.masteryPercentage.textContent = `${percentage}%`;
     elements.mobileMastery.textContent = `已掌握 ${counts.mastered} 个 / ${percentage}%`;
-    elements.masteryCaption.textContent = percentage === 0
-      ? '从第一个可核验能力开始'
-      : '知识点形成了可核验能力';
+    elements.masteryCaption.textContent = '按已掌握知识点数量统计';
     elements.progressFill.style.width = `${percentage}%`;
     elements.progressTrack.setAttribute('aria-valuenow', String(percentage));
     elements.reviewCount.textContent = String(counts.verify + counts.relearn);
     elements.verifyCount.textContent = String(counts.verify);
     elements.relearnCount.textContent = String(counts.relearn);
     elements.readyCount.textContent = `${readyNodes.length} 个知识点`;
-    elements.stageSummary.textContent = `已触达 ${touchedStages} / ${data.stages.length} 个阶段`;
+    elements.stageSummary.textContent = `已开始 ${touchedStages} / ${data.stages.length} 个阶段`;
 
     const current = nodeIndex.get(data.progress.currentNodeId);
     elements.currentNode.textContent = current?.title ?? '尚未指定当前知识点';
     elements.currentStage.textContent = current
       ? `阶段 ${current.stageIndex + 1} · ${current.stageTitle}`
-      : '请通过学习上报脚本设置当前入口';
-    elements.currentSummary.textContent = current?.summary ?? '选定唯一的当前知识点后，这里会显示本次学习焦点。';
+      : '';
+    elements.currentSummary.textContent = current?.summary ?? '可在下方查看知识点和学习进度。';
     if (!current) {
       document.getElementById('current-status').textContent = '未设置';
       document.getElementById('current-status').className = 'status-label pending';
-      elements.currentReadiness.textContent = '当前入口尚未设置';
+      elements.currentReadiness.textContent = '';
       elements.currentDetailButton.disabled = true;
       elements.currentStageButton.disabled = true;
     } else {
       const missing = getMissingPrerequisites(current);
       elements.currentReadiness.classList.toggle('is-blocked', missing.length > 0);
       elements.currentReadiness.textContent = missing.length === 0
-        ? '✓ 直接先修已就绪'
+        ? '✓ 先修已掌握'
         : `${missing.length} 个直接先修尚未掌握`;
     }
 
@@ -480,10 +478,10 @@
         const meta = document.createElement('span');
         meta.className = `node-meta${missing.length === 0 ? ' is-ready' : ''}`;
         meta.textContent = node.progress.status === 'mastered'
-          ? '✓ 已有掌握证据'
+          ? '✓ 已掌握'
           : missing.length === 0
-            ? '✓ 先修已就绪'
-            : `锁定 · ${missing.length} 个先修未掌握`;
+            ? '✓ 先修已掌握'
+            : `${missing.length} 个先修尚未掌握`;
         button.append(top, title, summary, meta);
         button.addEventListener('click', () => showNode(node.id));
         nodeButtons.set(node.id, button);

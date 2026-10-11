@@ -375,5 +375,3 @@ out      (1, 1, 32)      块的输出
 - 尚未展开：MQA/GQA 的 KV 头共享（`modern.mqa-gqa`）、RoPE 在缓存下的位置偏移
   （`modern.rope`）、滑窗与缓存联调、分页 KV 管理、连续批处理。
   按 roadmap 属于 G4 后续与 `systems.serving-bridge`。
-- 读过本文不构成任何节点的掌握证据。实际状态以 `learning/progress.json` 为准。
-  本次不修改知识地图依赖，不切换 `currentNodeId`，不新增已掌握记录。

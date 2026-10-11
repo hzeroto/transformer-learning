@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1180" viewBox="0 0 1120 1180" role="img">
+<title>SparseMoE.forward：同一份向量，分成两条计算路径</title><desc>左边得到专家编号与标量权重；右边把原向量送进 FFN。两边在加权累加时汇合。</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#73869a"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<g font-family="PingFang SC,Microsoft YaHei,Noto Sans CJK SC,sans-serif" fill="#182e42">
+<text x="35" y="43" font-size="28" font-weight="600" text-anchor="start" fill="#182e42">SparseMoE.forward：同一份向量，分成两条计算路径</text>
+<text x="35" y="79" font-size="19" font-weight="400" text-anchor="start" fill="#516579">左边得到专家编号与标量权重；右边把原向量送进 FFN。两边在加权累加时汇合。</text>
+<rect x="390" y="120" width="340" height="70" rx="10" fill="#e8f1fa" stroke="#c6d3de"/>
+<text x="560.0" y="147.5" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">x  (B,T,C)</text>
+<text x="560.0" y="176.5" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">① reshape → flat  (N,C)</text>
+<text x="750" y="136" font-size="19" font-weight="400" text-anchor="start" fill="#516579">N = B × T</text>
+<rect x="45" y="275" width="450" height="75" rx="10" fill="#e8f1fa" stroke="#c6d3de"/>
+<text x="270.0" y="305.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">② logits = flat @ W_g</text>
+<text x="270.0" y="334.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">(N,C) @ (C,E) → (N,E)</text>
+<polyline points="470,190 470,230 270,230 270,275" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="45" y="415" width="450" height="75" rx="10" fill="#e8f1fa" stroke="#c6d3de"/>
+<text x="270.0" y="445.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">③ topk(logits, k)</text>
+<text x="270.0" y="474.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">selected_scores / expert_ids  (N,k)</text>
+<polyline points="270,350 270,415" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="45" y="555" width="450" height="75" rx="10" fill="#e8f1fa" stroke="#c6d3de"/>
+<text x="270.0" y="585.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">softmax(selected_scores)</text>
+<text x="270.0" y="614.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">weights  (N,k)，每行和为 1</text>
+<polyline points="270,490 270,555" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="650" y="415" width="420" height="75" rx="10" fill="#e9f5ee" stroke="#c6d3de"/>
+<text x="860.0" y="445.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">④ 按专家 e 收集原向量</text>
+<text x="860.0" y="474.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">selected_x = flat[token_rows]  (M,C)</text>
+<polyline points="730,155 1030,155 1030,380 860,380 860,415" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="495,452 650,452" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="573" y="438" font-size="18" font-weight="400" text-anchor="middle" fill="#516579">按编号分发</text>
+<rect x="650" y="555" width="420" height="75" rx="10" fill="#e9f5ee" stroke="#c6d3de"/>
+<text x="860.0" y="585.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">expert[e](selected_x)</text>
+<text x="860.0" y="614.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">C → F → C，返回 (M,C)</text>
+<polyline points="860,490 860,555" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="860" y="663" font-size="19" font-weight="400" text-anchor="middle" fill="#516579">M=0 时跳过；总计处理 N×k 行</text>
+<rect x="350" y="735" width="460" height="80" rx="10" fill="#fff0df" stroke="#c6d3de"/>
+<text x="580.0" y="767.5" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">权重 × 专家输出</text>
+<text x="580.0" y="796.5" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">index_add 按原 token 行号累加</text>
+<polyline points="270,630 270,775 350,775" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1070,593 1090,593 1090,775 810,775" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="390" y="865" width="380" height="65" rx="10" fill="#fff0df" stroke="#c6d3de"/>
+<text x="580.0" y="890.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">⑥ 恢复为 (B,T,C)</text>
+<text x="580.0" y="919.0" font-size="20" font-weight="400" text-anchor="middle" fill="#182e42">输出给外层残差相加</text>
+<polyline points="580,815 580,865" fill="none" stroke="#73869a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="45" y="990" width="1025" height="140" rx="10" fill="#f7f9fc" stroke="#c6d3de"/>
+<text x="70" y="1024" font-size="20" font-weight="600" text-anchor="start" fill="#182e42">⑤ 训练统计旁路：每个专家一个 f、一个 P</text>
+<text x="70" y="1061" font-size="20" font-weight="400" text-anchor="start" fill="#182e42">expert_ids → counts → f = counts / (N×k)</text>
+<text x="70" y="1097" font-size="20" font-weight="400" text-anchor="start" fill="#182e42">logits → 全 E 项 softmax → P = 按 token 取平均</text>
+<text x="840" y="1061" font-size="21" font-weight="400" text-anchor="middle" fill="#182e42">L_balance = E × Σ fₑPₑ</text>
+<text x="840" y="1097" font-size="19" font-weight="400" text-anchor="middle" fill="#516579">P 保留到 W_g 的梯度</text>
+</g></svg>
