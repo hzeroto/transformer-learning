@@ -1,6 +1,6 @@
 window.LEARNING_DATA = {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-11T18:13:27.271Z",
+  "generatedAt": "2026-10-13T13:34:47.622Z",
   "goal": {
     "title": "Transformer 原理与实现",
     "description": "学习 Transformer 的数学原理、模型实现和训练方法，进一步研究缓存推理、常见变体与执行成本。",

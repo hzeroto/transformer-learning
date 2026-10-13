@@ -1,0 +1,7 @@
+# 可选真实 checkpoint / HF 数值参照环境；不修改仓库基础 PyTorch 依赖。
+# 选用已支持 Qwen3 的固定版本，不表示这些包的最新版本。
+transformers==4.51.3
+huggingface-hub==0.30.2
+tokenizers==0.21.1
+safetensors==0.5.3
+jinja2==3.1.6

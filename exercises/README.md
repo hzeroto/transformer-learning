@@ -36,6 +36,7 @@ exercises/
 - [018：滑动窗口与在线分块 Attention——局部计算、在线归一化与模型缓存（带注释参考实现）](ex018_efficient_attention/README.md)
 - [019：MoE——路由、专家计算、完整模型训练与生成（教师完整导读版）](ex019_moe/README.md)
 - [020：ViT——图像分块投影与 CLS 分类连接（教师补全版）](ex020_vit/README.md)
+- [021：真实 Qwen3 推理——权重接入、手写前向、KV Cache 与聊天生成（学习者脚手架）](ex021_qwen3_inference/README.md)
 
 ## 衔接讲义
 

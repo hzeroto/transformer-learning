@@ -173,6 +173,12 @@ MoE做到玩具路由、专家计算、负载分布和梯度检查；ViT做到�
 
 ### G7：完成标准与范围
 
+真实 checkpoint 接入的综合实践见 [Qwen3 推理讲义](../notes/qwen3-inference-from-checkpoint.md)
+和 [ex021 学习者脚手架](../exercises/ex021_qwen3_inference/README.md)：读取固定版本的
+Qwen3-0.6B，用基础 Tensor 手写前向、缓存和生成，并与官方实现数值对齐。
+这是 G4 能力的真实模型集成实践，可为测试排错与重建补充证据；可查讲义，不等同于闭卷，
+也不替代其他架构或完整毕业要求。当前只准备材料，实际掌握仍以 progress.json 为准。
+
 闭卷是不给现成模型答案，可以查Python语法和基础Tensor API。根据接口规格重建，
 覆盖隐藏测试与一个未讲过具体答案、但所需概念已学的排错案例。
 
