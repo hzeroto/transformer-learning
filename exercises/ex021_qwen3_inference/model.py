@@ -12,22 +12,11 @@ import torch
 from .support import LayerKV, QwenConfig
 
 
-def linear(x: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
-    """HF 线性权重布局：x (..., in)，weight (out, in)，返回 (..., out)。
-
-    无 bias。不使用 nn.Linear / functional.linear，自己处理权重方向。
-    """
-    raise NotImplementedError("TODO 1: Hugging Face 权重方向")
-
-
 def rms_norm(x: torch.Tensor, weight: torch.Tensor, eps: float) -> torch.Tensor:
-    """逐末轴 RMSNorm；x (..., D)，weight (D,)，输出与 x 同 shape。
-
-    eps 在平方均值之后、开方之前加入；不减均值。weight 是乘法缩放。
-    用于隐藏状态时 D=C，用于 Q/K 时 D=head_dim，不在头轴上求均值。
-    """
-    raise NotImplementedError("TODO 2: RMSNorm")
-
+    x2 = x.square().mean(dim=-1, keepdim=True)
+    x2 = torch.sqrt(x2 + eps)
+    x_norm = x / x2
+    return x_norm * weight
 
 def apply_rope(
     x: torch.Tensor, positions: torch.Tensor, theta: float,
@@ -39,7 +28,22 @@ def apply_rope(
     正向旋转一对 (a,b) 得到 (a*cos-b*sin, a*sin+b*cos)。
     Q 和 K 用同一约定，V 不调用本函数；只处理新 Q/K，不能重转历史 K。
     """
-    raise NotImplementedError("TODO 3: 与 checkpoint 一致的 RoPE")
+    # angle = pos * theta ** (-2 *(0 to D /2) /D)
+    D = x.shape[-1]
+    half_D = D // 2
+    j = torch.arange(half_D, dtype=torch.float32)  # (D/2,)
+    freq = theta ** (-2 * j / D)  # (D/2,)
+    angles = positions[:, None] * freq[None, :]  # (n,D/2)
+    cos = torch.cos(angles)  # (n,D/2)
+    sin = torch.sin(angles)  # (n,D/2)
+    x_pre = x[..., :half_D]  # (B,H,n,D/2)
+    x_suf = x[..., half_D:]  # (B,H,n,D/2)
+    x_rotated_pre = x_pre * cos[None, None, :, :] - x_suf * sin[None, None, :, :]
+    x_rotated_suf = x_pre * sin[None, None, :, :] + x_suf * cos[None, None, :, :]
+    x_rotated = torch.empty_like(x)
+    x_rotated[..., :half_D] = x_rotated_pre
+    x_rotated[..., half_D:] = x_rotated_suf
+    return x_rotated
 
 
 def grouped_attention(
@@ -102,7 +106,35 @@ def forward(
     ValueError: t+n > config.max_position_embeddings，在任何计算/状态修改前拒绝。
     本题其余输入合法性由调用方保证，不要求写通用防御式校验框架。
     """
-    raise NotImplementedError("TODO 6: 完整模型前向与位置偏移")
+    # 0. 准备参数
+    E = weights["model.embed_tokens.weight"]
+    rms_gamma = weights["model.norm.weight"]
+    W_out = weights["lm_head.weight"]
+    # 1. 检查总长度，拒绝超容量请求。
+    t = cache[0].k.shape[-2] if cache is not None else 0 # t代表已经处理过的历史长度，当前第一个input下标就是t
+    n = input_ids.shape[-1]
+    if t + n > config.max_position_embeddings:
+        raise ValueError(
+            f"历史长度 {t} + 本次长度 {n} 超过最大位置容量 {config.max_position_embeddings}"
+        )
+    positions = torch.arange(t, t + n, dtype=torch.long) # 生成本次 token 的绝对位置
+
+    # 2. embedding
+    x = E[input_ids] # (B,n,C)
+
+    # 3. blocks
+    new_cache = []
+    for layer_index in range(config.num_hidden_layers):
+        old_kv = cache[layer_index] if cache is not None else None
+        x, new_kv = transformer_block(x, weights, config, layer_index, positions, cache=old_kv)
+        new_cache.append(new_kv)
+
+    # 4. final_norm
+    x = rms_norm(x, rms_gamma, config.rms_norm_eps) # (B,n,C)
+
+    # 5. 投影back
+    logits = x @ W_out.T # (B,n,Vocab)
+    return logits, new_cache
 
 
 def greedy_generate(
@@ -115,13 +147,26 @@ def greedy_generate(
     eos_token_ids: 允许多个结束 ID；空 tuple 表示只按预算结束。
     G<=max_new_tokens；若预测到任一 EOS，把该 ID 收入返回值并立即停止。
     每次调用都是新请求，不接受/保留外部缓存。不得修改 input_ids/weights。
-
-    第一次 forward 一次处理完整 prompt；由其最后位置 logits 选第一个新 ID。
-    后续每次仅送入上次预测的那个 ID。不要重复送 prompt 最后一个 token，
-    不要重新计算整个已生成前缀，不用任何模型的 .generate()。
-    0 预算返回 (1,0) long 且不得调用 forward；不需要 Softmax 或 temperature。
-    达到 EOS 或预算后，不再为最后一个 ID 执行无用 forward。
-    ValueError: 负预算；或 T 超容量；或 T+max_new_tokens 超容量（保守预留规则）。
-    所有长度检查在调用 forward 之前执行。
     """
-    raise NotImplementedError("TODO 7: prefill / decode / EOS 闭环")
+    # 1. 检查输入长度，拒绝超容量请求。
+    if max_new_tokens < 0:
+        raise ValueError(f"max_new_tokens 必须为非负整数，但收到 {max_new_tokens}")
+    if input_ids.shape[1] + max_new_tokens > config.max_position_embeddings:
+        raise ValueError(
+            f"输入长度 {input_ids.shape[1]} + 生成预算 {max_new_tokens} "
+            f"超过最大位置容量 {config.max_position_embeddings}"
+        )
+    # 2. 先处理完整 prompt，得到初始 logits 和缓存。
+    cache = None
+    # 3. 贪心选择第一个新 token，检查是否 EOS。
+    new_ids = []
+    for _ in range(max_new_tokens):
+        logits, cache = forward(input_ids, weights, config, cache=cache)
+        next_id = logits[:, -1, :].argmax(dim=-1).item()
+        new_ids.append(next_id)
+        if next_id in eos_token_ids:
+            break
+        # 4. 仅送入上次预测的那个 ID，继续 forward。
+        input_ids = torch.tensor([[next_id]], dtype=torch.long)
+    # 5. 返回新增 ID，形状 (1,G)
+    return torch.tensor([new_ids], dtype=torch.long)

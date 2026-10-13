@@ -1,77 +1,211 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1400" viewBox="0 0 1120 1400" role="img" aria-labelledby="title desc">
-<title id="title">Qwen3-0.6B：从问题到回答</title><desc id="desc">目标链路 · CPU float32 · batch=1 · 正输出预算 · 紫色核心待实现</desc>
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#566676"/></marker></defs>
-<rect width="100%" height="100%" fill="white"/>
-<style>text {font-family:'PingFang SC','Noto Sans CJK SC','Arial',sans-serif; fill:#182738} .mono {font-family:'Menlo','Consolas',monospace}</style>
-<text x="44" y="51" font-size="31" text-anchor="start" font-weight="600" style="fill:#182738">Qwen3-0.6B：从问题到回答</text>
-<text x="44" y="88" font-size="20" text-anchor="start" font-weight="400" style="fill:#566676">目标链路 · CPU float32 · batch=1 · 正输出预算 · 紫色核心待实现</text>
-<text x="44" y="125" font-size="18" text-anchor="start" font-weight="400" style="fill:#285b91">蓝色：已提供的辅助入口</text>
-<text x="350" y="125" font-size="18" text-anchor="start" font-weight="400" style="fill:#614295">紫色：手写模型与生成逻辑</text>
-<text x="680" y="125" font-size="18" text-anchor="start" font-weight="400" style="fill:#267153">绿色：数据 / 请求状态</text>
-<rect x="45" y="160" width="420" height="125" rx="12" fill="#edf4fc" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="255" y="193" font-size="22" text-anchor="middle" font-weight="600" style="fill:#182738">① 用户问题 → 对话模板 → tokenizer</text>
-<text x="255" y="225" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">encode_prompt：官方非思考模板</text>
-<text x="255" y="253" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">只生成 ID，不调用 HF 模型前向</text>
-<rect x="720" y="160" width="355" height="125" rx="12" fill="#edf4fc" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="897.5" y="193" font-size="23" text-anchor="middle" font-weight="600" style="fill:#182738">启动时加载本地文件</text>
-<text x="897.5" y="225" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">config.json + model.safetensors</text>
-<text x="897.5" y="253" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">read_config / load_weights</text>
-<path d="M255 285 V325" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="70" y="325" width="370" height="95" rx="12" fill="#eaf6f0" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="255" y="358" font-size="22" text-anchor="middle" font-weight="600" style="fill:#182738">完整 prompt 的 ID</text>
-<text x="255" y="390" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">input_ids: (1,T)，T 为 prompt 长度</text>
-<path d="M897 285 V325" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="720" y="325" width="355" height="95" rx="12" fill="#eaf6f0" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="897.5" y="358" font-size="23" text-anchor="middle" font-weight="600" style="fill:#182738">固定参数 weights + config</text>
-<text x="897.5" y="390" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">整个请求期间不更新参数</text>
-<path d="M255 420 V451 H560 V475" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="360" y="475" width="400" height="95" rx="12" fill="#f2effb" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="560" y="508" font-size="23" text-anchor="middle" font-weight="600" style="fill:#182738">② 本次送入模型的 ID</text>
-<text x="560" y="540" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">prefill: (1,T)；decode: (1,1)</text>
-<text x="47" y="608" font-size="20" text-anchor="start" font-weight="400" style="fill:#182738">prefill / decode 共用 forward</text>
-<path d="M560 570 V632" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="45" y="650" width="255" height="230" rx="12" fill="#eaf6f0" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="172.5" y="683" font-size="21" text-anchor="middle" font-weight="600" style="fill:#182738">本请求的 28 层 KV</text>
-<text x="172.5" y="715" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">初次 cache=None</text>
-<text x="172.5" y="743" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">每层旧 K/V: (1,8,t,128)</text>
-<text x="282" y="767" font-size="19" text-anchor="end" font-weight="400" style="fill:#182738">传入旧 cache</text>
-<text x="282" y="828" font-size="19" text-anchor="end" font-weight="400" style="fill:#182738">返回 new_cache</text>
-<text x="173" y="866" font-size="17" text-anchor="middle" font-weight="400" style="fill:#182738">下轮用新缓存；旧缓存不改</text>
-<path d="M300 760 H360" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<path d="M360 821 H300" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<text x="47" y="921" font-size="19" text-anchor="start" font-weight="400" style="fill:#182738">新 K/V: (1,8,t+n,128)</text>
-<text x="47" y="951" font-size="17" text-anchor="start" font-weight="400" style="fill:#182738">K 已归一化、旋转；V 仅投影</text>
-<text x="47" y="981" font-size="17" text-anchor="start" font-weight="400" style="fill:#182738">每层各一对，不在请求间混用</text>
-<rect x="360" y="632" width="400" height="280" rx="12" fill="#f2effb" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="560" y="665" font-size="23" text-anchor="middle" font-weight="600" style="fill:#182738">③ forward：本次 n 个位置</text>
-<text x="560" y="704" font-size="21" text-anchor="middle" font-weight="400" style="fill:#182738">Embedding 查表 → (1,n,1024)</text>
-<text x="560" y="746" font-size="21" text-anchor="middle" font-weight="400" style="fill:#182738">28 个 Qwen3 Block（见放大图）</text>
-<text x="560" y="788" font-size="21" text-anchor="middle" font-weight="400" style="fill:#182738">Final RMSNorm → (1,n,1024)</text>
-<text x="560" y="830" font-size="21" text-anchor="middle" font-weight="400" style="fill:#182738">词表投影：归一化输出 @ E.T</text>
-<text x="560" y="872" font-size="21" text-anchor="middle" font-weight="400" style="fill:#182738">logits: (1,n,151936)</text>
-<path d="M897 420 V704 H760" fill="none" stroke="#566676" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
-<text x="918" y="607" font-size="18" text-anchor="middle" font-weight="400" style="fill:#182738">提供本次前向所需的</text>
-<text x="918" y="635" font-size="18" text-anchor="middle" font-weight="400" style="fill:#182738">各层参数与配置</text>
-<text x="911" y="750" font-size="18" text-anchor="middle" font-weight="400" style="fill:#182738">E 同时用于输入查表</text>
-<text x="911" y="777" font-size="18" text-anchor="middle" font-weight="400" style="fill:#182738">和最终词表投影</text>
-<path d="M560 912 V955" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="360" y="955" width="400" height="95" rx="12" fill="#f2effb" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="560" y="988" font-size="23" text-anchor="middle" font-weight="600" style="fill:#182738">④ 取末位 logits → argmax</text>
-<text x="560" y="1020" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">next_id: (1,1)，先追加到输出 ID</text>
-<path d="M560 1050 V1090" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<rect x="360" y="1090" width="400" height="105" rx="12" fill="#f2effb" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="560" y="1123" font-size="22" text-anchor="middle" font-weight="600" style="fill:#182738">⑤ 命中 EOS 或用完输出预算？</text>
-<text x="560" y="1155" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">EOS 来自 generation_config.json</text>
-<text x="560" y="1183" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">[151645,151643]</text>
-<path d="M760 1142 H1090 V522 H760" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<text x="905" y="993" font-size="22" text-anchor="middle" font-weight="600" style="fill:#614295">否：继续 decode</text>
-<text x="913" y="1030" font-size="19" text-anchor="middle" font-weight="400" style="fill:#182738">只送刚预测的 next_id</text>
-<text x="913" y="1060" font-size="19" text-anchor="middle" font-weight="400" style="fill:#182738">并传回本轮 new_cache</text>
-<text x="913" y="1090" font-size="19" text-anchor="middle" font-weight="400" style="fill:#182738">不重复送 prompt 末尾</text>
-<path d="M560 1195 V1244" fill="none" stroke="#566676" stroke-width="2"  marker-end="url(#arrow)"/>
-<text x="589" y="1228" font-size="19" text-anchor="start" font-weight="400" style="fill:#182738">是</text>
-<rect x="360" y="1244" width="400" height="95" rx="12" fill="#edf4fc" stroke="#cbd3dc" stroke-width="1.4"/>
-<text x="560" y="1277" font-size="22" text-anchor="middle" font-weight="600" style="fill:#182738">⑥ 整段 decode → 显示回答</text>
-<text x="560" y="1309" font-size="20" text-anchor="middle" font-weight="400" style="fill:#182738">仅解码新增 ID；结束后不再跑 forward</text>
-<text x="44" y="1373" font-size="20" text-anchor="start" font-weight="400" style="fill:#182738">t = 已缓存长度；n = 本次输入长度。第一次 prefill 的末位 logits 就产生第一个新 token。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="2240" height="3000" viewBox="0 0 2240 3000" role="img" aria-labelledby="title desc">
+<title id="title">Qwen3-0.6B：完整前向与生成架构</title>
+<desc id="desc">展开 embedding、每层 Q/K/V 投影、Q/K RMSNorm、RoPE、KV 缓存追加、因果 GQA、两条残差、SwiGLU、final RMSNorm 与词表投影；两侧为输入处理、请求状态与生成循环。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#8396ac"/></marker></defs>
+<style>text {font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif} path {stroke-linecap:round;stroke-linejoin:round}</style>
+<rect width="2240" height="3000" fill="#f7f9fc"/>
+<text x="70" y="77" font-size="48" fill="#192e46" font-weight="700" text-anchor="start">Qwen3-0.6B</text>
+<text x="437" y="77" font-size="42" fill="#192e46" font-weight="600" text-anchor="start">完整前向与生成架构</text>
+<text x="73" y="120" font-size="23" fill="#61758c" font-weight="400" text-anchor="start">CPU float32 · B = 1 · n = 本次 token 数 · t = 历史缓存长度 · 图示为待实现的目标链路</text>
+<text x="70" y="220" font-size="22" fill="#3472bd" font-weight="600" text-anchor="start">01</text>
+<text x="118" y="220" font-size="29" fill="#192e46" font-weight="600" text-anchor="start">输入</text>
+<text x="70" y="254" font-size="20" fill="#61758c" font-weight="400" text-anchor="start">prompt 只在第一轮完整送入</text>
+<text x="560" y="220" font-size="22" fill="#3472bd" font-weight="600" text-anchor="start">02</text>
+<text x="608" y="220" font-size="29" fill="#192e46" font-weight="600" text-anchor="start">forward(input_ids, weights, config, cache)</text>
+<text x="560" y="254" font-size="20" fill="#61758c" font-weight="400" text-anchor="start">每个运算独立展开；所有层共享结构，各自使用参数</text>
+<text x="1775" y="220" font-size="22" fill="#3472bd" font-weight="600" text-anchor="start">03</text>
+<text x="1823" y="220" font-size="29" fill="#192e46" font-weight="600" text-anchor="start">生成循环</text>
+<text x="1775" y="254" font-size="20" fill="#61758c" font-weight="400" text-anchor="start">greedy_generate · 正输出预算</text>
+<rect x="535" y="260" width="1115" height="2600" rx="18" fill="white" stroke="#dce4ee" stroke-width="2" />
+<rect x="565" y="425" width="1055" height="1975" rx="20" fill="#fcfdff" stroke="#cbd7e6" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="600" y="470" font-size="28" fill="#192e46" font-weight="600" text-anchor="start">Qwen3 Block × 28</text>
+<text x="600" y="502" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">以下展开第 i 层；输出依次送入下一层</text>
+<path d="M265 365 V425" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M265 525 V590" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M265 680 V765" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M460 812 H500 V317 H860" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="277" y="727" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">首次 prefill</text>
+<path d="M1090 365 V550" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<circle cx="1090" cy="525" r="5" fill="#8396ac"/>
+<path d="M1090 525 H595 V1740 H1062" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="630" y="1691" font-size="22" fill="#3472bd" font-weight="500" text-anchor="start">保留 X</text>
+<path d="M1090 640 V675 H775 V710" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 675 V710" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 675 H1405 V710" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<circle cx="1090" cy="675" r="5" fill="#8396ac"/>
+<path d="M775 800 V845" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 800 V845" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M775 925 V970" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 925 V970" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1060 V1130" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1405 800 V1130" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1432" y="962" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">V 不做</text>
+<text x="1432" y="992" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">Q/K Norm</text>
+<text x="1432" y="1022" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">或 RoPE</text>
+<path d="M775 1060 V1330 H845" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="795" y="1308" font-size="24" fill="#7654b9" font-weight="600" text-anchor="start">Q</text>
+<path d="M1247 1235 V1270 H1090 V1295" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1220" y="1260" font-size="22" fill="#338268" font-weight="500" text-anchor="middle">K</text>
+<path d="M1405 1235 V1520 H1335" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1435" y="1440" font-size="22" fill="#338268" font-weight="500" text-anchor="start">V</text>
+<path d="M1090 1365 V1390" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1460 V1485" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1555 V1580" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1655 V1712" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1768 V1810" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<circle cx="1090" cy="1790" r="5" fill="#8396ac"/>
+<path d="M1090 1790 H1580 V2350 H1118" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1538" y="2283" font-size="21" fill="#a77325" font-weight="500" text-anchor="end">保留 U</text>
+<path d="M1090 1895 V1930 H865 V1960" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 1930 H1320 V1960" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<circle cx="1090" cy="1930" r="5" fill="#8396ac"/>
+<path d="M865 2040 V2080" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M865 2150 V2190 H1062" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1320 2040 V2190 H1118" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 2218 V2245" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 2315 V2322" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 2378 V2460" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1120" y="2430" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">第 28 层输出</text>
+<path d="M1090 2545 V2600" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<path d="M1090 2685 V2740" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<rect x="70" y="1510" width="390" height="115" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="1546" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">固定参数与配置</text>
+<text x="265" y="1578" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">启动时从本地文件加载</text>
+<text x="265" y="1603" font-size="22" fill="#61758c" font-weight="400" text-anchor="middle">weights + config</text>
+<text x="75" y="1678" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">各层使用自己的投影与归一化权重</text>
+<text x="75" y="1720" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">E 同时用于 embedding 与词表投影</text>
+<path d="M460 1560 H565" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#arrow)"/>
+<text x="75" y="1805" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">实线：张量流向</text>
+<text x="75" y="1840" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">虚线：参数 / 位置 / 缓存状态</text>
+<rect x="70" y="275" width="390" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="311" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">用户问题</text>
+<text x="265" y="343" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">文字</text>
+<rect x="70" y="425" width="390" height="100" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="461" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">对话模板 + tokenizer</text>
+<text x="265" y="493" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">encode_prompt</text>
+<rect x="70" y="590" width="390" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="626" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">完整 prompt ID</text>
+<text x="265" y="658" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1, T)</text>
+<rect x="70" y="765" width="390" height="130" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="801" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">本次 input_ids</text>
+<text x="265" y="833" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">prefill: (1,T) · decode: (1,1)</text>
+<text x="265" y="873" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">下一轮只送新预测的一个 ID</text>
+<rect x="70" y="970" width="390" height="120" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="265" y="1006" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">本次绝对位置</text>
+<text x="265" y="1038" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">positions = t … t+n−1</text>
+<text x="265" y="1063" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">t 来自本请求的旧缓存长度</text>
+<path d="M460 1015 H645" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#arrow)"/>
+<text x="73" y="1145" font-size="21" fill="#7654b9" font-weight="500" text-anchor="start">Q 与 K 使用相同的位置</text>
+<text x="73" y="1181" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">每层只旋转本次新增 Q/K</text>
+<rect x="860" y="275" width="460" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="311" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">Embedding 查表</text>
+<text x="1090" y="343" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">E[input_ids] → (1,n,1024)</text>
+<rect x="855" y="550" width="470" height="90" rx="14" fill="#eaf6f3" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="586" font-size="27" fill="#267e78" font-weight="600" text-anchor="middle">输入 RMSNorm</text>
+<text x="1090" y="618" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">input_layernorm · X: (1,n,1024)</text>
+<rect x="645" y="710" width="260" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="775" y="746" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">Q 投影 + 拆头</text>
+<text x="775" y="778" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,16,n,128)</text>
+<rect x="960" y="710" width="260" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="746" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">K 投影 + 拆头</text>
+<text x="1090" y="778" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,8,n,128)</text>
+<rect x="1275" y="710" width="260" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1405" y="746" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">V 投影 + 拆头</text>
+<text x="1405" y="778" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,8,n,128)</text>
+<rect x="645" y="845" width="260" height="80" rx="14" fill="#eaf6f3" stroke="#dce4ee" stroke-width="2" />
+<text x="775" y="881" font-size="27" fill="#267e78" font-weight="600" text-anchor="middle">Q 的 RMSNorm</text>
+<text x="775" y="913" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">q_norm.weight</text>
+<rect x="960" y="845" width="260" height="80" rx="14" fill="#eaf6f3" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="881" font-size="27" fill="#267e78" font-weight="600" text-anchor="middle">K 的 RMSNorm</text>
+<text x="1090" y="913" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">k_norm.weight</text>
+<rect x="645" y="970" width="260" height="90" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="775" y="1006" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">Q 的 RoPE</text>
+<text x="775" y="1038" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">位置 t … t+n−1</text>
+<rect x="960" y="970" width="260" height="90" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1006" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">新 K 的 RoPE</text>
+<text x="1090" y="1038" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">位置 t … t+n−1</text>
+<rect x="960" y="1130" width="575" height="105" rx="14" fill="#ecf7f0" stroke="#dce4ee" stroke-width="2" />
+<text x="1247.5" y="1166" font-size="27" fill="#338268" font-weight="600" text-anchor="middle">沿 token 轴拼接历史 K / V</text>
+<text x="1247.5" y="1198" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">K = [旧 K, 新 K]；V = [旧 V, 新 V]</text>
+<text x="1247" y="1225" font-size="20" fill="#338268" font-weight="400" text-anchor="middle">(1,8,t+n,128) · 旧 K 已旋转，不重转</text>
+<rect x="845" y="1295" width="490" height="70" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1339" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">GQA 分组 · QKᵀ / √128</text>
+<rect x="845" y="1390" width="490" height="70" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1434" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">因果 mask → Softmax</text>
+<rect x="845" y="1485" width="490" height="70" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1529" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">注意力权重 @ V</text>
+<rect x="845" y="1580" width="490" height="75" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1616" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">合头 → o_proj</text>
+<text x="1090" y="1648" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">2048 → 1024</text>
+<circle cx="1090" cy="1740" r="28" fill="#edf4ff" stroke="#3472bd" stroke-width="2"/>
+<text x="1090" y="1750" font-size="32" fill="#3472bd" font-weight="500" text-anchor="middle">+</text>
+<text x="1140" y="1750" font-size="23" fill="#192e46" font-weight="500" text-anchor="start">U = X + Attention 更新</text>
+<rect x="855" y="1810" width="470" height="85" rx="14" fill="#eaf6f3" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="1846" font-size="27" fill="#267e78" font-weight="600" text-anchor="middle">FFN 前 RMSNorm</text>
+<text x="1090" y="1878" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">post_attention_layernorm</text>
+<rect x="720" y="1960" width="290" height="80" rx="14" fill="#fff6e8" stroke="#dce4ee" stroke-width="2" />
+<text x="865" y="1996" font-size="27" fill="#a77325" font-weight="600" text-anchor="middle">gate_proj</text>
+<text x="865" y="2028" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,n,3072)</text>
+<rect x="1175" y="1960" width="290" height="80" rx="14" fill="#fff6e8" stroke="#dce4ee" stroke-width="2" />
+<text x="1320" y="1996" font-size="27" fill="#a77325" font-weight="600" text-anchor="middle">up_proj</text>
+<text x="1320" y="2028" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,n,3072)</text>
+<rect x="720" y="2080" width="290" height="70" rx="14" fill="#fff6e8" stroke="#dce4ee" stroke-width="2" />
+<text x="865" y="2124" font-size="27" fill="#a77325" font-weight="600" text-anchor="middle">SiLU</text>
+<circle cx="1090" cy="2190" r="28" fill="#fff6e8" stroke="#a77325" stroke-width="2"/>
+<text x="1090" y="2200" font-size="32" fill="#a77325" font-weight="500" text-anchor="middle">×</text>
+<text x="1135" y="2220" font-size="22" fill="#a77325" font-weight="500" text-anchor="start">逐元素门控</text>
+<rect x="855" y="2245" width="470" height="70" rx="14" fill="#fff6e8" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="2289" font-size="27" fill="#a77325" font-weight="600" text-anchor="middle">down_proj · 3072 → 1024</text>
+<circle cx="1090" cy="2350" r="28" fill="#fff6e8" stroke="#a77325" stroke-width="2"/>
+<text x="1090" y="2360" font-size="32" fill="#a77325" font-weight="500" text-anchor="middle">+</text>
+<text x="1140" y="2389" font-size="23" fill="#192e46" font-weight="500" text-anchor="start">U + FFN 更新</text>
+<rect x="855" y="2460" width="470" height="85" rx="14" fill="#eaf6f3" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="2496" font-size="27" fill="#267e78" font-weight="600" text-anchor="middle">Final RMSNorm</text>
+<text x="1090" y="2528" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">model.norm.weight · (1,n,1024)</text>
+<rect x="855" y="2600" width="470" height="85" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="2636" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">词表投影</text>
+<text x="1090" y="2668" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">归一化输出 @ E.T</text>
+<rect x="855" y="2740" width="470" height="85" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1090" y="2776" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">logits</text>
+<text x="1090" y="2808" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">(1,n,151936) · 本次全部位置</text>
+<path d="M1325 2782 H1695 V320 H1775" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<rect x="1775" y="275" width="390" height="90" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="311" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">取最后位置 logits</text>
+<text x="1970" y="343" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">logits[:, −1, :]</text>
+<path d="M1970 365 V425" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<rect x="1775" y="425" width="390" height="90" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="461" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">argmax</text>
+<text x="1970" y="493" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">next_id</text>
+<path d="M1970 515 V575" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<rect x="1775" y="575" width="390" height="90" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="611" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">追加到输出 ID</text>
+<text x="1970" y="643" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">包含预测出的 EOS</text>
+<path d="M1970 665 V725" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<rect x="1775" y="725" width="390" height="120" rx="14" fill="#f2edfc" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="761" font-size="27" fill="#7654b9" font-weight="600" text-anchor="middle">EOS / 预算用尽？</text>
+<text x="1970" y="793" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">是：结束；否：继续生成</text>
+<path d="M1970 845 V925" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1990" y="895" font-size="23" fill="#61758c" font-weight="500" text-anchor="start">是</text>
+<rect x="1775" y="925" width="390" height="100" rx="14" fill="#edf4ff" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="961" font-size="27" fill="#3472bd" font-weight="600" text-anchor="middle">整体解码 → 文本回答</text>
+<text x="1970" y="993" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">只解码新增 ID</text>
+<path d="M2165 785 H2200 V165 H485 V840 H460" fill="none" stroke="#8396ac" stroke-width="2.5"  marker-end="url(#arrow)"/>
+<text x="1115" y="157" font-size="22" fill="#7654b9" font-weight="500" text-anchor="middle">未结束：只回送 next_id，并复用本轮 new_cache</text>
+<rect x="1775" y="1130" width="390" height="150" rx="14" fill="#ecf7f0" stroke="#dce4ee" stroke-width="2" />
+<text x="1970" y="1166" font-size="27" fill="#338268" font-weight="600" text-anchor="middle">本请求的 28 层 KV</text>
+<text x="1970" y="1198" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">初次 cache = None</text>
+<text x="1970" y="1228" font-size="22" fill="#338268" font-weight="400" text-anchor="middle">每层各一对 K / V</text>
+<text x="1970" y="1261" font-size="21" fill="#61758c" font-weight="400" text-anchor="middle">下一轮使用返回的 new_cache</text>
+<path d="M1775 1160 H1707" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" />
+<path d="M1683 1160 H1535" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#arrow)"/>
+<path d="M1535 1210 H1683" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" />
+<path d="M1707 1210 H1775" fill="none" stroke="#8396ac" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#arrow)"/>
+<text x="1656" y="1144" font-size="19" fill="#338268" font-weight="400" text-anchor="middle">旧 KV</text>
+<text x="1656" y="1250" font-size="19" fill="#338268" font-weight="400" text-anchor="middle">新 KV</text>
+<text x="1778" y="1345" font-size="23" fill="#338268" font-weight="500" text-anchor="start">只缓存 8 个 KV 头</text>
+<text x="1778" y="1384" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">历史 K 已归一化并旋转</text>
+<text x="1778" y="1420" font-size="21" fill="#61758c" font-weight="400" text-anchor="start">V 只投影，不做 RoPE</text>
+<text x="70" y="2895" font-size="23" fill="#192e46" font-weight="600" text-anchor="start">阅读主线</text>
+<text x="70" y="2935" font-size="24" fill="#61758c" font-weight="400" text-anchor="start">输入 ID → Embedding → 28 层 Block → Final RMSNorm → 词表 logits → 新 ID</text>
+<text x="70" y="2974" font-size="22" fill="#61758c" font-weight="400" text-anchor="start">prefill 与 decode 走同一张计算图；区别只有本次输入长度 n、位置偏移 t 和已有缓存。</text>
 </svg>

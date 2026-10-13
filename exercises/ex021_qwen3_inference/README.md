@@ -19,17 +19,19 @@
 
 ## 你填写哪里
 
-只需填写 [model.py](model.py) 的 7 个函数。可以查基础 API、讲义和旧练习，但这次不直接调用旧整模型：
+需要完成 [model.py](model.py) 的 6 个核心函数。可以查基础 API、讲义和旧练习，但这次不直接调用旧整模型：
 
 | 函数 | 串起的内容 |
 |---|---|
-| `linear` | HF 的 `(out,in)` 权重方向 |
 | `rms_norm` | 主干与 Q/K 的末轴归一化 |
 | `apply_rope` | 半分配对、真实 theta 与绝对位置 |
 | `grouped_attention` | GQA 分组、缩放与矩形因果 mask |
 | `transformer_block` | Q/K Norm、Attention/FFN 两条残差、紧凑 KV 追加 |
 | `forward` | embedding、所有层、final norm、共享词表投影 |
 | `greedy_generate` | prefill 一次、逐 token decode、EOS 与输出预算 |
+
+投影可以直接写 `x @ weight.T`；`linear` 是可选的辅助函数，不单独测试，也不要求保留或调用。
+投影结果仍随 Block 和完整模型的数值对齐一起验证。
 
 每个函数的 docstring 已给出对象来源、shape、返回值和边界。核心可用 Tensor 运算与 `torch.softmax`，
 禁止用 HF 模型、`.generate()`、`nn.Transformer`、`nn.MultiheadAttention`、SDPA、现成归一化/FFN/线性层代做。
@@ -45,7 +47,7 @@
 .venv/bin/python -B -m unittest tests.exercises.test_qwen3_inference -v
 ```
 
-建议依次完成基础运算、完整块、forward、生成；不是把它们拆成七节课。
+建议依次完成基础运算、完整块、forward、生成。
 空脚手架预期有一项“尚未完成”失败，其余未实现的行为测试暂跳过，教师辅助测试独立运行。
 这是待完成状态，不是通过；最终必须全部实际执行通过，不能剩 skip。
 
@@ -128,6 +130,8 @@ demo 使用官方非思考聊天模板，结束集合读取 `generation_config.j
 | 数值对，但中文输出乱码 | 是否把单个 token 分开解码 |
 
 ## 教师准备的验证边界
+
+以下为最初版本的准备记录，包含当时的 `linear` 独立测试；该项现已取消。
 
 本次在临时隔离依赖目录运行了官方 tiny 对照，没有改课程 `.venv`、没有下载真实权重。
 27 项新测试在隔离教师实现上全部通过，无跳过；75 项相关既有回归通过。

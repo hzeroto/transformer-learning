@@ -135,8 +135,6 @@ def generation_stub(tokens):
 def probe(name):
     config, weights = fixture()
     x = torch.ones(1, 1, 4)
-    if name == 'linear':
-        return learner.linear(x, torch.ones(3, 4))
     if name == 'rms_norm':
         return learner.rms_norm(x, torch.ones(4), 1e-6)
     if name == 'apply_rope':
@@ -165,9 +163,9 @@ def require(name):
 
 
 class ImplementationStatusTest(unittest.TestCase):
-    def test_all_seven_core_functions_implemented(self):
+    def test_all_required_core_functions_implemented(self):
         pending = []
-        for name in ('linear', 'rms_norm', 'apply_rope', 'grouped_attention',
+        for name in ('rms_norm', 'apply_rope', 'grouped_attention',
                      'transformer_block', 'forward', 'greedy_generate'):
             try:
                 probe(name)
@@ -187,7 +185,7 @@ class TensorAssertions(unittest.TestCase):
 
 
 class SupportTests(TensorAssertions):
-    """教师适配层独立执行；即使七个核心 TODO 为空，也必须通过。"""
+    """教师适配层独立执行；即使六个核心 TODO 为空，也必须通过。"""
 
     def test_expected_shapes_keep_attention_width_independent_from_hidden_size(self):
         config, weights = fixture()
@@ -232,20 +230,6 @@ class SupportTests(TensorAssertions):
                     path.write_text(json.dumps(invalid))
                     with self.assertRaises(ValueError):
                         support.read_config(path)
-
-
-class LinearTests(TensorAssertions):
-    def test_hugging_face_out_in_orientation_and_noncontiguous_input(self):
-        require('linear')
-        x = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4)[..., ::2]
-        weight = torch.tensor([[1., 2.], [-3., 0.5], [4., -1.]])
-        before = x.clone()
-        expected = torch.stack([
-            torch.stack([torch.stack([torch.dot(token, row) for row in weight])
-                         for token in batch]) for batch in x
-        ])
-        self.assert_tensor(learner.linear(x, weight), expected)
-        self.assertTrue(torch.equal(x, before))
 
 
 class RMSNormTests(TensorAssertions):

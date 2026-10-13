@@ -1,9 +1,13 @@
 // 静态课程图：用真实接口与 checkpoint 形状绘制；不执行或代写模型。
 // 重绘：node notes/assets/qwen3-inference/render.mjs（需要 rsvg-convert）。
+// 仅生成 SVG：追加 --svg-only。
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { renderOverview, overviewSize } from './overview.mjs';
+
+const svgOnly = process.argv.includes('--svg-only');
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const colors = {
@@ -39,75 +43,17 @@ function drawing(width, height, title, subtitle) {
     parts.push('</svg>');
     const svg = join(dir,`${name}.svg`);
     writeFileSync(svg,parts.join('\n')+'\n');
-    execFileSync('rsvg-convert',[svg,'-o',join(dir,`${name}.png`)]);
+    if (!svgOnly) execFileSync('rsvg-convert',[svg,'-o',join(dir,`${name}.png`)]);
     console.log(`${name}: ${width} x ${height}`);
   }};
 }
 
-// 图一：持久参数、请求状态、token 回送是三种不同关系。
+// 图一：完整前向的运算图，以及独立的输入、请求状态与生成控制。
 {
-  const {box,text,lines,path,save}=drawing(1120,1400,
-    'Qwen3-0.6B：从问题到回答',
-    '目标链路 · CPU float32 · batch=1 · 正输出预算 · 紫色核心待实现');
-  text(44,125,'蓝色：已提供的辅助入口',18,'start',colors.blue);
-  text(350,125,'紫色：手写模型与生成逻辑',18,'start',colors.purple);
-  text(680,125,'绿色：数据 / 请求状态',18,'start',colors.green);
-
-  box(45,160,420,125,'① 用户问题 → 对话模板 → tokenizer',
-    ['encode_prompt：官方非思考模板','只生成 ID，不调用 HF 模型前向'], 'given',22);
-  box(720,160,355,125,'启动时加载本地文件',
-    ['config.json + model.safetensors','read_config / load_weights'], 'given',23);
-  path('M255 285 V325');
-  box(70,325,370,95,'完整 prompt 的 ID', ['input_ids: (1,T)，T 为 prompt 长度'], 'state',22);
-  path('M897 285 V325');
-  box(720,325,355,95,'固定参数 weights + config', ['整个请求期间不更新参数'], 'state',23);
-
-  path('M255 420 V451 H560 V475');
-  box(360,475,400,95,'② 本次送入模型的 ID',
-    ['prefill: (1,T)；decode: (1,1)'], 'core');
-  text(47,608,'prefill / decode 共用 forward',20,'start');
-  path('M560 570 V632');
-
-  // 与参数供给分开绘制的显式请求缓存。
-  box(45,650,255,230,'本请求的 28 层 KV',
-    ['初次 cache=None','每层旧 K/V: (1,8,t,128)'], 'state',21);
-  text(282,767,'传入旧 cache',19,'end');
-  text(282,828,'返回 new_cache',19,'end');
-  text(173,866,'下轮用新缓存；旧缓存不改',17);
-  path('M300 760 H360');
-  path('M360 821 H300');
-  text(47,921,'新 K/V: (1,8,t+n,128)',19,'start');
-  text(47,951,'K 已归一化、旋转；V 仅投影',17,'start');
-  text(47,981,'每层各一对，不在请求间混用',17,'start');
-
-  box(360,632,400,280,'③ forward：本次 n 个位置',[], 'core');
-  lines(560,704,['Embedding 查表 → (1,n,1024)',
-    '28 个 Qwen3 Block（见放大图）',
-    'Final RMSNorm → (1,n,1024)',
-    '词表投影：归一化输出 @ E.T',
-    'logits: (1,n,151936)'],21,42);
-  path('M897 420 V704 H760',true);
-  text(918,607,'提供本次前向所需的',18);
-  text(918,635,'各层参数与配置',18);
-  text(911,750,'E 同时用于输入查表',18);
-  text(911,777,'和最终词表投影',18);
-
-  path('M560 912 V955');
-  box(360,955,400,95,'④ 取末位 logits → argmax',
-    ['next_id: (1,1)，先追加到输出 ID'], 'core',23);
-  path('M560 1050 V1090');
-  box(360,1090,400,105,'⑤ 命中 EOS 或用完输出预算？',
-    ['EOS 来自 generation_config.json', '[151645,151643]'], 'core',22);
-  // 未结束：送回新 ID；参数不重载，旧 prompt 不重送。
-  path('M760 1142 H1090 V522 H760');
-  text(905,993,'否：继续 decode',22,'middle',colors.purple,600);
-  lines(913,1030,['只送刚预测的 next_id','并传回本轮 new_cache','不重复送 prompt 末尾'],19,30);
-  path('M560 1195 V1244');
-  text(589,1228,'是',19,'start');
-  box(360,1244,400,95,'⑥ 整段 decode → 显示回答',
-    ['仅解码新增 ID；结束后不再跑 forward'], 'given',22);
-  text(44,1373,'t = 已缓存长度；n = 本次输入长度。第一次 prefill 的末位 logits 就产生第一个新 token。',20,'start');
-  save('overview');
+  const svg = join(dir, 'overview.svg');
+  writeFileSync(svg, renderOverview());
+  if (!svgOnly) execFileSync('rsvg-convert', [svg, '-o', join(dir, 'overview.png')]);
+  console.log(`overview: ${overviewSize.width} x ${overviewSize.height}`);
 }
 
 // 图二：本图一条残差旁路对应一次逐元素加法，不是拼接。
