@@ -469,6 +469,19 @@
           "masteryCriteria": ["每次组件替换都有独立测试和参数量核对，并说明所选版本与自定义配置的区别", "使用所选MHA或GQA配置完成小数据训练，不能将GQA泛称为所有LLaMA版本的固有结构", "RoPE位置偏移与缓存追加正确，全量和增量logits在预设容差内对齐"]
         },
         {
+          "id": "implementation.qwen3-inference",
+          "title": "真实模型权重接入与推理（Qwen3-0.6B）",
+          "summary": "接入固定版本的真实checkpoint，用基础Tensor实现Qwen3-0.6B的前向、KV缓存与生成，并与官方实现验证数值一致性。",
+          "prerequisites": ["implementation.llama"],
+          "masteryCriteria": [
+            "按官方配置和权重布局实现前向，正确处理独立head_dim、Q/K RMSNorm、半分RoPE、GQA、SwiGLU与共享词表权重",
+            "在声明设备、dtype与容差的条件下通过离线测试，并与官方随机小模型和固定真实checkpoint的全部位置、全部词表logits对齐",
+            "验证全量与分块缓存推理一致，覆盖非零位置、多token追加、紧凑KV、旧缓存保持与请求隔离，并说明固定参数和请求状态的区别",
+            "使用官方tokenizer和聊天模板接通自写生成循环，正确处理生成预算、EOS和整段解码，不调用官方模型或generate代做推理",
+            "记录实际实现错误的触发条件、最早出错张量与修复验证，区分教师提示、教师测试和独立排错证据"
+          ]
+        },
+        {
           "id": "implementation.testing-debugging",
           "title": "测试与故障排查",
           "summary": "从训练闭环开始使用数值、梯度和性质测试；Attention的屏蔽与泄漏排错在对应实现中继续验收。",

@@ -54,38 +54,103 @@ def grouped_attention(
 
     q (B,Hq,n,D)；k/v (B,Hkv,S,D)；Hq 能被 Hkv 整除。
     query_positions (n,)、key_positions (S,) 为严格递增的绝对位置。
-    query 位置 p 只能读取 key 位置 <=p；调用方保证每行至少一个可读 key。
-    query head h 使用 KV head h // (Hq // Hkv)。临时复制 KV 允许，
-    但缓存保持 Hkv 头。缩放因子用 sqrt(D)，不是 sqrt(C) 或 sqrt(S)。
-    mask 的 True 表示允许读取；Softmax 沿 S 轴，无滑窗，不返回权重表。
-    允许 torch.softmax，不允许 scaled_dot_product_attention 等融合接口。
     """
-    raise NotImplementedError("TODO 4: GQA 与矩形因果权限")
+    B, Hq, n, D = q.shape
+    _, Hkv, S, _ = k.shape
+    div = Hq // Hkv
+    reflection = torch.arange(Hq, device=q.device) // div  # (Hq,)
+    k_expanded = k[:, reflection, :, :]  # (B,Hq,S,D)
+    v_expanded = v[:, reflection, :, :]  # (B,Hq,S,D)
+    scale = D ** 0.5
 
+    # cal
+    grade = (q @ k_expanded.transpose(-2, -1)) / scale  # (B,Hq,n,S)
+    # set allow
+    allow = key_positions[None, None, :] <= query_positions[None, :, None]  # (1,n,S)
+    grade = torch.masked_fill(grade, ~allow, float("-inf"))  # (B,Hq,n,S)
+
+    sm_grade = torch.softmax(grade, dim=-1)  # (B,Hq,n,S)
+    out = sm_grade @ v_expanded  # (B,Hq,n,D)
+    return out
+
+def split_head(x: torch.Tensor, num_heads: int) -> torch.Tensor:
+    """Split the last dimension into `num_heads` dimensions."""
+    B, n, C = x.shape
+    D = C // num_heads
+    return x.view(B, n, num_heads, D).transpose(1, 2)  # (B, H, n, D)
+
+def merge_head(x: torch.Tensor) -> torch.Tensor:
+    """Merge the head dimension back to the last dimension."""
+    B, H, n, D = x.shape
+    return x.transpose(1, 2).contiguous().view(B, n, H * D)  # (B, n, C)
 
 def transformer_block(
     x: torch.Tensor, weights: dict[str, torch.Tensor], config: QwenConfig,
     layer_index: int, positions: torch.Tensor, cache: LayerKV | None = None,
 ) -> tuple[torch.Tensor, LayerKV]:
     """本层新增 token 的前向 + 功能式缓存追加。
-
-    x (B,n,C) 来自 embedding 或上一层；weights 是完整官方名称字典。
-    层参数前缀 model.layers.{layer_index}.，对应键见讲义/expected_shapes。
-    positions (n,) 是 t..t+n-1，t=旧缓存长度，无 cache 时 t=0。
-    cache.k/v 为 (B,Hkv,t,D)，K 已做本层 Q/K RMSNorm 与 RoPE，V 仅投影。
-    返回 x_out (B,n,C)，以及新 LayerKV，k/v 均 (B,Hkv,t+n,D)。
-
-    连接约定：input_layernorm -> Q/K/V 投影 -> 分头 -> Q/K 各自 RMSNorm
-    -> Q/K RoPE -> 追加新 K/V -> GQA -> 合头 -> o_proj -> 第一条残差；
-    再 post_attention_layernorm -> SwiGLU(gate/up/down) -> 第二条残差。
-    post_attention_layernorm 这个权重名不意味着采用 Post-LN 块！
-    Q 总宽度 Hq*D 可以不等于 C；不要借用默认 C/Hq 推导 D 的旧模型。
-    SwiGLU 中可用 torch.sigmoid 构造 SiLU，不使用 nn.SiLU 或现成 FFN。
-    不修改旧 cache 的对象或 Tensor；用新容器返回，不能保存重复后的 Hq 份 KV。
-    本函数接收的长度、参数和位置保证合法；总容量由 forward 统一检查。
     """
-    raise NotImplementedError("TODO 5: Qwen3 的一个完整块")
+    # 0. 准备参数
+    w_q = weights[f"model.layers.{layer_index}.self_attn.q_proj.weight"]
+    w_k = weights[f"model.layers.{layer_index}.self_attn.k_proj.weight"]
+    w_v = weights[f"model.layers.{layer_index}.self_attn.v_proj.weight"]
+    w_o = weights[f"model.layers.{layer_index}.self_attn.o_proj.weight"]
+    w_norm1 = weights[f"model.layers.{layer_index}.input_layernorm.weight"]
+    w_norm2 = weights[f"model.layers.{layer_index}.post_attention_layernorm.weight"]
+    w_gate = weights[f"model.layers.{layer_index}.mlp.gate_proj.weight"]
+    w_up = weights[f"model.layers.{layer_index}.mlp.up_proj.weight"]
+    w_down = weights[f"model.layers.{layer_index}.mlp.down_proj.weight"]
+    w_q_norm = weights[f"model.layers.{layer_index}.self_attn.q_norm.weight"]
+    w_k_norm = weights[f"model.layers.{layer_index}.self_attn.k_norm.weight"]
+    B, n, C = x.shape
+    Hq = config.num_attention_heads
+    Hkv = config.num_key_value_heads
+    D = config.head_dim
+    eps = config.rms_norm_eps
+    theta = config.rope_theta
 
+    # 1. norm & qkv linear
+    x2 = rms_norm(x, w_norm1, eps) # (B,n,C)
+    t = cache.k.shape[-2] if cache is not None else 0 # 前缀kv长度
+    q = x2 @ w_q.T
+    k_new = x2 @ w_k.T
+    v_new = x2 @ w_v.T # (B,n,C)
+    q_sp = split_head(q, Hq) # (B, Hq, n, D)
+    k_sp = split_head(k_new, Hkv) # (B, Hkv, n, D)
+    v_sp = split_head(v_new, Hkv) # (B, Hkv, n, D)
+
+    q_sp = rms_norm(q_sp, w_q_norm, eps)
+    k_sp = rms_norm(k_sp, w_k_norm, eps)
+    
+    # 2. apply rope
+    positions_new = torch.arange(t, t + n)
+    positions_all = torch.arange(t + n) 
+    q_sp = apply_rope(q_sp, positions_new, theta)
+    k_sp = apply_rope(k_sp, positions_new, theta)
+    if cache is not None:
+        k_new = torch.cat([cache.k, k_sp], dim = -2)
+        v_new = torch.cat([cache.v, v_sp], dim = -2)
+    else :
+        k_new = k_sp
+        v_new = v_sp
+    newkv = LayerKV(k=k_new,v=v_new)
+    
+    # 3. attention
+    grade = grouped_attention(q_sp, k_new, v_new, query_positions=positions_new,key_positions=positions_all)
+    
+    # 4. merge & Wo
+    grade = merge_head(grade) @ w_o.T
+    
+    x2 = x + grade
+    
+    # 5. SimGLU
+    x3 = rms_norm(x2, w_norm2, eps)
+    up = x3 @ w_up.T
+    gate = x3 @ w_gate.T
+    gate = gate * torch.sigmoid(gate)
+    U = x2 + (up * gate) @ w_down.T
+    
+    return U, newkv
 
 def forward(
     input_ids: torch.Tensor, weights: dict[str, torch.Tensor], config: QwenConfig,
@@ -98,13 +163,6 @@ def forward(
     cache=None: 新请求，从位置 0 开始；非 None: 层数正确且均含 t 个历史 token，
     与本请求/模型/B/dtype 一致。历史缓存的 K/V 布局见 transformer_block。
     返回 logits (B,n,Vocab)，以及长度 num_hidden_layers 的 list[LayerKV]。
-    logits 是原始词表分数，不做 Softmax/argmax，只含本次 n 个位置。
-
-    查 model.embed_tokens.weight -> 逐层同一个 block -> model.norm.weight
-    -> lm_head.weight。不另加绝对位置 embedding，不缩放 token embedding。
-    无论 prefill、单 token decode、多 token append，都走本函数，不复制前向。
-    ValueError: t+n > config.max_position_embeddings，在任何计算/状态修改前拒绝。
-    本题其余输入合法性由调用方保证，不要求写通用防御式校验框架。
     """
     # 0. 准备参数
     E = weights["model.embed_tokens.weight"]

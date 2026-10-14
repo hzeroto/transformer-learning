@@ -4,6 +4,10 @@
 选用 `Qwen/Qwen3-0.6B`，固定 revision `c1899de289a04d12100db370d81485cdf75e47ca`。
 先读 [接入讲义](../../notes/qwen3-inference-from-checkpoint.md)：只补齐与已有 LLaMA 风格实现不同的接缝。
 
+对应[课程地图](../../learning/map.json)中的 `implementation.qwen3-inference`
+（真实模型权重接入与推理），先修为 `implementation.llama`；完成状态与证据以
+`learning/progress.json` 为准。
+
 范围：CPU float32、无 PAD、无 Dropout、完整因果 GQA；模型前向支持等长 batch，demo 只生成一条请求。
 首版贪心，不含量化、GPU 内核、滑窗、HTTP 服务、多请求调度或训练。
 
@@ -110,6 +114,25 @@ uv pip install --python .venv/bin/python -r exercises/ex021_qwen3_inference/requ
 demo 使用官方非思考聊天模板，结束集合读取 `generation_config.json`，
 由你的 `greedy_generate` 产生新增 ID，再整体解码。贪心只是排错基线，不代表官方推荐的最佳采样质量。
 第一版把全部新增位置投影到词表，便于对齐；之后才考虑正式生成仅对末位做词表投影。
+
+### E. 用自己的推理实现连续聊天
+
+```bash
+.venv/bin/python -B -m examples.qwen3_chat
+```
+
+[终端聊天入口](../../examples/qwen3_chat.py)只加载一次本地权重，直接调用你在
+`model.py` 中写的 `greedy_generate` 和 `forward`。支持多轮对话、`/reset` 清空历史、
+`/exit` 退出，生成时可用 Ctrl+C 取消当前轮。默认每轮最多生成 256 个 token，
+可用 `--max-new-tokens` 调整；每轮生成结束后整段显示回复。
+
+每轮还会显示输入/新增 token 数、模型推理耗时和平均 `tokens/s`。
+速度按“新增 token 数 ÷ 本轮 `greedy_generate` 耗时”计算，包含本轮输入的预填充与后续解码，
+不包含权重加载、分词、文本解码或终端显示时间；新增 token 数包含实际生成的 EOS。
+这是本轮生成的平均速度，不是单独测量的 decode 吞吐；对话历史增长也会影响该数值。
+
+多轮历史经官方非思考聊天模板编码后作为本轮输入，KV 缓存由你的 `greedy_generate`
+在本轮内部建立和追加；这里只保留文本历史，不跨轮复用 KV，也不调用官方模型推理。
 
 ## 完成标准与排错入口
 
