@@ -2,19 +2,7 @@
   const root = typeof window === 'undefined' ? globalThis : window;
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  const geometry = {
-    nodeWidth: 194,
-    nodeHeight: 62,
-    rankGap: 242,
-    nodeGap: 10,
-    laneGap: 12,
-    laneHeaderHeight: 43,
-    lanePaddingBottom: 14,
-    graphPaddingLeft: 176,
-    graphPaddingRight: 58,
-    graphPaddingTop: 54,
-    graphPaddingBottom: 38
-  };
+  const geometry = { nodeWidth: 200, nodeHeight: 82, columnGap: 28, rowGap: 20, rankGap: 44, padding: 20 };
 
   function createSvgElement(name, attributes = {}, text = '') {
     const element = document.createElementNS(SVG_NS, name);
@@ -49,74 +37,58 @@
     return ranks;
   }
 
-  function createTopologyLayout(nodes, stages) {
-    const ranks = calculateRanks(nodes);
+  function createTopologyLayout(nodes, stages, { width = 1200, stageId = null } = {}) {
+    // 阶段图重新计算阶段内依赖层，不继承全局的巨大坐标偏移。
+    const scoped = nodes.filter((node) => stageId === null || node.stageId === stageId);
+    const ids = new Set(scoped.map((node) => node.id));
+    const localNodes = scoped.map((node) => ({ ...node, prerequisites: node.prerequisites.filter((id) => ids.has(id)) }));
+    const ranks = calculateRanks(localNodes);
     const maxRank = Math.max(0, ...ranks.values());
-    const buckets = new Map();
-
-    for (const node of nodes) {
-      const key = `${node.stageIndex}:${ranks.get(node.id)}`;
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(node);
-    }
-    for (const bucket of buckets.values()) {
-      bucket.sort((a, b) => a.nodeIndexInStage - b.nodeIndexInStage);
-    }
-
-    const laneLayouts = [];
-    let laneTop = geometry.graphPaddingTop;
-    for (const [stageIndex, stage] of stages.entries()) {
-      let maxBucketSize = 1;
-      for (let rank = 0; rank <= maxRank; rank += 1) {
-        maxBucketSize = Math.max(maxBucketSize, buckets.get(`${stageIndex}:${rank}`)?.length ?? 0);
-      }
-      const height = geometry.laneHeaderHeight
-        + maxBucketSize * geometry.nodeHeight
-        + Math.max(0, maxBucketSize - 1) * geometry.nodeGap
-        + geometry.lanePaddingBottom;
-      laneLayouts.push({
-        id: stage.id,
-        title: stage.title,
-        index: stageIndex,
-        y: laneTop,
-        height,
-        nodeCount: stage.nodes.length
-      });
-      laneTop += height + geometry.laneGap;
-    }
-
+    const buckets = Array.from({ length: maxRank + 1 }, () => []);
+    for (const node of localNodes) buckets[ranks.get(node.id)].push(node);
+    for (const bucket of buckets) bucket.sort((a, b) => a.stageIndex - b.stageIndex || a.nodeIndexInStage - b.nodeIndexInStage);
+    const maxBucket = Math.max(1, ...buckets.map((bucket) => bucket.length));
+    const { nodeHeight, columnGap, rowGap, rankGap, padding } = geometry;
+    const canvasWidth = Math.max(240, width);
+    const horizontalWidth = (maxRank + 1) * geometry.nodeWidth + maxRank * rankGap + padding * 2;
+    const direction = stageId !== null && horizontalWidth <= canvasWidth ? 'horizontal' : 'vertical';
     const positions = new Map();
-    for (const node of nodes) {
-      const rank = ranks.get(node.id);
-      const bucket = buckets.get(`${node.stageIndex}:${rank}`);
-      const bucketIndex = bucket.findIndex((entry) => entry.id === node.id);
-      const lane = laneLayouts[node.stageIndex];
-      positions.set(node.id, {
-        id: node.id,
-        rank,
-        x: geometry.graphPaddingLeft + rank * geometry.rankGap,
-        y: lane.y + geometry.laneHeaderHeight + bucketIndex * (geometry.nodeHeight + geometry.nodeGap),
-        width: geometry.nodeWidth,
-        height: geometry.nodeHeight
-      });
+    const levels = [];
+    let height;
+    if (direction === 'horizontal') {
+      height = maxBucket * nodeHeight + (maxBucket - 1) * rowGap + padding * 2;
+      const step = (canvasWidth - padding * 2 - geometry.nodeWidth) / Math.max(1, maxRank);
+      for (const [rank, bucket] of buckets.entries()) {
+        const startY = (height - bucket.length * nodeHeight - (bucket.length - 1) * rowGap) / 2;
+        for (const [index, node] of bucket.entries()) positions.set(node.id, {
+          id: node.id, rank, x: maxRank ? padding + rank * step : (canvasWidth - geometry.nodeWidth) / 2,
+          y: startY + index * (nodeHeight + rowGap), width: geometry.nodeWidth, height: nodeHeight
+        });
+      }
+    } else {
+      const columns = Math.min(maxBucket, Math.max(1, Math.floor((canvasWidth - padding * 2 + columnGap) / (180 + columnGap))));
+      const nodeWidth = Math.min(260, (canvasWidth - padding * 2 - (columns - 1) * columnGap) / columns);
+      let top = padding;
+      for (const [rank, bucket] of buckets.entries()) {
+        if (!bucket.length) continue;
+        levels.push({ rank, y: top });
+        top += 24;
+        for (let start = 0; start < bucket.length; start += columns) {
+          const row = bucket.slice(start, start + columns);
+          const left = (canvasWidth - row.length * nodeWidth - (row.length - 1) * columnGap) / 2;
+          for (const [index, node] of row.entries()) positions.set(node.id, {
+            id: node.id, rank, x: left + index * (nodeWidth + columnGap), y: top,
+            width: nodeWidth, height: nodeHeight
+          });
+          top += nodeHeight + rowGap;
+        }
+        top += rankGap - rowGap;
+      }
+      height = Math.max(nodeHeight, top - rankGap + padding);
     }
-
-    const edges = nodes.flatMap((node) => node.prerequisites.map((sourceId) => ({
-      sourceId,
-      targetId: node.id
-    })));
-
     return {
-      ranks,
-      positions,
-      edges,
-      lanes: laneLayouts,
-      maxRank,
-      width: geometry.graphPaddingLeft
-        + maxRank * geometry.rankGap
-        + geometry.nodeWidth
-        + geometry.graphPaddingRight,
-      height: laneTop - geometry.laneGap + geometry.graphPaddingBottom
+      ranks, positions, levels, maxRank, direction, width: canvasWidth, height,
+      edges: localNodes.flatMap((node) => node.prerequisites.map((sourceId) => ({ sourceId, targetId: node.id })))
     };
   }
 
@@ -149,190 +121,88 @@
     };
   }
 
-  function truncateLabel(value, maxUnits = 23) {
+  function wrapLabel(value, maxUnits) {
+    const lines = [];
+    let line = '';
     let units = 0;
-    let output = '';
     for (const character of value) {
       const weight = character.codePointAt(0) > 255 ? 2 : 1;
-      if (units + weight > maxUnits) return `${output}…`;
-      output += character;
+      if (units + weight > maxUnits && line) {
+        lines.push(line);
+        line = '';
+        units = 0;
+      }
+      line += character;
       units += weight;
     }
-    return output;
+    if (line) lines.push(line);
+    return lines;
   }
 
-  function createTopologyGraph(options) {
-    const {
-      container,
-      nodes,
-      stages,
-      statusMeta,
-      initialNodeId = nodes.find((node) => node.progress.status === 'current')?.id ?? nodes[0]?.id,
-      onSelect,
-      onTransform
-    } = options;
-    const layout = createTopologyLayout(nodes, stages);
+  function createTopologyGraph({ container, nodes, stages, statusMeta, initialNodeId = null, onSelect, onTransform }) {
     const nodeById = new Map(nodes.map((node) => [node.id, node]));
     const nodeElements = new Map();
-    const laneElements = new Map();
     const edgeElements = [];
+    let layout = createTopologyLayout(nodes, stages);
+    let filter = { query: '', status: 'all', stageId: null };
     let selectedNodeId = null;
-    let transform = { x: 0, y: 0, scale: 1 };
+    let scale = 1;
+    let offset = { x: 0, y: 0 };
     let pointerStart = null;
-    let viewMode = nodeById.has(initialNodeId) ? 'focus' : 'all';
-    let focusedNodeId = initialNodeId;
-    let previousViewportSize = null;
-    let resizeFrame = null;
-    const instanceId = `learning-topology-${Math.random().toString(36).slice(2, 9)}`;
-
-    container.replaceChildren();
+    let resizeFrame;
+    let pendingFocusId = initialNodeId;
+    let previousSize = null;
+    const instanceId = 'learning-topology-' + Math.random().toString(36).slice(2, 9);
     const canvas = document.createElement('div');
     canvas.className = 'topology-canvas';
+    canvas.setAttribute('tabindex', '0');
+    canvas.setAttribute('aria-label', '知识依赖图，可滚动浏览全部节点');
     const svg = createSvgElement('svg', {
-      class: 'topology-svg',
-      role: 'group',
-      'aria-labelledby': `${instanceId}-title ${instanceId}-description`
+      class: 'topology-svg', role: 'group',
+      'aria-labelledby': instanceId + '-title ' + instanceId + '-description'
     });
     svg.append(
-      createSvgElement('title', { id: `${instanceId}-title` }, 'Transformer 知识依赖拓扑图'),
-      createSvgElement('desc', { id: `${instanceId}-description` }, `${nodes.length} 个知识点按依赖深度从左向右排列，箭头从先修指向后续知识点。`)
+      createSvgElement('title', { id: instanceId + '-title' }, 'Transformer 知识依赖拓扑图'),
+      createSvgElement('desc', { id: instanceId + '-description' }, '全局按依赖层从上向下排列，阶段内按箭头方向阅读；滚动可查看完整课程，点击节点查看先修与后续。')
     );
-
     const defs = createSvgElement('defs');
-    const markers = {
-      normal: createMarker(`${instanceId}-arrow`, 'topology-arrow-normal'),
-      upstream: createMarker(`${instanceId}-arrow-upstream`, 'topology-arrow-upstream'),
-      downstream: createMarker(`${instanceId}-arrow-downstream`, 'topology-arrow-downstream')
-    };
-    defs.append(markers.normal, markers.upstream, markers.downstream);
-    svg.appendChild(defs);
-
+    for (const kind of ['normal', 'upstream', 'downstream']) {
+      const marker = createSvgElement('marker', {
+        id: instanceId + '-arrow-' + kind, class: 'topology-arrow-' + kind,
+        viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'
+      });
+      marker.appendChild(createSvgElement('path', { d: 'M 0 0 L 8 4 L 0 8 z' }));
+      defs.appendChild(marker);
+    }
     const viewport = createSvgElement('g', { class: 'topology-viewport' });
-    const lanesLayer = createSvgElement('g', { class: 'topology-lanes' });
+    const levelsLayer = createSvgElement('g', { class: 'topology-levels' });
     const edgesLayer = createSvgElement('g', { class: 'topology-edges' });
     const nodesLayer = createSvgElement('g', { class: 'topology-nodes' });
-    viewport.append(lanesLayer, edgesLayer, nodesLayer);
-    svg.appendChild(viewport);
+    viewport.append(levelsLayer, edgesLayer, nodesLayer);
+    svg.append(defs, viewport);
     canvas.appendChild(svg);
-    container.appendChild(canvas);
-
-    const stageCounts = new Map(stages.map((stage) => [
-      stage.id,
-      stage.nodes.filter((node) => node.progress.status === 'mastered').length
-    ]));
-    for (const lane of layout.lanes) {
-      const hasCurrentNode = stages[lane.index].nodes.some((node) => node.progress.status === 'current');
-      const laneGroup = createSvgElement('g', {
-        class: `topology-lane${hasCurrentNode ? ' is-current' : ''}`,
-        'data-stage-id': lane.id
-      });
-      const background = createSvgElement('rect', {
-        class: 'topology-lane-background',
-        x: 10,
-        y: lane.y,
-        width: layout.width - 20,
-        height: lane.height,
-        rx: 12
-      });
-      const number = createSvgElement('text', {
-        class: 'topology-lane-number',
-        x: 28,
-        y: lane.y + 28
-      }, String(lane.index + 1).padStart(2, '0'));
-      const title = createSvgElement('text', {
-        class: 'topology-lane-title',
-        x: 60,
-        y: lane.y + 27
-      }, truncateLabel(lane.title.split('：')[0], 16));
-      const count = createSvgElement('text', {
-        class: 'topology-lane-count',
-        x: geometry.graphPaddingLeft - 18,
-        y: lane.y + 27,
-        'text-anchor': 'end'
-      }, `${stageCounts.get(lane.id)}/${lane.nodeCount}`);
-      laneGroup.append(background, number, title, count);
-      lanesLayer.appendChild(laneGroup);
-      laneElements.set(lane.id, laneGroup);
-    }
-
-    for (let rank = 0; rank <= layout.maxRank; rank += 1) {
-      const x = geometry.graphPaddingLeft + rank * geometry.rankGap;
-      const label = createSvgElement('text', {
-        class: 'topology-rank-label',
-        x: x + geometry.nodeWidth / 2,
-        y: 31,
-        'text-anchor': 'middle'
-      }, rank === 0 ? '路线起点' : `依赖层 ${rank}`);
-      const guide = createSvgElement('line', {
-        class: 'topology-rank-guide',
-        x1: x + geometry.nodeWidth / 2,
-        y1: 39,
-        x2: x + geometry.nodeWidth / 2,
-        y2: layout.height - geometry.graphPaddingBottom + 5
-      });
-      lanesLayer.append(guide, label);
-    }
-
-    for (const edge of layout.edges) {
-      const source = layout.positions.get(edge.sourceId);
-      const target = layout.positions.get(edge.targetId);
-      const startX = source.x + source.width;
-      const startY = source.y + source.height / 2;
-      const endX = target.x;
-      const endY = target.y + target.height / 2;
-      const curve = Math.max(24, (endX - startX) * 0.46);
-      const path = createSvgElement('path', {
-        class: 'topology-edge',
-        d: `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`,
-        'data-source-id': edge.sourceId,
-        'data-target-id': edge.targetId,
-        'marker-end': `url(#${instanceId}-arrow)`
-      });
-      edgesLayer.appendChild(path);
-      edgeElements.push({ ...edge, element: path });
-    }
+    container.replaceChildren(canvas);
 
     for (const node of nodes) {
-      const position = layout.positions.get(node.id);
+      for (const sourceId of node.prerequisites) {
+        const path = createSvgElement('path', {
+          class: 'topology-edge', 'data-source-id': sourceId, 'data-target-id': node.id,
+          'marker-end': 'url(#' + instanceId + '-arrow-normal)'
+        });
+        edgesLayer.appendChild(path);
+        edgeElements.push({ sourceId, targetId: node.id, element: path });
+      }
       const group = createSvgElement('g', {
-        class: `topology-node status-${node.progress.status}`,
-        transform: `translate(${position.x} ${position.y})`,
-        role: 'button',
-        tabindex: '0',
-        'aria-label': `${node.title}，${statusMeta[node.progress.status].label}`,
-        'aria-pressed': 'false',
-        'data-node-id': node.id
+        class: 'topology-node status-' + node.progress.status, role: 'button', tabindex: '0',
+        'aria-label': node.title + '，' + node.stageTitle + '，' + statusMeta[node.progress.status].label,
+        'aria-pressed': 'false', 'data-node-id': node.id
       });
-      const title = createSvgElement('title', {}, `${node.title} · ${statusMeta[node.progress.status].label}`);
-      const card = createSvgElement('rect', {
-        class: 'topology-node-card',
-        width: geometry.nodeWidth,
-        height: geometry.nodeHeight,
-        rx: 9
-      });
-      const statusBar = createSvgElement('rect', {
-        class: 'topology-node-status-bar',
-        width: 5,
-        height: geometry.nodeHeight,
-        rx: 3
-      });
-      const titleText = createSvgElement('text', {
-        class: 'topology-node-title',
-        x: 15,
-        y: 25
-      }, truncateLabel(node.title));
-      const metaText = createSvgElement('text', {
-        class: 'topology-node-meta',
-        x: 15,
-        y: 46
-      }, `${node.stageIndex + 1}.${node.nodeIndexInStage + 1} · ${statusMeta[node.progress.status].shortLabel}`);
-      const stateMark = createSvgElement('text', {
-        class: 'topology-node-state-mark',
-        x: geometry.nodeWidth - 12,
-        y: 25,
-        'text-anchor': 'end'
-      }, statusMark(node.progress.status));
-      group.append(title, card, statusBar, titleText, metaText, stateMark);
+      const title = createSvgElement('title', {}, node.title + ' · ' + statusMeta[node.progress.status].label);
+      const card = createSvgElement('rect', { class: 'topology-node-card', rx: 8 });
+      const bar = createSvgElement('rect', { class: 'topology-node-status-bar', width: 4, rx: 2 });
+      const label = createSvgElement('text', { class: 'topology-node-title', x: 13 });
+      const meta = createSvgElement('text', { class: 'topology-node-meta', x: 13 });
+      group.append(title, card, bar, label, meta);
       group.addEventListener('click', () => onSelect(node.id));
       group.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -341,238 +211,236 @@
         }
       });
       nodesLayer.appendChild(group);
-      nodeElements.set(node.id, group);
+      nodeElements.set(node.id, { group, card, bar, label, meta });
     }
 
-    function createMarker(id, className) {
-      const marker = createSvgElement('marker', {
-        id,
-        class: className,
-        viewBox: '0 0 8 8',
-        refX: 7,
-        refY: 4,
-        markerWidth: 6,
-        markerHeight: 6,
-        orient: 'auto-start-reverse'
-      });
-      marker.appendChild(createSvgElement('path', { d: 'M 0 0 L 8 4 L 0 8 z' }));
-      return marker;
+    function getSize() {
+      return { width: canvas.clientWidth, height: canvas.clientHeight };
     }
 
-    function statusMark(status) {
-      return {
-        mastered: '✓',
-        current: '◆',
-        verify: '?',
-        relearn: '↺',
-        pending: '○'
-      }[status] ?? '○';
+    function applyScale() {
+      const size = getSize();
+      const width = Math.max(size.width, layout.width * scale);
+      const height = Math.max(size.height, layout.height * scale);
+      offset = {
+        x: (width - layout.width * scale) / 2,
+        y: filter.stageId === null ? 0 : (height - layout.height * scale) / 2
+      };
+      svg.style.width = width + 'px';
+      svg.style.height = height + 'px';
+      viewport.setAttribute('transform', 'translate(' + offset.x + ' ' + offset.y + ') scale(' + scale + ')');
+      onTransform?.({ scale });
     }
 
-    function emitTransform() {
-      previousViewportSize = getViewportSize();
-      viewport.setAttribute('transform', `translate(${transform.x} ${transform.y}) scale(${transform.scale})`);
-      canvas.classList.toggle('is-overview', transform.scale < 0.5);
-      onTransform?.({ ...transform });
-    }
-
-    function getViewportSize() {
-      const bounds = svg.getBoundingClientRect();
-      return { width: bounds.width, height: bounds.height };
+    function redrawLayout() {
+      const size = getSize();
+      if (!size.width || !size.height) return false;
+      layout = createTopologyLayout(nodes, stages, { width: size.width, stageId: filter.stageId });
+      container.classList.toggle('is-stage-scope', filter.stageId !== null);
+      container.style.setProperty('--topology-content-height', (layout.height + 48) + 'px');
+      svg.setAttribute('data-direction', layout.direction);
+      levelsLayer.replaceChildren();
+      for (const level of layout.levels) {
+        levelsLayer.append(
+          createSvgElement('text', { class: 'topology-rank-label', x: 20, y: level.y + 12 }, level.rank === 0 ? '起点 · 无本图内先修' : '依赖层 ' + level.rank),
+          createSvgElement('line', { class: 'topology-rank-guide', x1: 140, x2: layout.width - 20, y1: level.y + 8, y2: level.y + 8 })
+        );
+      }
+      for (const node of nodes) {
+        const position = layout.positions.get(node.id);
+        const { group, card, bar, label, meta } = nodeElements.get(node.id);
+        const search = [node.title, node.summary, node.stageTitle, ...node.masteryCriteria].join(' ').toLocaleLowerCase('zh-CN');
+        const matches = Boolean(position) && (!filter.query || search.includes(filter.query))
+          && (filter.status === 'all' || node.progress.status === filter.status);
+        group.classList.toggle('is-outside-stage', !position);
+        group.classList.toggle('is-filtered-out', !matches);
+        group.setAttribute('aria-hidden', String(!matches));
+        group.setAttribute('tabindex', matches ? '0' : '-1');
+        if (!position) continue;
+        group.setAttribute('transform', 'translate(' + position.x + ' ' + position.y + ')');
+        card.setAttribute('width', position.width);
+        card.setAttribute('height', position.height);
+        bar.setAttribute('height', position.height);
+        label.replaceChildren();
+        const lines = wrapLabel(node.title, Math.floor((position.width - 26) / 7.5));
+        const startY = lines.length === 1 ? 33 : 24;
+        for (const [index, line] of lines.entries()) {
+          label.appendChild(createSvgElement('tspan', { x: 13, y: startY + index * 17 }, line));
+        }
+        const outsidePrerequisites = node.prerequisites.filter((id) => !layout.positions.has(id)).length;
+        meta.setAttribute('y', position.height - 12);
+        // 编号对应侧栏阶段；不要为塞入长阶段名而横向压扁文字。
+        meta.textContent = (node.stageIndex + 1) + '.' + (node.nodeIndexInStage + 1) + ' · '
+          + statusMeta[node.progress.status].label
+          + (filter.stageId !== null && outsidePrerequisites ? ' · ' + outsidePrerequisites + ' 个跨阶段先修' : '');
+      }
+      for (const [edgeIndex, edge] of edgeElements.entries()) {
+        const source = layout.positions.get(edge.sourceId);
+        const target = layout.positions.get(edge.targetId);
+        const visible = source && target;
+        edge.element.classList.toggle('is-outside-stage', !visible);
+        edge.element.classList.toggle('is-filtered-out', !visible
+          || nodeElements.get(edge.sourceId).group.classList.contains('is-filtered-out')
+          || nodeElements.get(edge.targetId).group.classList.contains('is-filtered-out'));
+        if (!visible) continue;
+        edge.element.classList.toggle('is-long-edge', layout.direction === 'horizontal'
+          ? target.rank > source.rank + 1
+          : target.y - source.y - source.height > geometry.rankGap + 24);
+        let path;
+        if (layout.direction === 'horizontal') {
+          const x1 = source.x + source.width;
+          const y1 = source.y + source.height / 2;
+          const x2 = target.x;
+          const y2 = target.y + target.height / 2;
+          const curve = Math.max(20, (x2 - x1) / 2);
+          if (target.rank === source.rank + 1) {
+            path = 'M ' + x1 + ' ' + y1 + ' C ' + (x1 + curve) + ' ' + y1 + ', ' + (x2 - curve) + ' ' + y2 + ', ' + x2 + ' ' + y2;
+          } else {
+            const rail = 5 + (edgeIndex % 5) * 2;
+            path = 'M ' + x1 + ' ' + y1 + ' H ' + (x1 + 10) + ' V ' + rail + ' H ' + (x2 - 10) + ' V ' + y2 + ' H ' + x2;
+          }
+        } else {
+          const x1 = source.x + source.width / 2;
+          const y1 = source.y + source.height;
+          const x2 = target.x + target.width / 2;
+          const y2 = target.y;
+          const curve = Math.max(20, (y2 - y1) / 2);
+          if (y2 - y1 <= geometry.rankGap + 24) {
+            path = 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1 + curve) + ', ' + x2 + ' ' + (y2 - curve) + ', ' + x2 + ' ' + y2;
+          } else {
+            // 跨行/跨层边从卡片间隙绕行，避免穿过无关节点造成错误的依赖暗示。
+            const inset = 5 + (edgeIndex % 5) * 2;
+            const rail = x1 + x2 < layout.width ? inset : layout.width - inset;
+            path = 'M ' + x1 + ' ' + y1 + ' V ' + (y1 + 8) + ' H ' + rail + ' V ' + (y2 - 8) + ' H ' + x2 + ' V ' + y2;
+          }
+        }
+        edge.element.setAttribute('d', path);
+      }
+      previousSize = size;
+      applyScale();
+      return true;
     }
 
     function fit() {
-      const viewportSize = getViewportSize();
-      if (viewportSize.width === 0 || viewportSize.height === 0) return;
-      const padding = 22;
-      const scale = Math.min(
-        1,
-        (viewportSize.width - padding * 2) / layout.width,
-        (viewportSize.height - padding * 2) / layout.height
-      );
-      transform = {
-        scale,
-        x: (viewportSize.width - layout.width * scale) / 2,
-        y: (viewportSize.height - layout.height * scale) / 2
-      };
-      viewMode = 'all';
-      emitTransform();
-    }
-
-    function zoomAt(scaleFactor, clientX, clientY) {
-      const bounds = svg.getBoundingClientRect();
-      const pointX = clientX - bounds.left;
-      const pointY = clientY - bounds.top;
-      const nextScale = Math.min(1.8, Math.max(0.18, transform.scale * scaleFactor));
-      const worldX = (pointX - transform.x) / transform.scale;
-      const worldY = (pointY - transform.y) / transform.scale;
-      transform = {
-        scale: nextScale,
-        x: pointX - worldX * nextScale,
-        y: pointY - worldY * nextScale
-      };
-      viewMode = 'manual';
-      emitTransform();
-    }
-
-    function zoom(scaleFactor) {
-      const bounds = svg.getBoundingClientRect();
-      zoomAt(scaleFactor, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+      scale = 1;
+      pendingFocusId = null;
+      redrawLayout();
+      canvas.scrollLeft = 0;
+      canvas.scrollTop = 0;
     }
 
     function focusNode(nodeId, { moveFocus = true } = {}) {
+      if (!nodeById.has(nodeId)) return;
+      pendingFocusId = nodeId;
       const position = layout.positions.get(nodeId);
       if (!position) return;
-      focusedNodeId = nodeId;
-      viewMode = 'focus';
-      const viewportSize = getViewportSize();
-      if (viewportSize.width === 0 || viewportSize.height === 0) return;
-      // 保证文字可读；远处依赖通过拖动或“查看全图”浏览，不再用整图尺寸压缩当前节点。
-      const nextScale = 1.15;
-      transform = {
-        scale: nextScale,
-        x: viewportSize.width / 2 - (position.x + position.width / 2) * nextScale,
-        y: viewportSize.height / 2 - (position.y + position.height / 2) * nextScale
-      };
-      emitTransform();
-      if (moveFocus) nodeElements.get(nodeId)?.focus({ preventScroll: true });
+      const size = getSize();
+      if (!size.width || !size.height) return;
+      canvas.scrollLeft = Math.max(0, (position.x + position.width / 2) * scale + offset.x - size.width / 2);
+      canvas.scrollTop = Math.max(0, (position.y + position.height / 2) * scale + offset.y - size.height / 2);
+      pendingFocusId = null;
+      if (moveFocus) nodeElements.get(nodeId).group.focus({ preventScroll: true });
     }
 
     function refreshViewport() {
-      const size = getViewportSize();
+      const size = getSize();
       if (!size.width || !size.height) return;
-      if (viewMode === 'all') fit();
-      else if (viewMode === 'focus') focusNode(focusedNodeId, { moveFocus: false });
-      else {
-        // 手动浏览时保留画布中心的世界坐标，适配全屏和容器尺寸变化。
-        if (previousViewportSize) {
-          transform.x += (size.width - previousViewportSize.width) / 2;
-          transform.y += (size.height - previousViewportSize.height) / 2;
-        }
-        emitTransform();
-      }
+      const scrollFraction = canvas.scrollTop / Math.max(1, canvas.scrollHeight - (previousSize?.height || size.height));
+      const selectedPosition = layout.positions.get(selectedNodeId);
+      const selectedWasVisible = selectedPosition && selectedPosition.y * scale + offset.y >= canvas.scrollTop
+        && selectedPosition.y * scale + offset.y < canvas.scrollTop + size.height;
+      if (!redrawLayout()) return;
+      if (pendingFocusId || selectedWasVisible) focusNode(pendingFocusId || selectedNodeId, { moveFocus: false });
+      else canvas.scrollTop = scrollFraction * Math.max(0, canvas.scrollHeight - size.height);
+    }
+
+    function zoomAt(factor, clientX, clientY) {
+      const bounds = canvas.getBoundingClientRect();
+      const x = clientX - bounds.left;
+      const y = clientY - bounds.top;
+      const worldX = (canvas.scrollLeft + x - offset.x) / scale;
+      const worldY = (canvas.scrollTop + y - offset.y) / scale;
+      // 用户可主动缩小，但默认/阶段导航始终回到 100% 可读字号。
+      scale = Math.max(0.6, Math.min(1.8, scale * factor));
+      applyScale();
+      canvas.scrollLeft = Math.max(0, worldX * scale + offset.x - x);
+      canvas.scrollTop = Math.max(0, worldY * scale + offset.y - y);
+    }
+
+    function zoom(factor) {
+      const bounds = canvas.getBoundingClientRect();
+      zoomAt(factor, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
     }
 
     function selectNode(nodeId) {
-      if (!nodeById.has(nodeId)) return;
+      if (nodeId !== null && !nodeById.has(nodeId)) return;
       selectedNodeId = nodeId;
       const relationships = collectRelationshipSets(nodeId, nodes);
-      const upstreamPath = new Set([...relationships.ancestors, nodeId]);
-      const downstreamPath = new Set([...relationships.descendants, nodeId]);
-
-      for (const [id, element] of nodeElements) {
-        element.setAttribute('aria-pressed', String(id === nodeId));
-        element.classList.toggle('is-selected', id === nodeId);
-        element.classList.toggle('is-upstream', relationships.ancestors.has(id));
-        element.classList.toggle('is-downstream', relationships.descendants.has(id));
-        element.classList.toggle('is-direct-upstream', relationships.directPrerequisites.has(id));
-        element.classList.toggle('is-direct-downstream', relationships.directDependents.has(id));
-        element.classList.toggle(
-          'is-unrelated',
-          id !== nodeId && !relationships.ancestors.has(id) && !relationships.descendants.has(id)
-        );
+      const upstream = new Set([...relationships.ancestors, nodeId]);
+      const downstream = new Set([...relationships.descendants, nodeId]);
+      for (const [id, { group }] of nodeElements) {
+        group.setAttribute('aria-pressed', String(id === nodeId));
+        group.classList.toggle('is-selected', id === nodeId);
+        group.classList.toggle('is-upstream', relationships.ancestors.has(id));
+        group.classList.toggle('is-downstream', relationships.descendants.has(id));
+        group.classList.toggle('is-direct-upstream', relationships.directPrerequisites.has(id));
+        group.classList.toggle('is-direct-downstream', relationships.directDependents.has(id));
+        group.classList.toggle('is-unrelated', nodeId !== null && !upstream.has(id) && !downstream.has(id));
       }
-
       for (const edge of edgeElements) {
-        const isUpstream = upstreamPath.has(edge.sourceId) && upstreamPath.has(edge.targetId);
-        const isDownstream = downstreamPath.has(edge.sourceId) && downstreamPath.has(edge.targetId);
-        const isDirect = (edge.targetId === nodeId && relationships.directPrerequisites.has(edge.sourceId))
-          || (edge.sourceId === nodeId && relationships.directDependents.has(edge.targetId));
+        const isUpstream = upstream.has(edge.sourceId) && upstream.has(edge.targetId);
+        const isDownstream = downstream.has(edge.sourceId) && downstream.has(edge.targetId);
         edge.element.classList.toggle('is-upstream', isUpstream);
         edge.element.classList.toggle('is-downstream', isDownstream);
-        edge.element.classList.toggle('is-direct', isDirect);
-        edge.element.classList.toggle('is-unrelated', !isUpstream && !isDownstream);
-        edge.element.setAttribute(
-          'marker-end',
-          `url(#${isUpstream ? `${instanceId}-arrow-upstream` : isDownstream ? `${instanceId}-arrow-downstream` : `${instanceId}-arrow`})`
-        );
+        edge.element.classList.toggle('is-direct', edge.targetId === nodeId || edge.sourceId === nodeId);
+        edge.element.classList.toggle('is-unrelated', nodeId !== null && !isUpstream && !isDownstream);
+        edge.element.setAttribute('marker-end', 'url(#' + instanceId + '-arrow-' + (isUpstream ? 'upstream' : isDownstream ? 'downstream' : 'normal') + ')');
       }
     }
 
     function setFilter({ query = '', status = 'all', stageId = null }) {
-      const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
-      let matches = 0;
-      for (const node of nodes) {
-        const searchText = [node.title, node.summary, node.stageTitle, ...node.masteryCriteria]
-          .join(' ')
-          .toLocaleLowerCase('zh-CN');
-        const inStage = stageId === null || node.stageId === stageId;
-        const isMatch = inStage && (!normalizedQuery || searchText.includes(normalizedQuery))
-          && (status === 'all' || node.progress.status === status);
-        const element = nodeElements.get(node.id);
-        element?.classList.toggle('is-outside-stage', !inStage);
-        element?.classList.toggle('is-filtered-out', !isMatch);
-        element?.setAttribute('tabindex', isMatch ? '0' : '-1');
-        element?.setAttribute('aria-hidden', String(!isMatch));
-        if (isMatch) matches += 1;
-      }
-      for (const edge of edgeElements) {
-        const sourceHidden = nodeElements.get(edge.sourceId)?.classList.contains('is-filtered-out');
-        const targetHidden = nodeElements.get(edge.targetId)?.classList.contains('is-filtered-out');
-        edge.element.classList.toggle('is-filtered-out', sourceHidden || targetHidden);
-        const outsideStage = nodeElements.get(edge.sourceId)?.classList.contains('is-outside-stage')
-          || nodeElements.get(edge.targetId)?.classList.contains('is-outside-stage');
-        edge.element.classList.toggle('is-outside-stage', outsideStage);
-      }
-      for (const [id, element] of laneElements) {
-        element.classList.toggle('is-outside-stage', stageId !== null && id !== stageId);
-      }
-      return matches;
+      const scopeChanged = filter.stageId !== stageId;
+      filter = { query: query.trim().toLocaleLowerCase('zh-CN'), status, stageId };
+      if (scopeChanged) fit();
+      else redrawLayout();
+      return nodes.filter((node) => (stageId === null || node.stageId === stageId)
+        && (status === 'all' || node.progress.status === status)
+        && (!filter.query || [node.title, node.summary, node.stageTitle, ...node.masteryCriteria].join(' ').toLocaleLowerCase('zh-CN').includes(filter.query))).length;
     }
 
-    svg.addEventListener('wheel', (event) => {
+    canvas.addEventListener('wheel', (event) => {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
       zoomAt(event.deltaY < 0 ? 1.12 : 1 / 1.12, event.clientX, event.clientY);
     }, { passive: false });
-
-    svg.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || event.target.closest('.topology-node')) return;
-      pointerStart = {
-        pointerId: event.pointerId,
-        x: event.clientX,
-        y: event.clientY,
-        originX: transform.x,
-        originY: transform.y
-      };
-      svg.setPointerCapture(event.pointerId);
+    canvas.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || event.pointerType === 'touch' || event.target.closest('.topology-node')) return;
+      pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, left: canvas.scrollLeft, top: canvas.scrollTop };
+      canvas.setPointerCapture(event.pointerId);
       canvas.classList.add('is-dragging');
     });
-    svg.addEventListener('pointermove', (event) => {
-      if (!pointerStart || pointerStart.pointerId !== event.pointerId) return;
-      transform.x = pointerStart.originX + event.clientX - pointerStart.x;
-      transform.y = pointerStart.originY + event.clientY - pointerStart.y;
-      viewMode = 'manual';
-      emitTransform();
+    canvas.addEventListener('pointermove', (event) => {
+      if (!pointerStart || pointerStart.id !== event.pointerId) return;
+      canvas.scrollLeft = pointerStart.left - (event.clientX - pointerStart.x);
+      canvas.scrollTop = pointerStart.top - (event.clientY - pointerStart.y);
     });
-    function stopDragging(event) {
-      if (!pointerStart || pointerStart.pointerId !== event.pointerId) return;
+    function stopDragging() {
       pointerStart = null;
       canvas.classList.remove('is-dragging');
     }
-    svg.addEventListener('pointerup', stopDragging);
-    svg.addEventListener('pointercancel', stopDragging);
-
-    const resizeObserver = typeof ResizeObserver === 'undefined'
-      ? null
-      : new ResizeObserver(() => {
-        cancelAnimationFrame(resizeFrame);
-        resizeFrame = requestAnimationFrame(refreshViewport);
-      });
-    resizeObserver?.observe(svg);
+    canvas.addEventListener('pointerup', stopDragging);
+    canvas.addEventListener('pointercancel', stopDragging);
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(refreshViewport);
+    });
+    resizeObserver?.observe(container);
     requestAnimationFrame(refreshViewport);
-
     return {
-      fit,
-      refreshViewport,
-      zoomIn: () => zoom(1.2),
-      zoomOut: () => zoom(1 / 1.2),
-      focusNode,
-      selectNode,
-      setFilter,
-      getLayout: () => layout,
-      getScale: () => transform.scale,
-      destroy: () => resizeObserver?.disconnect()
+      fit, refreshViewport, focusNode, selectNode, setFilter,
+      zoomIn: () => zoom(1.2), zoomOut: () => zoom(1 / 1.2),
+      getLayout: () => layout, getScale: () => scale,
+      destroy: () => { resizeObserver?.disconnect(); cancelAnimationFrame(resizeFrame); }
     };
   }
 

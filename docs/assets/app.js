@@ -97,19 +97,17 @@
     recordsToggle: document.getElementById('records-toggle')
   };
 
-  const hashNodeId = decodeURIComponent(window.location.hash.slice(1));
-  let selectedNodeId = nodeIndex.has(hashNodeId)
-    ? hashNodeId
-    : data.progress.currentNodeId || allNodes[0]?.id;
+  const hashNodeId = readHashNodeId();
+  // 当前学习任务只是进度信息；只有显式节点链接才在启动时选中节点。
+  let selectedNodeId = nodeIndex.has(hashNodeId) ? hashNodeId : null;
   let activeStatus = 'all';
   let activeStageId = nodeIndex.get(selectedNodeId)?.stageId ?? null;
-  let activeMapView = 'stages';
+  let activeMapView = 'topology';
   let showAllRecords = false;
   let topologyGraph = null;
   let pseudoFullscreen = false;
   const nodeButtons = new Map();
   const stageSections = new Map();
-  const lastNodeByStage = new Map();
   const expandedStages = new Set(
     data.stages
       .filter((stage) => stage.nodes.some((node) => node.progress.status !== 'pending'))
@@ -153,16 +151,41 @@
     return counts;
   }
 
+  function readHashNodeId() {
+    try {
+      return decodeURIComponent(window.location.hash.slice(1));
+    } catch (_error) {
+      return null;
+    }
+  }
+
   function setHash(nodeId) {
-    const hash = `#${encodeURIComponent(nodeId)}`;
-    if (window.location.hash !== hash) history.replaceState(null, '', hash);
+    const hash = nodeId ? `#${encodeURIComponent(nodeId)}` : '';
+    if (window.location.hash !== hash) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    }
+  }
+
+  function clearSelection() {
+    selectedNodeId = null;
+    setHash(null);
+    for (const button of nodeButtons.values()) {
+      button.setAttribute('aria-pressed', 'false');
+      button.classList.remove('is-prerequisite', 'is-dependent');
+    }
+    topologyGraph?.selectNode(null);
+    elements.detailPanel.hidden = true;
+    elements.locateNode.disabled = true;
+    const stage = data.stages.find((entry) => entry.id === activeStageId);
+    elements.graphContext.textContent = stage
+      ? `${stage.title.split('：')[0]} · ${stage.nodes.length} 个知识点全景，点击节点查看详情`
+      : '完整课程 · 按依赖层排列，向下滚动浏览全部知识点';
   }
 
   function showNode(nodeId, options = {}) {
     const node = nodeIndex.get(nodeId);
     if (!node) return;
     selectedNodeId = nodeId;
-    lastNodeByStage.set(node.stageId, nodeId);
     setHash(nodeId);
     // 从先修、学习轨迹或深链接进入另一个阶段时，同步整个浏览范围。
     const scopeChanged = activeStageId !== null && activeStageId !== node.stageId;
@@ -181,6 +204,8 @@
       button.classList.toggle('is-dependent', (dependents.get(node.id) ?? []).includes(id));
     }
     topologyGraph?.selectNode(nodeId);
+    elements.detailPanel.hidden = false;
+    elements.locateNode.disabled = false;
     if (scopeChanged || activeMapView === 'stages') topologyGraph?.focusNode(nodeId, { moveFocus: false });
     elements.graphContext.textContent = `正在查看：${node.title}`;
 
@@ -600,8 +625,9 @@
       : '完整课程的知识点与依赖路线';
     elements.searchInput.placeholder = stage ? '搜索本阶段知识点' : '搜索全部知识点';
     elements.topologyHint.textContent = stage
-      ? '展示本阶段依赖 · 跨阶段先修可从右侧详情进入 · 拖动浏览 / Ctrl、⌘ + 滚轮缩放'
-      : '拖动浏览 · Ctrl/⌘ + 滚轮缩放 · 点击节点查看掌握要求';
+      ? '箭头由先修指向后续 · 跨阶段先修见节点详情 · 滚动/拖动浏览 · Ctrl、⌘ + 滚轮缩放'
+      : '全局从上向下按依赖层阅读 · 节点编号对应左侧阶段 · 点击节点高亮关联 · 滚动浏览 / Ctrl、⌘ + 滚轮缩放';
+    elements.topologyFit.textContent = stage ? '阶段全图' : '查看全图';
     for (const button of elements.stageOverview.querySelectorAll('[data-stage-target]')) {
       const active = button.dataset.stageTarget === (activeStageId ?? 'all');
       button.classList.toggle('is-active', active);
@@ -622,21 +648,23 @@
     if (!stage) return;
     activeStageId = stageId;
     expandedStages.add(stageId);
+    clearSelection();
     resetFilterInputs();
     applyFilters({ selectMatch: false });
-    const targetId = nodeId ?? lastNodeByStage.get(stageId)
-      ?? stage.nodes.find((node) => node.progress.status === 'current')?.id
-      ?? stage.nodes[0]?.id;
-    showNode(targetId);
-    topologyGraph?.focusNode(targetId, { moveFocus: false });
+    // 阶段导航只切换范围；只有明确的节点入口才选中/定位。
+    if (nodeId) {
+      showNode(nodeId);
+      topologyGraph?.focusNode(nodeId, { moveFocus: false });
+    } else topologyGraph?.fit();
     if (scroll) elements.mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function showAllStages() {
     activeStageId = null;
+    clearSelection();
     resetFilterInputs();
     applyFilters({ selectMatch: false });
-    if (activeMapView === 'topology') topologyGraph?.fit();
+    topologyGraph?.fit();
   }
 
   function locateSelectedNode() {
@@ -689,17 +717,11 @@
       ? `筛选结果 ${visible} / ${scopedNodes.length}`
       : `共 ${scopedNodes.length} 个知识点`;
     elements.filterEmpty.hidden = visible !== 0;
-    elements.detailPanel.hidden = visible === 0;
+    elements.detailPanel.hidden = visible === 0 || selectedNodeId === null;
     elements.topologyEmpty.hidden = visible !== 0;
     topologyGraph?.setFilter({ query, status: activeStatus, stageId: activeStageId });
-    if (selectMatch && filtersActive && visible > 0) {
-      const match = nodeButtons.get(selectedNodeId)?.classList.contains('is-hidden')
-        ? [...nodeButtons.values()].find((button) => !button.classList.contains('is-hidden'))
-        : nodeButtons.get(selectedNodeId);
-      if (match) {
-        showNode(match.dataset.nodeId);
-        topologyGraph?.focusNode(match.dataset.nodeId, { moveFocus: false });
-      }
+    if (selectMatch && selectedNodeId && nodeButtons.get(selectedNodeId)?.classList.contains('is-hidden')) {
+      clearSelection();
     }
     elements.resetFilters.hidden = !filtersActive;
   }
@@ -772,9 +794,11 @@
   renderMap();
   renderTopology();
   renderRecords();
-  showNode(selectedNodeId);
+  if (selectedNodeId) showNode(selectedNodeId);
+  else clearSelection();
   applyFilters();
   setMapView(activeMapView);
+  if (selectedNodeId) topologyGraph?.focusNode(selectedNodeId, { moveFocus: false });
 
   elements.searchInput.addEventListener('input', applyFilters);
   elements.statusFilters.addEventListener('click', (event) => {
@@ -808,7 +832,12 @@
     setMapView(nextButton.dataset.mapView);
     nextButton.focus();
   });
-  elements.topologyFit.addEventListener('click', showAllStages);
+  elements.topologyFit.addEventListener('click', () => {
+    clearSelection();
+    resetFilterInputs();
+    applyFilters({ selectMatch: false });
+    topologyGraph?.fit();
+  });
   elements.topologyCurrent.disabled = !nodeIndex.has(data.progress.currentNodeId);
   elements.topologyCurrent.addEventListener('click', () => {
     const currentId = data.progress.currentNodeId;
@@ -835,7 +864,7 @@
   });
   elements.currentStageButton.addEventListener('click', () => {
     const current = nodeIndex.get(data.progress.currentNodeId);
-    if (current) revealStage(current.stageId, { nodeId: current.id });
+    if (current) revealStage(current.stageId);
   });
   elements.locateNode.addEventListener('click', locateSelectedNode);
   for (const button of document.querySelectorAll('[data-jump-target]')) {
@@ -850,8 +879,9 @@
     renderRecords();
   });
   window.addEventListener('hashchange', () => {
-    const nodeId = decodeURIComponent(window.location.hash.slice(1));
-    if (nodeIndex.has(nodeId) && nodeId !== selectedNodeId) showNode(nodeId);
+    const nodeId = readHashNodeId();
+    if (!nodeIndex.has(nodeId)) showAllStages();
+    else if (nodeId !== selectedNodeId) showNode(nodeId, { locate: true });
   });
   document.addEventListener('keydown', (event) => {
     const target = event.target;
