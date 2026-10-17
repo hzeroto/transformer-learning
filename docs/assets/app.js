@@ -799,6 +799,19 @@
   applyFilters();
   setMapView(activeMapView);
   if (selectedNodeId) topologyGraph?.focusNode(selectedNodeId, { moveFocus: false });
+  else {
+    // 首页默认展示知识地图；进度卡片保留在上方，显式节点深链接不受影响。
+    // 等加载及浏览器滚动恢复完成后立即定位，不播放从进度卡片滚到地图的入场动画。
+    window.addEventListener('load', () => {
+      requestAnimationFrame(() => {
+        const headerHeight = document.querySelector('.site-header').offsetHeight;
+        window.scrollTo({
+          top: window.scrollY + elements.mapPanel.getBoundingClientRect().top - headerHeight,
+          behavior: 'instant'
+        });
+      });
+    }, { once: true });
+  }
 
   elements.searchInput.addEventListener('input', applyFilters);
   elements.statusFilters.addEventListener('click', (event) => {
